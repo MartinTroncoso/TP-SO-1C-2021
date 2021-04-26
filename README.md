@@ -1,10 +1,12 @@
 # tp-2021-1c-No-C-Aprueba-+
 
-### CLONAR EL REPO PARADOS EN /home/utnso/workspace     
+### :point_right:SIEMPRE BUILDEAR PRIMERO LA CARPETA 'shared' Y DESPUÉS LOS 3 PROYECTOS PORQUE SINO NO RECONOCEN LAS LIBRERIAS
+
+### :point_right:CLONAR EL REPO PARADOS EN /home/utnso/workspace     
         
         git clone https://github.com/sisoputnfrba/tp-2021-1c-No-C-Aprueba-
 
-### LEVANTAR PROCESO EN LA CONSOLA (CON LAS SHARED LIBRARY)
+### :point_right:LEVANTAR PROCESO EN LA CONSOLA (CON LAS SHARED LIBRARY)
         
         LD_LIBRARY_PATH="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug" ./Debug/'Proceso'
 
