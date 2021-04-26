@@ -11,7 +11,7 @@
 #include <utils.h>
 
 char* PUNTO_MONTAJE;
-int PUERTO;
+char* PUERTO;
 int TIEMPO_SINCRONIZACION;
 
 void leerConfiguracion(t_config*);

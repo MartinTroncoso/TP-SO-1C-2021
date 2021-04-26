@@ -16,8 +16,9 @@ int TAMANIO_PAGINA;
 int TAMANIO_SWAP;
 char* PATH_SWAP;
 char* ALGORITMO_REEMPLAZO;
-int PUERTO;
+char* PUERTO;
 
 void leerConfiguracion(t_config*);
 void logearConfiguracion(t_log*);
+
 #endif /* MI_RAM_HQ_H_ */
