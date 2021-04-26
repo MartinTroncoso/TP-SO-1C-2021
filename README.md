@@ -2,6 +2,8 @@
 
 ### :point_right:SIEMPRE BUILDEAR PRIMERO LA CARPETA 'shared' Y DESPUÉS LOS 3 PROYECTOS PORQUE SINO NO RECONOCEN LAS LIBRERIAS
 
+### :point_right:File > Import > General > Existing Projects Into Workspace > Browse > tp-2021-1c-No-C-Aprueba-
+
 ### :point_right:CLONAR EL REPO PARADOS EN /home/utnso/workspace     
         
         git clone https://github.com/sisoputnfrba/tp-2021-1c-No-C-Aprueba-
