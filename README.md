@@ -5,6 +5,8 @@
 ### :point_right:CLONAR EL REPO PARADOS EN /home/utnso/workspace     
         
         git clone https://github.com/sisoputnfrba/tp-2021-1c-No-C-Aprueba-
+        
+#### :point_right:File > Import > General > Existing Projects Into Workspace > Browse > tp-2021-1c-No-C-Aprueba-
 
 ### :point_right:LEVANTAR PROCESO EN LA CONSOLA (CON LAS SHARED LIBRARY)
         
