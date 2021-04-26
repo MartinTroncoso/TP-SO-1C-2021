@@ -10,13 +10,9 @@
 
 #include <utils.h>
 
-int TAMANIO_MEMORIA;
-char* ESQUEMA_MEMORIA;
-int TAMANIO_PAGINA;
-int TAMANIO_SWAP;
-char* PATH_SWAP;
-char* ALGORITMO_REEMPLAZO;
+char* PUNTO_MONTAJE;
 int PUERTO;
+int TIEMPO_SINCRONIZACION;
 
 void leerConfiguracion(t_config*);
 void logearConfiguracion(t_log*);

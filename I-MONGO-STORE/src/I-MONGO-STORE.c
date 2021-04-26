@@ -25,23 +25,15 @@ int main(void) {
 void leerConfiguracion(t_config* config)
 {
 	//NUMERICOS
-	TAMANIO_MEMORIA = config_get_int_value(config,"TAMANIO_MEMORIA");
-	TAMANIO_PAGINA = config_get_int_value(config,"TAMANIO_PAGINA");
-	TAMANIO_SWAP = config_get_int_value(config,"TAMANIO_SWAP");
 	PUERTO = config_get_int_value(config,"PUERTO");
+	TIEMPO_SINCRONIZACION = config_get_int_value(config,"TIEMPO_SINCRONIZACION");
 	//STRINGS
-	ESQUEMA_MEMORIA = config_get_string_value(config,"ESQUEMA_MEMORIA");
-	PATH_SWAP = config_get_string_value(config,"PATH_SWAP");
-	ALGORITMO_REEMPLAZO = config_get_string_value(config,"ALGORITMO_REEMPLAZO");
+	PUNTO_MONTAJE = config_get_string_value(config,"PUNTO_MONTAJE");
 }
 
 void logearConfiguracion(t_log* logger)
 {
-	log_info(logger, "%d",TAMANIO_MEMORIA);
-	log_info(logger,ESQUEMA_MEMORIA);
-	log_info(logger, "%d",TAMANIO_PAGINA);
-	log_info(logger,"%d",TAMANIO_SWAP);
-	log_info(logger,PATH_SWAP);
-	log_info(logger,ALGORITMO_REEMPLAZO);
-	log_info(logger,"%d",PUERTO);
+	log_info(logger,PUNTO_MONTAJE);
+	log_info(logger, "%d",PUERTO);
+	log_info(logger,"%d",TIEMPO_SINCRONIZACION);
 }
