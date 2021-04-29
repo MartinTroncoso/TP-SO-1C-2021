@@ -10,13 +10,37 @@
 
 #include "Discordiador.h"
 
-void leer_consola(t_log* logger)
+void leer_consola(t_dictionary* diccionario,t_log* logger)
 {
 	char* leido;
 	leido = readline(">");
 
 	while(strcmp(leido,"")!=0){
 		log_info(logger,leido);
+		switch((int) dictionary_get(diccionario,strtok(leido," ")))
+		{
+		case 1:
+			printf("Comando leido: 	INICIAR_PATOTA\n");
+			break;
+		case 2:
+			printf("Comando leido: 	LISTAR_TRIPULANTES\n");
+			break;
+		case 3:
+			printf("Comando leido: 	EXPULSAR_TRIPULANTE\n");
+			break;
+		case 4:
+			printf("Comando leido: 	INICIAR_PLANIFICACION\n");
+			break;
+		case 5:
+			printf("Comando leido: 	PAUSAR_PLANIFICACION\n");
+			break;
+		case 6:
+			printf("Comando leido: 	OBTENER_BITACORA\n");
+			break;
+		default:
+			printf("Comando no reconocido\n");
+			break;
+		}
 		free(leido);
 		leido = readline(">");
 	}
@@ -76,13 +100,30 @@ void logearConfiguracion(t_log* log)
 	log_info(log, "%d",RETARDO_CICLO_CPU);
 }
 
+//DICCIONARIO PARA LEER LOS COMANDOS ESCRITOS POR CONSOLA
+void crearDiccionarioComandos(t_dictionary* diccionario)
+{
+	dictionary_put(diccionario,"INICIAR_PATOTA",(int*) 1);
+	dictionary_put(diccionario,"LISTAR_TRIPULANTES",(int*) 2);
+	dictionary_put(diccionario,"EXPULSAR_TRIPULANTE",(int*) 3);
+	dictionary_put(diccionario,"INICIAR_PLANIFICACION",(int*) 4);
+	dictionary_put(diccionario,"PAUSAR_PLANIFICACION",(int*) 5);
+	dictionary_put(diccionario,"OBTENER_BITACORA",(int*) 6);
+
+	//printf("diccionario %d\n", (int) dictionary_get(diccionario,"OBTENER_BITACORA"));
+}
+
 int main(void)
 {
 
 	t_config* configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
 	t_log* loggerDiscordiador = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.log", "Discordiador", 1, LOG_LEVEL_INFO);
+	t_dictionary* diccionarioDiscordiador = dictionary_create();
+	crearDiccionarioComandos(diccionarioDiscordiador);
 	leerConfiguracion(configuracionDiscordiador);
 	logearConfiguracion(loggerDiscordiador);
+
+	leer_consola(diccionarioDiscordiador,loggerDiscordiador);
 
 	//EL DISCORDIADOR SE CONECTA A MI-RAM (HAY QUE CORRERLO A ESTE ANTES)
 	int conexion = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);

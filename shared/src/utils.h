@@ -20,6 +20,7 @@
 #include <commons/config.h>
 #include <readline/readline.h>
 #include <commons/collections/list.h>
+#include <commons/collections/dictionary.h>
 #include <commons/log.h>
 
 //void holiwis();

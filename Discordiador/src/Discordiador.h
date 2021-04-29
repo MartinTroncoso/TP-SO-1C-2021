@@ -22,8 +22,10 @@ int RETARDO_CICLO_CPU;
 
 void leerConfiguracion(t_config*);
 void logearConfiguracion(t_log*);
-void leer_consola(t_log*);
+void leer_consola(t_dictionary*,t_log*);
 void paquete(int);
 void terminar_programa(int, t_log*, t_config*);
+
+void crearDiccionarioComandos(t_dictionary*);
 
 #endif /* DISCORDIADOR_H_ */
