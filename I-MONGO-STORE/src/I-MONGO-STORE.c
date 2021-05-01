@@ -26,6 +26,8 @@ void inicializarVariables(){
 int main(void) {
 	inicializarVariables();
 
+
+
 	void iterator(char* value)
 	{
 		printf("%s\n", value);

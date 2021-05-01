@@ -27,7 +27,15 @@ void inicializarVariables(){
 	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
 
+//void iniciar_tripulante(t_tripulante tripulante){
+//	///
+//}
+
 int main(void) {
+
+	inicializarVariables();
+//	void* memoria = malloc(TAMANIO_MEMORIA);
+
 	void iterator(char* value)
 	{
 		printf("%s\n", value);
@@ -36,14 +44,14 @@ int main(void) {
 	t_list* lista;
 	while(1)
 	{
-		int cod_op = recibir_operacion(socket_servidor);
+		int cod_op = recibir_operacion(socket_discordiador);
 		switch(cod_op)
 		{
 		case MENSAJE:
-			recibir_mensaje(socket_servidor);
+			recibir_mensaje(socket_discordiador);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(socket_servidor);
+			lista = recibir_paquete(socket_discordiador);
 			printf("ME LLEGARON LOS SIGUIENTES VALORES:\n");
 			list_iterate(lista, (void*) iterator);
 			break;

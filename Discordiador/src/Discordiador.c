@@ -14,6 +14,7 @@ void inicializarVariables(){
 	configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
 	loggerDiscordiador = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.log","Discordiador",1,LOG_LEVEL_INFO);
 	diccionarioDiscordiador = dictionary_create();
+
 	IP_MI_RAM = config_get_string_value(configuracionDiscordiador,"IP_MI_RAM_HQ");
 	IP_I_MONGO_STORE = config_get_string_value(configuracionDiscordiador,"IP_I_MONGO_STORE");
 	ALGORITMO = config_get_string_value(configuracionDiscordiador,"ALGORITMO");
@@ -24,8 +25,10 @@ void inicializarVariables(){
 	DURACION_SABOTAJE = config_get_int_value(configuracionDiscordiador,"DURACION_SABOTAJE");
 	RETARDO_CICLO_CPU = config_get_int_value(configuracionDiscordiador,"RETARDO_CICLO_CPU");
 	crearDiccionarioComandos(diccionarioDiscordiador);
+	id_tripulante = 1;
 
-	socket_cliente = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+	socket_cliente_miRam = crearConexionCliente(IP_MI_RAM, PUERTO_MI_RAM);
+	socket_cliente_iMongo = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -40,47 +43,104 @@ void crearDiccionarioComandos(t_dictionary* diccionario)
 	//printf("diccionario %d\n", (int) dictionary_get(diccionario,"OBTENER_BITACORA"));
 }
 
+void iniciarPatota(t_iniciar_patota estructura){
+	//crea una patota
+	//crea estructura->cantidadTripulantes tripulantes
+	//le asigna a cada uno su posición
+	//cada tripulante arranca en estado NEW
+	//ir asignadole a cada tripulante su id
+	//mandarle a Mi-RAM todos los tripulantes para que los ponga en memoria
+}
+
+void listarTripulantes(){
+	//imprime todos los tripulantes
+	/*
+	 Por ejemplo
+
+	 Estado de la Nave: 30/06/2021 10:30:00
+	 Tripulante: 1		Patota: 1		Status: EXEC
+	 Tripulante: 2		Patota: 2		Status: EXEC
+	 Tripulante: 3		Patota: 2		Status: BLOCK I/O
+	 Tripulante: 4		Patota: 3		Status: READY
+	*/
+}
+
+void expulsarTripulante(int idTripulante){
+	//se finaliza un tripulante
+	//avisarle a MI-RAM que lo borre del mapa
+	//en caso de ser necesario tambien elimina su segmento de tareas
+}
+
+void iniciarPlanificacion(){
+	//se inicia la planificacion
+	//hasta este punto se supone que no hubo movimientos entre colas de planificacion ni de los tripulantes
+}
+
+void pausarPlanificacion(){
+	//se pausa la planificacion
+}
+
+void obtenerBitacora(int idTripulante){
+	//se manda un mensaje a I-MONGO solicitando la bitacora de un tripulante
+}
+
 void leer_consola(t_dictionary* diccionario,t_log* logger)
 {
 	char* palabras;
-	char* leido;
-	leido = readline(">");
-	while(strcmp(leido,"")!=0){
-		log_info(logger,leido);
-		switch((int) dictionary_get(diccionario,strtok(leido," ")))
+	char* comando = readline(">");
+
+	while(strcmp(comando,"")!=0){
+		log_info(logger,comando);
+
+		switch((int) dictionary_get(diccionario,strtok(comando," ")))
 		{
-		case 1:
-			printf("Comando leido: 	INICIAR_PATOTA\n");
-			palabras = leido;
+		case 1:{
+			//INICIAR_PATOTA [cant_tripulantes] [path] [pos1] [pos2] ...
+			//PRIMER COMANDO A MANDAR
+			palabras = comando;
 			partirCadena(palabras);
+			//iniciarPatota(t_iniciar_patota);
 			break;
-		case 2:
-			printf("Comando leido: 	LISTAR_TRIPULANTES\n");
+		}
+		case 2:{
+			//LISTAR_TRIPULANTES
+			listarTripulantes();
 			break;
-		case 3:
-			printf("Comando leido: 	EXPULSAR_TRIPULANTE\n");
+		}
+		case 3:{
+			//EXPULSAR_TRIPULANTE 'id'
+			int idTripulante = atoi(strtok(NULL," "));
+			expulsarTripulante(idTripulante);
 			break;
-		case 4:
-			printf("Comando leido: 	INICIAR_PLANIFICACION\n");
+		}
+		case 4:{
+			//INICIAR_PLANIFICACION
+			iniciarPlanificacion();
 			break;
-		case 5:
-			printf("Comando leido: 	PAUSAR_PLANIFICACION\n");
+		}
+		case 5:{
+			//PAUSAR_PLANIFICACION
+			pausarPlanificacion();
 			break;
-		case 6:
-			printf("Comando leido: 	OBTENER_BITACORA\n");
+		}
+		case 6:{
+			//OBTENER_BITACORA [idTripulante]
+			int idTripulante = atoi(strtok(NULL," "));
+			obtenerBitacora(idTripulante);
 			break;
+		}
 		default:
 			printf("Comando no reconocido\n");
 			break;
 		}
-		free(leido);
-		leido = readline(">");
+		free(comando);
+		comando = readline(">");
 	}
 
-	free(leido);
+	free(comando);
 }
 
-void paquete(int conexion)
+void paquete(int socket_cliente, int otro_socket_cliente)
 {
 	char* leido;
 	t_paquete* paquete = crear_paquete();
@@ -92,27 +152,29 @@ void paquete(int conexion)
 	}
 
 	free(leido);
-	enviar_paquete(paquete,conexion);
+	enviar_paquete(paquete,socket_cliente);
+	enviar_paquete(paquete,otro_socket_cliente);
 
 	eliminar_paquete(paquete);
 }
 
-void terminar_programa(int conexion, t_log* logger, t_config* config)
+void terminar_programa()
 {
-	close(conexion);
-	log_destroy(logger);
-	config_destroy(config);
+	close(socket_cliente_iMongo);
+	close(socket_cliente_miRam);
+	log_destroy(loggerDiscordiador);
+	config_destroy(configuracionDiscordiador);
 }
 
 void partirCadena(char* cadena)
 {
-	comandoIniciarPatota* parametrosPatota = malloc(sizeof(comandoIniciarPatota));
+	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
 	t_list* listaCoordenadas = list_create();
 	char* token = strtok(NULL," ");
-	if(atoi(token)!=0)
-	{
+	if(atoi(token)!=0){
 		parametrosPatota->cantidadTripulantes = atoi(token);
-	}else
+	}
+	else
 	{
 		printf("Error leyendo cantidadTripulantes\n");
 		token = NULL;
@@ -121,7 +183,6 @@ void partirCadena(char* cadena)
 	token = strtok(NULL," ");
 	if(token!=NULL)
 	{
-
 		parametrosPatota->rutaDeTareas = token;
 		token = strtok(NULL," |");
 		printf("%d\n",parametrosPatota->cantidadTripulantes);
@@ -130,35 +191,36 @@ void partirCadena(char* cadena)
 		{
 			if(token!=NULL)
 			{
-				coordenadasTripulante* posicionTripulante=malloc(sizeof(coordenadasTripulante));
+				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
 				if(strcmp(token,"0")==0)
 				{
 					posicionTripulante->coordenadaX = 0;
 					token = strtok(NULL," |");
-				}else if(atoi(token)!=0)
-				{
-					posicionTripulante->coordenadaX = atoi(token);
-					token = strtok(NULL," |");
-				}else
-				{
-					printf("Coordenadas mal ingresadas X\n");
 				}
-				/*posicionTripulante->coordenadaX = atoi(token);
-				token = strtok(NULL," |");*/
-				if(strcmp(token,"0")==0)
-				{
-					posicionTripulante->coordenadaY = 0;
-					token = strtok(NULL," |");
-				}else if(atoi(token)!=0)
-				{
-					posicionTripulante->coordenadaY = atoi(token);
-					token = strtok(NULL," |");
-				}else
-				{
-					printf("Coordenadas mal ingresadas Y\n");
-				}
-				printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
-				list_add(listaCoordenadas,posicionTripulante);
+				else
+					if(atoi(token)!=0){
+						posicionTripulante->coordenadaX = atoi(token);
+						token = strtok(NULL," |");
+					}else
+					{
+						printf("Coordenadas mal ingresadas X\n");
+					}
+					/*posicionTripulante->coordenadaX = atoi(token);
+					token = strtok(NULL," |");*/
+					if(strcmp(token,"0")==0)
+					{
+						posicionTripulante->coordenadaY = 0;
+						token = strtok(NULL," |");
+					}else if(atoi(token)!=0)
+					{
+						posicionTripulante->coordenadaY = atoi(token);
+						token = strtok(NULL," |");
+					}else
+					{
+						printf("Coordenadas mal ingresadas Y\n");
+					}
+					printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+					list_add(listaCoordenadas,posicionTripulante);
 			}else
 			{
 				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
@@ -168,13 +230,7 @@ void partirCadena(char* cadena)
 				list_add(listaCoordenadas,posicionTripulante);
 			}
 		}
-}
-
-	/*while(token!=NULL)
-	{
-		printf("%s\n",token);
-		token = strtok(NULL," ");
-	}*/
+	}
 }
 
 int main(void)
@@ -189,17 +245,16 @@ int main(void)
 		token = strtok(NULL," |");
 	}
 
-	leer_consola(diccionarioDiscordiador,loggerDiscordiador);
+	leer_consola(diccionarioDiscordiador, loggerDiscordiador);
 
-	//SE ENVIA A MI-RAM EL VALOR
-	enviar_mensaje(ALGORITMO,socket_cliente);
+	//SE ENVIA EL ALGORITMO A LOS 2 PROCESOS
+	enviar_mensaje(ALGORITMO,socket_cliente_miRam);
+	enviar_mensaje(ALGORITMO,socket_cliente_iMongo);
 
 	//SE ARMA UN PAQUETE CON LOS MENSAJES QUE SE ESCRIBAN EN CONSOLA Y CUANDO SE APRIETA 'ENTER' SE MANDA TODO JUNTO
-	paquete(socket_cliente);
+	paquete(socket_cliente_miRam, socket_cliente_iMongo);
 
-	terminar_programa(socket_cliente, loggerDiscordiador, configuracionDiscordiador);
+	terminar_programa();
 
 	return EXIT_SUCCESS;
 }
-
-

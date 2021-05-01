@@ -15,10 +15,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <pthread.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include <readline/readline.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 #include <commons/log.h>

@@ -25,7 +25,7 @@ typedef struct
 	int cantidadTripulantes;
 	char* rutaDeTareas;
 	t_list* coordenadasTripulantes;
-}comandoIniciarPatota;
+}t_iniciar_patota;
 
 typedef struct
 {
@@ -33,20 +33,50 @@ typedef struct
 	int coordenadaY;
 }coordenadasTripulante;
 
+typedef struct{
+	uint32_t pid;
+	void* tareas;
+}patota;
+
+typedef enum{
+	NEW=0,
+	READY=1,
+	EXEC=2,
+	BLOCK=3
+}estado;
+
+typedef struct{
+	uint32_t tid;
+	estado estado;
+	coordenadasTripulante posicion;
+	uint32_t proxInstruccion;
+}tripulante;
+
 t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
 t_dictionary* diccionarioDiscordiador;
 
-int socket_cliente;
+int socket_cliente_miRam;
+int socket_cliente_iMongo;
+
+int id_tripulante; //ID GLOBAL QUE SE VA INCREMENTANDO CADA VEZ QUE SE CREA UN TRIPULANTE.
+
+t_list* tripulantes;
 
 void inicializarVariables();
 
+void iniciarPatota(t_iniciar_patota);
+void listarTripulantes();
+void expulsarTripulante(int);
+void iniciarPlanificacion();
+void pausarPlanificacion();
+void obtenerBitacora(int);
+
+void sumarIdTripulante();
 void leer_consola(t_dictionary*,t_log*);
-void paquete(int);
-void terminar_programa(int, t_log*, t_config*);
-
+void paquete(int,int);
+void terminar_programa();
 void partirCadena(char*);
-
 void crearDiccionarioComandos(t_dictionary*);
 
 #endif /* DISCORDIADOR_H_ */
