@@ -12,15 +12,17 @@
 
 void leer_consola(t_dictionary* diccionario,t_log* logger)
 {
+	char* palabras;
 	char* leido;
 	leido = readline(">");
-
 	while(strcmp(leido,"")!=0){
 		log_info(logger,leido);
 		switch((int) dictionary_get(diccionario,strtok(leido," ")))
 		{
 		case 1:
 			printf("Comando leido: 	INICIAR_PATOTA\n");
+			palabras = leido;
+			partirCadena(palabras);
 			break;
 		case 2:
 			printf("Comando leido: 	LISTAR_TRIPULANTES\n");
@@ -113,9 +115,54 @@ void crearDiccionarioComandos(t_dictionary* diccionario)
 	//printf("diccionario %d\n", (int) dictionary_get(diccionario,"OBTENER_BITACORA"));
 }
 
+void partirCadena(char* cadena)
+{
+	comandoIniciarPatota* parametrosPatota=malloc(sizeof(comandoIniciarPatota));
+	t_list* listaCoordenadas = list_create();
+	char* token = strtok(NULL," ");
+	parametrosPatota->cantidadTripulantes = atoi(token);
+	token = strtok(NULL," ");
+	parametrosPatota->rutaDeTareas = token;
+	token = strtok(NULL," |");
+	printf("%d\n",parametrosPatota->cantidadTripulantes);
+	printf("%s\n",parametrosPatota->rutaDeTareas);
+	for(int i = 0;i<parametrosPatota->cantidadTripulantes;i++)
+	{
+		if(token!=NULL)
+		{
+			coordenadasTripulante* posicionTripulante=malloc(sizeof(coordenadasTripulante));
+			posicionTripulante->coordenadaX = atoi(token);
+			token = strtok(NULL," |");
+			posicionTripulante->coordenadaY = atoi(token);
+			printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+			list_add(listaCoordenadas,posicionTripulante);
+			token = strtok(NULL," |");
+
+		}else
+		{
+			coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
+			posicionTripulante->coordenadaX=0;
+			posicionTripulante->coordenadaY=0;
+			printf("Posicion 0|0 es %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+			list_add(listaCoordenadas,posicionTripulante);
+		}
+	}
+	/*while(token!=NULL)
+	{
+		printf("%s\n",token);
+		token = strtok(NULL," ");
+	}*/
+}
+
 int main(void)
 {
-
+	char palabras[] = "COMANDO 5 1|4 1|7";
+	char* token = strtok(palabras," |");
+	while(token!=NULL)
+	{
+		printf("%s\n",token);
+		token = strtok(NULL," |");
+	}
 	t_config* configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
 	t_log* loggerDiscordiador = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.log", "Discordiador", 1, LOG_LEVEL_INFO);
 	t_dictionary* diccionarioDiscordiador = dictionary_create();
