@@ -25,16 +25,22 @@ typedef struct
 	int cantidadTripulantes;
 	char* rutaDeTareas;
 	t_list* coordenadasTripulantes;
-} comandoIniciarPatota;
+}comandoIniciarPatota;
 
 typedef struct
 {
 	int coordenadaX;
 	int coordenadaY;
-} coordenadasTripulante;
+}coordenadasTripulante;
 
-void leerConfiguracion(t_config*);
-void logearConfiguracion(t_log*);
+t_config* configuracionDiscordiador;
+t_log* loggerDiscordiador;
+t_dictionary* diccionarioDiscordiador;
+
+int socket_cliente;
+
+void inicializarVariables();
+
 void leer_consola(t_dictionary*,t_log*);
 void paquete(int);
 void terminar_programa(int, t_log*, t_config*);

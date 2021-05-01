@@ -10,49 +10,38 @@
 
 #include "I-MONGO-STORE.h"
 
-void leerConfiguracion(t_config* config)
-{
-	//NUMERICOS
-	TIEMPO_SINCRONIZACION = config_get_int_value(config,"TIEMPO_SINCRONIZACION");
-	//STRINGS
-	PUNTO_MONTAJE = config_get_string_value(config,"PUNTO_MONTAJE");
-	PUERTO = config_get_string_value(config,"PUERTO");
-}
+void inicializarVariables(){
+	configuracionMongo = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.config");
+	loggerMongo = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.log", "I-MONGO-STORE", 1, LOG_LEVEL_INFO);
+	TIEMPO_SINCRONIZACION = config_get_int_value(configuracionMongo,"TIEMPO_SINCRONIZACION");
+	PUNTO_MONTAJE = config_get_string_value(configuracionMongo,"PUNTO_MONTAJE");
+	PUERTO = config_get_string_value(configuracionMongo,"PUERTO");
 
-void logearConfiguracion(t_log* logger)
-{
-	log_info(logger, PUNTO_MONTAJE);
-	log_info(logger, PUERTO);
-	log_info(logger,"%d",TIEMPO_SINCRONIZACION);
+	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
+	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
+	socket_discordiador = esperar_cliente(socket_servidor);
+	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
 
 int main(void) {
-	t_config* configuracionMongo = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.config");
-	t_log* loggerMongo = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.log", "I-MONGO-STORE", 1, LOG_LEVEL_INFO);
-	leerConfiguracion(configuracionMongo);
-	logearConfiguracion(loggerMongo);
+	inicializarVariables();
 
 	void iterator(char* value)
 	{
 		printf("%s\n", value);
 	}
 
-	int server_fd = iniciarServidor("127.0.0.1",PUERTO);
-	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
-	int cliente_fd = esperar_cliente(server_fd);
-	printf("SE CONECTÓ EL DISCORDIADOR!\n");
-
 	t_list* lista;
 	while(1)
 	{
-		int cod_op = recibir_operacion(cliente_fd);
+		int cod_op = recibir_operacion(socket_discordiador);
 		switch(cod_op)
 		{
 		case MENSAJE:
-			recibir_mensaje(cliente_fd);
+			recibir_mensaje(socket_discordiador);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(cliente_fd);
+			lista = recibir_paquete(socket_discordiador);
 			printf("ME LLEGARON LOS SIGUIENTES VALORES:\n");
 			list_iterate(lista, (void*) iterator);
 			break;

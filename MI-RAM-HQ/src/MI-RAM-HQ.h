@@ -18,7 +18,12 @@ char* PATH_SWAP;
 char* ALGORITMO_REEMPLAZO;
 char* PUERTO;
 
-void leerConfiguracion(t_config*);
-void logearConfiguracion(t_log*);
+t_config* configuracionMiRam;
+t_log* loggerMiRam;
+
+int socket_servidor;
+int socket_discordiador;
+
+void inicializarVariables();
 
 #endif /* MI_RAM_HQ_H_ */
