@@ -109,33 +109,67 @@ void partirCadena(char* cadena)
 	comandoIniciarPatota* parametrosPatota = malloc(sizeof(comandoIniciarPatota));
 	t_list* listaCoordenadas = list_create();
 	char* token = strtok(NULL," ");
-	parametrosPatota->cantidadTripulantes = atoi(token);
-	token = strtok(NULL," ");
-	parametrosPatota->rutaDeTareas = token;
-	token = strtok(NULL," |");
-	printf("%d\n",parametrosPatota->cantidadTripulantes);
-	printf("%s\n",parametrosPatota->rutaDeTareas);
-	for(int i = 0;i<parametrosPatota->cantidadTripulantes;i++)
+	if(atoi(token)!=0)
 	{
-		if(token!=NULL)
-		{
-			coordenadasTripulante* posicionTripulante=malloc(sizeof(coordenadasTripulante));
-			posicionTripulante->coordenadaX = atoi(token);
-			token = strtok(NULL," |");
-			posicionTripulante->coordenadaY = atoi(token);
-			printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
-			list_add(listaCoordenadas,posicionTripulante);
-			token = strtok(NULL," |");
-
-		}else
-		{
-			coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-			posicionTripulante->coordenadaX=0;
-			posicionTripulante->coordenadaY=0;
-			printf("Posicion 0|0 es %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
-			list_add(listaCoordenadas,posicionTripulante);
-		}
+		parametrosPatota->cantidadTripulantes = atoi(token);
+	}else
+	{
+		printf("Error leyendo cantidadTripulantes\n");
+		token = NULL;
 	}
+	//parametrosPatota->cantidadTripulantes = atoi(token);
+	token = strtok(NULL," ");
+	if(token!=NULL)
+	{
+
+		parametrosPatota->rutaDeTareas = token;
+		token = strtok(NULL," |");
+		printf("%d\n",parametrosPatota->cantidadTripulantes);
+		printf("%s\n",parametrosPatota->rutaDeTareas);
+		for(int i = 0;i<parametrosPatota->cantidadTripulantes;i++)
+		{
+			if(token!=NULL)
+			{
+				coordenadasTripulante* posicionTripulante=malloc(sizeof(coordenadasTripulante));
+				if(strcmp(token,"0")==0)
+				{
+					posicionTripulante->coordenadaX = 0;
+					token = strtok(NULL," |");
+				}else if(atoi(token)!=0)
+				{
+					posicionTripulante->coordenadaX = atoi(token);
+					token = strtok(NULL," |");
+				}else
+				{
+					printf("Coordenadas mal ingresadas X\n");
+				}
+				/*posicionTripulante->coordenadaX = atoi(token);
+				token = strtok(NULL," |");*/
+				if(strcmp(token,"0")==0)
+				{
+					posicionTripulante->coordenadaY = 0;
+					token = strtok(NULL," |");
+				}else if(atoi(token)!=0)
+				{
+					posicionTripulante->coordenadaY = atoi(token);
+					token = strtok(NULL," |");
+				}else
+				{
+					printf("Coordenadas mal ingresadas Y\n");
+				}
+				printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+				list_add(listaCoordenadas,posicionTripulante);
+			}else
+			{
+				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
+				posicionTripulante->coordenadaX=0;
+				posicionTripulante->coordenadaY=0;
+				printf("Posicion 0|0 es %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+				list_add(listaCoordenadas,posicionTripulante);
+			}
+		}
+}
+
 	/*while(token!=NULL)
 	{
 		printf("%s\n",token);
