@@ -38,16 +38,9 @@ typedef struct{
 	void* tareas;
 }patota;
 
-typedef enum{
-	NEW=0,
-	READY=1,
-	EXEC=2,
-	BLOCK=3
-}estado;
-
 typedef struct{
 	uint32_t tid;
-	estado estado;
+	char estado;
 	coordenadasTripulante posicion;
 	uint32_t proxInstruccion;
 }tripulante;
