@@ -12,6 +12,8 @@
         
         LD_LIBRARY_PATH="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug" ./Debug/'Proceso'
 
+### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
+
 ### :policeman: MÓDULO DISCORDIADOR
 
 Es el encargado de organizar, planificar y ordenar la ejecución de las tareas de los tripulantes. Se usan los conceptos de procesos e hilos. Tiene su propia consola, en la que se pueden mandar los mensajes INICIAR_PATOTA, INICIAR_PLANIFICACION, PAUSAR_PLANIFICACION, LISTAR_TRIPULANTES, EXPULSAR_TRIPULANTES y OBTENER_BITACORA. Después están los del Anexo II que no se quien los mandaría.
