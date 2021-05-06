@@ -9,6 +9,7 @@
  */
 
 #include "Discordiador.h"
+#include <commons/process.h>
 
 void inicializarVariables(){
 	configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
@@ -25,7 +26,7 @@ void inicializarVariables(){
 	DURACION_SABOTAJE = config_get_int_value(configuracionDiscordiador,"DURACION_SABOTAJE");
 	RETARDO_CICLO_CPU = config_get_int_value(configuracionDiscordiador,"RETARDO_CICLO_CPU");
 	crearDiccionarioComandos(diccionarioDiscordiador);
-	id_tripulante = 1;
+	tripulantes = list_create();
 
 	socket_cliente_miRam = crearConexionCliente(IP_MI_RAM, PUERTO_MI_RAM);
 	socket_cliente_iMongo = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
@@ -50,6 +51,13 @@ void iniciarPatota(t_iniciar_patota estructura){
 	//cada tripulante arranca en estado NEW
 	//ir asignadole a cada tripulante su id
 	//mandarle a Mi-RAM todos los tripulantes para que los ponga en memoria
+
+	//PCB* patota = malloc(sizeof(PCB));
+	//patota->pid = ;
+	//patota->direccionTareas = ;
+	//TCB* tripulante = malloc(sizeof(tripulante));
+	//tripulante->tid = process_get_thread_id();
+	//send(socket_cliente_miRam,tripulantesSerializados,sizeof(tripulantes),0);
 }
 
 void listarTripulantes(){
@@ -69,6 +77,10 @@ void expulsarTripulante(int idTripulante){
 	//se finaliza un tripulante
 	//avisarle a MI-RAM que lo borre del mapa
 	//en caso de ser necesario tambien elimina su segmento de tareas
+
+	//int op_code = 2;
+	//send(socket_cliente_miRam,&op_code,sizeof(int),0);
+	//send(socket_cliente_miRam,&idTripulante,sizeof(int),0);
 }
 
 void iniciarPlanificacion(){
@@ -108,7 +120,7 @@ void leer_consola(t_dictionary* diccionario,t_log* logger)
 			break;
 		}
 		case 3:{
-			//EXPULSAR_TRIPULANTE 'id'
+			//EXPULSAR_TRIPULANTE [idTripulante]
 			int idTripulante = atoi(strtok(NULL," "));
 			expulsarTripulante(idTripulante);
 			break;
@@ -166,8 +178,7 @@ void terminar_programa()
 	config_destroy(configuracionDiscordiador);
 }
 
-void partirCadena(char* cadena)
-{
+void partirCadena(char* cadena){
 	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
 	t_list* listaCoordenadas = list_create();
 	char* token = strtok(NULL," ");

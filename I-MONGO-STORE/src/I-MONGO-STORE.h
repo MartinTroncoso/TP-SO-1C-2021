@@ -20,6 +20,10 @@ t_log* loggerMongo;
 int socket_servidor;
 int socket_discordiador;
 
+typedef enum{
+	OBTENER_BITACORA
+}tipo_mensaje;
+
 void inicializarVariables();
 
 #endif /* I_MONGO_STORE_H_ */

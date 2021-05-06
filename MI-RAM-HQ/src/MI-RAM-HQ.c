@@ -28,7 +28,27 @@ void inicializarVariables(){
 }
 
 //void iniciar_tripulante(t_tripulante tripulante){
-//	///
+//
+//}
+
+//void iniciar_patota(...){
+//
+//}
+
+//void recibir_comandos(){
+//	int op_code = recibir_operacion(socket_discordiador);
+//	switch(tipo_mensaje){
+//	case INICIAR_PATOTA:{
+//		iniciar_patota();
+//		iniciar_tripulantes();
+//	}
+//	case EXPULSAR_TRIPULANTE:{
+//
+//	}
+//	default:{
+//
+//	}
+//	}
 //}
 
 int main(void) {
@@ -64,6 +84,8 @@ int main(void) {
 		}
 	}
 
+	close(socket_servidor);
+	close(socket_discordiador);
 	log_destroy(loggerMiRam);
 	config_destroy(configuracionMiRam);
 

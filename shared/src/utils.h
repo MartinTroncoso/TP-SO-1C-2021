@@ -17,6 +17,7 @@
 #include <string.h>
 #include <readline/readline.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
@@ -64,9 +65,5 @@ int esperar_cliente(int);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int);
 int recibir_operacion(int);
-
-//void holiwis();
-//void comoAndas();
-//void bien();
 
 #endif /* UTILS_H_ */

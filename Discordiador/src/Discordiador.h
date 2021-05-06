@@ -20,30 +20,29 @@ int QUANTUM;
 int DURACION_SABOTAJE;
 int RETARDO_CICLO_CPU;
 
-typedef struct
-{
+typedef struct{
 	int cantidadTripulantes;
 	char* rutaDeTareas;
 	t_list* coordenadasTripulantes;
 }t_iniciar_patota;
 
-typedef struct
-{
+typedef struct{
 	int coordenadaX;
 	int coordenadaY;
 }coordenadasTripulante;
 
 typedef struct{
 	uint32_t pid;
-	void* tareas;
-}patota;
+	uint32_t direccionTareas;
+}PCB;
 
 typedef struct{
 	uint32_t tid;
 	char estado;
 	coordenadasTripulante posicion;
 	uint32_t proxInstruccion;
-}tripulante;
+	uint32_t direccionPCB;
+}TCB;
 
 t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
@@ -51,8 +50,7 @@ t_dictionary* diccionarioDiscordiador;
 
 int socket_cliente_miRam;
 int socket_cliente_iMongo;
-
-int id_tripulante; //ID GLOBAL QUE SE VA INCREMENTANDO CADA VEZ QUE SE CREA UN TRIPULANTE.
+int socket_escucha_iMongo;
 
 t_list* tripulantes;
 
@@ -65,7 +63,6 @@ void iniciarPlanificacion();
 void pausarPlanificacion();
 void obtenerBitacora(int);
 
-void sumarIdTripulante();
 void leer_consola(t_dictionary*,t_log*);
 void paquete(int,int);
 void terminar_programa();

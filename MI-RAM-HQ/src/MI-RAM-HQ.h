@@ -18,6 +18,29 @@ char* PATH_SWAP;
 char* ALGORITMO_REEMPLAZO;
 char* PUERTO;
 
+typedef struct{
+	int coordenadaX;
+	int coordenadaY;
+}coordenadasTripulante;
+
+typedef struct{
+	uint32_t pid;
+	uint32_t direccionTareas;
+}PCB;
+
+typedef struct{
+	uint32_t tid;
+	char estado;
+	coordenadasTripulante posicion;
+	uint32_t proxInstruccion;
+	uint32_t direccionPCB;
+}TCB;
+
+typedef enum{
+	INICIAR_PATOTA=1,
+	EXPULSAR_TRIPULANTE=2
+}tipo_mensaje;
+
 t_config* configuracionMiRam;
 t_log* loggerMiRam;
 

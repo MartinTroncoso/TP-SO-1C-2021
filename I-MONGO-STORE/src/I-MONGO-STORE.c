@@ -26,8 +26,6 @@ void inicializarVariables(){
 int main(void) {
 	inicializarVariables();
 
-
-
 	void iterator(char* value)
 	{
 		printf("%s\n", value);
@@ -56,6 +54,8 @@ int main(void) {
 		}
 	}
 
+	close(socket_servidor);
+	close(socket_discordiador);
 	log_destroy(loggerMongo);
 	config_destroy(configuracionMongo);
 
