@@ -98,19 +98,22 @@ void obtenerBitacora(int idTripulante){
 
 void leer_consola(t_dictionary* diccionario,t_log* logger)
 {
-	char* palabras;
+	char** palabras;
 	char* comando = readline(">");
 
 	while(strcmp(comando,"")!=0){
 		log_info(logger,comando);
-
-		switch((int) dictionary_get(diccionario,strtok(comando," ")))
+		palabras = string_split(comando, " ");
+		switch((int) dictionary_get(diccionario,palabras[0]))
 		{
 		case 1:{
 			//INICIAR_PATOTA [cant_tripulantes] [path] [pos1] [pos2] ...
 			//PRIMER COMANDO A MANDAR
-			palabras = comando;
-			partirCadena(palabras);
+			if(palabras[1]!=NULL)
+			{
+				partirCadena(palabras);
+			}
+
 			//iniciarPatota(t_iniciar_patota);
 			break;
 		}
@@ -178,67 +181,43 @@ void terminar_programa()
 	config_destroy(configuracionDiscordiador);
 }
 
-void partirCadena(char* cadena){
+void partirCadena(char** cadena){
 	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
 	t_list* listaCoordenadas = list_create();
-	char* token = strtok(NULL," ");
-	if(atoi(token)!=0){
-		parametrosPatota->cantidadTripulantes = atoi(token);
-	}
-	else
-	{
-		printf("Error leyendo cantidadTripulantes\n");
-		token = NULL;
-	}
-	//parametrosPatota->cantidadTripulantes = atoi(token);
-	token = strtok(NULL," ");
-	if(token!=NULL)
-	{
-		parametrosPatota->rutaDeTareas = token;
-		token = strtok(NULL," |");
-		printf("%d\n",parametrosPatota->cantidadTripulantes);
-		printf("%s\n",parametrosPatota->rutaDeTareas);
-		for(int i = 0;i<parametrosPatota->cantidadTripulantes;i++)
+	int flag = 3;
+	if(atoi(cadena[1])!=0 && cadena[1]!=NULL){
+		if(cadena[2]!=NULL)
 		{
-			if(token!=NULL)
+			parametrosPatota->cantidadTripulantes = atoi(cadena[1]);
+			parametrosPatota->rutaDeTareas = cadena[2];
+			printf("%d\n",parametrosPatota->cantidadTripulantes);
+			printf("%s\n",parametrosPatota->rutaDeTareas);
+			printf("cantidad de tripulantes: %d\n",parametrosPatota->cantidadTripulantes);
+			while(cadena[flag]!=NULL)
 			{
+				printf("valor de flag: %d\n", flag);
 				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-				if(strcmp(token,"0")==0)
+				if(cadena[flag]!=NULL)
 				{
-					posicionTripulante->coordenadaX = 0;
-					token = strtok(NULL," |");
-				}
-				else
-					if(atoi(token)!=0){
-						posicionTripulante->coordenadaX = atoi(token);
-						token = strtok(NULL," |");
-					}else
-					{
-						printf("Coordenadas mal ingresadas X\n");
-					}
-					/*posicionTripulante->coordenadaX = atoi(token);
-					token = strtok(NULL," |");*/
-					if(strcmp(token,"0")==0)
-					{
-						posicionTripulante->coordenadaY = 0;
-						token = strtok(NULL," |");
-					}else if(atoi(token)!=0)
-					{
-						posicionTripulante->coordenadaY = atoi(token);
-						token = strtok(NULL," |");
-					}else
-					{
-						printf("Coordenadas mal ingresadas Y\n");
-					}
-					printf("Posicion x e y %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+					char** coordenadas = string_split(cadena[flag], "|");
+					posicionTripulante->coordenadaX = atoi(coordenadas[0]);
+					posicionTripulante->coordenadaY = atoi(coordenadas[1]);
 					list_add(listaCoordenadas,posicionTripulante);
-			}else
+					printf("Posicion del tripulante: x: %d, y: %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+					flag++;
+				}
+			}
+			if(parametrosPatota->cantidadTripulantes-list_size(listaCoordenadas)!=0)
 			{
-				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-				posicionTripulante->coordenadaX=0;
-				posicionTripulante->coordenadaY=0;
-				printf("Posicion 0|0 es %d %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
-				list_add(listaCoordenadas,posicionTripulante);
+				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(listaCoordenadas);
+				for(int i = 0; i<tripulantesFaltantes;i++)
+				{
+					coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
+					posicionTripulante->coordenadaX= 0;
+					posicionTripulante->coordenadaY= 0;
+					printf("coordenadas del tripulantes por defecto: posX: %d, posY: %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+				}
+
 			}
 		}
 	}

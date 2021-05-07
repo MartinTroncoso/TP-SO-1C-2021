@@ -66,7 +66,7 @@ void obtenerBitacora(int);
 void leer_consola(t_dictionary*,t_log*);
 void paquete(int,int);
 void terminar_programa();
-void partirCadena(char*);
+void partirCadena(char**);
 void crearDiccionarioComandos(t_dictionary*);
 
 #endif /* DISCORDIADOR_H_ */
