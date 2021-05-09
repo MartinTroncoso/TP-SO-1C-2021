@@ -14,6 +14,8 @@
 
 ### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
 
+### :point_right: Diagrama de flujo: https://lucid.app/lucidchart/08070e2d-21af-4143-b078-d4927ef03d9b/edit?shared=true&page=0_0#
+
 ### :policeman: MÓDULO DISCORDIADOR
 
 Es el encargado de organizar, planificar y ordenar la ejecución de las tareas de los tripulantes. Se usan los conceptos de procesos e hilos. Tiene su propia consola, en la que se pueden mandar los mensajes INICIAR_PATOTA, INICIAR_PLANIFICACION, PAUSAR_PLANIFICACION, LISTAR_TRIPULANTES, EXPULSAR_TRIPULANTES y OBTENER_BITACORA. Después están los del Anexo II que no se quien los mandaría.
@@ -41,6 +43,5 @@ Es el encargado de almacenar toda la información de manera persistente, análog
 La estructura básica del FS se basa en una estructura de árbol de directorios para representar la información administrativa y los datos en formato de archivos. El árbol de directorios tomará su punto de partida del punto de montaje del archivo de configuración.
 Durante las pruebas no se proveerán archivos que tengan estados inconsistentes respecto del trabajo práctico, por lo que no es necesario tomar en cuenta dichos casos.
 Para este file system, como lo que se busca es generar los recursos que se van a utilizar en la nave, cada archivo va a tener un caracter de llenado el cual va a ser el único que deba encontrarse dentro de un archivo y el cual se van a incrementar o decrementar por medio de las tareas ejecutadas por los tripulantes. Ejemplo: En el caso de tener 5 oxígenos el archivo deberá tener “OOOOO” en su contenido.
-
 
 ![Arquitectura TP](https://user-images.githubusercontent.com/49170861/115929112-9a259480-a45d-11eb-854d-e409a32410a9.jpg)
