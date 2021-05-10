@@ -39,7 +39,7 @@ typedef struct{
 
 typedef struct{
 	uint32_t tid;
-	char estado;
+	char estado; //N-R-E-B
 	coordenadasTripulante* posicion;
 	uint32_t proxInstruccion;
 	uint32_t direccionPCB;
@@ -71,7 +71,7 @@ void obtenerBitacora(int);
 
 void* serializar_tripulante(t_tripulante*);
 void gestionarTripulante(t_tripulante*);
-void ingresar_comandos(t_dictionary*,t_log*);
+void ingresar_comandos();
 void paquete(int,int);
 void terminar_programa();
 void partirCadena(char**);
