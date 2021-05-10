@@ -24,6 +24,8 @@
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 #include <commons/log.h>
+#include <commons/txt.h>
+#include <commons/bitarray.h>
 
 //void holiwis();
 //void comoAndas();

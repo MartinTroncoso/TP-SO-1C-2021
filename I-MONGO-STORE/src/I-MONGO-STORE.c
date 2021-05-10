@@ -17,12 +17,100 @@ void inicializarVariables(){
 	PUNTO_MONTAJE = config_get_string_value(configuracionMongo,"PUNTO_MONTAJE");
 	PUERTO = config_get_string_value(configuracionMongo,"PUERTO");
 
+//	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
+//	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
+//	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
+	inicializarDiccionario();
+	inicializarFileSystem();
 	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
 	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
 	socket_discordiador = esperar_cliente(socket_servidor);
 	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
+void inicializarFileSystem()
+{
+	inicializarSuperBloque();
+	inicializarBlocks();
 
+}
+
+void inicializarSuperBloque()
+{
+	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
+	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
+	uint32_t tamanioDeBloque = config_get_int_value(configuracionSuperBloque,"BLOCK_SIZE");
+	config_destroy(configuracionSuperBloque);
+	FILE* superBloque = fopen(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),"r+");
+	if(superBloque!=NULL)
+	{
+		void* memoriaArray = malloc(cantidadDeBloques/8);
+		t_bitarray* bitArraySuperBloque = bitarray_create(memoriaArray, cantidadDeBloques);
+
+	}
+}
+
+void inicializarBlocks()
+{
+	char* puntoMontajeBlocks = PUNTO_MONTAJE;
+	strcat(puntoMontajeBlocks,"/Blocks.ims");
+	printf("%s\n",puntoMontajeBlocks);
+	FILE* archivoBlocks = fopen(puntoMontajeBlocks,"r+");
+	fseek(archivoBlocks,0,SEEK_END);
+	if(ftell(archivoBlocks) == 0)
+	{
+		printf("No existe el archivo blocks\n");
+		fclose(archivoBlocks);
+	}else
+	{
+		printf("Existe el archivo blocks\n");
+		fclose(archivoBlocks);
+	}
+	//mapeado a memoria y realizar copia cada bajada a disco
+}
+
+void inicializarDiccionario()
+{
+	caracterAsociadoATarea = dictionary_create();
+	dictionary_put(caracterAsociadoATarea, "GENERAR_OXIGENO",(char*) "O");
+	dictionary_put(caracterAsociadoATarea, "CONSUMIR_OXIGENO",(char*) "O");
+	dictionary_put(caracterAsociadoATarea, "GENERAR_COMIDA",(char*) "C");
+	dictionary_put(caracterAsociadoATarea, "CONSUMIR_COMIDA",(char*) "C");
+	dictionary_put(caracterAsociadoATarea, "GENERAR_BASURA",(char*) "B");
+	dictionary_put(caracterAsociadoATarea, "DESCARTAR_BASURA",(char*) "B");
+}
+
+void actualizarBitacora(int idTripulante, operacionBitacora idOperacion, char* stringParametros)
+{
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante));
+	char** parametros = string_split(stringParametros," ");
+
+	switch(idOperacion)
+	{
+	case MOVIMIENTOTRIPULANTE: //EN ESTE CASO EL PARAMETRO DEBE SER UN STRING DEL FORMATO "X|Y X'|Y' (ejemplo 1|2 a 2|2"
+		txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %s a %s\n",parametros[0],parametros[1]));
+		free(parametros);
+		break;
+	case COMIENZOEJECUCIONDETAREA: // PARAMETRO: "NOMBRETAREA"
+		txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",parametros[0]));
+		free(parametros);
+		break;
+	case FINALIZATAREA: //PARAMETRO "NOMBRETAREA"
+		txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",parametros[0]));
+		free(parametros);
+		break;
+	case CORREENPANICOSABOTAJE: //PARAMETRO INDISTINTO
+		txt_write_in_file(bitacoraTripulante, "Se corre en panico hacia la ubicacion del sabotaje");
+		free(parametros);
+		break;
+	case SABOTAJERESUELTO: //PARAMETRO INDISTINTO
+		txt_write_in_file(bitacoraTripulante, "sSe resuelve el sabotaje");
+		free(parametros);
+		break;
+	default:
+		break;
+	}
+
+}
 int main(void) {
 	inicializarVariables();
 
@@ -58,7 +146,7 @@ int main(void) {
 	close(socket_discordiador);
 	log_destroy(loggerMongo);
 	config_destroy(configuracionMongo);
-
+	dictionary_destroy(caracterAsociadoATarea);
 	return EXIT_SUCCESS;
 }
 
