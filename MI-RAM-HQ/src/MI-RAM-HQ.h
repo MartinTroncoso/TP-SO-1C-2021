@@ -31,22 +31,22 @@ typedef struct{
 typedef struct{
 	uint32_t tid;
 	char estado;
-	coordenadasTripulante posicion;
+	coordenadasTripulante* posicion;
 	uint32_t proxInstruccion;
 	uint32_t direccionPCB;
 }TCB;
 
-typedef enum{
-	INICIAR_PATOTA=1,
-	EXPULSAR_TRIPULANTE=2
-}tipo_mensaje;
-
 t_config* configuracionMiRam;
 t_log* loggerMiRam;
+
+t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en memoria
+t_list* patotas; //idem
 
 int socket_servidor;
 int socket_discordiador;
 
 void inicializarVariables();
+void atenderComandosDiscordiador();
+void atenderTripulante(TCB*);
 
 #endif /* MI_RAM_HQ_H_ */

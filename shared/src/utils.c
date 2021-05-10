@@ -119,7 +119,7 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
 
 void* serializar_paquete(t_paquete* paquete, int bytes)
 {
-	void * magic = malloc(bytes);
+	void* magic = malloc(bytes);
 	int desplazamiento = 0;
 
 	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
@@ -128,6 +128,17 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	desplazamiento+= sizeof(int);
 	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
 	desplazamiento+= paquete->buffer->size;
+
+	return magic;
+}
+
+void* serializar_buffer(t_buffer* buffer, int bytes){
+	void* magic = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(magic + desplazamiento, &(buffer->size), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(magic + desplazamiento, buffer->stream, buffer->size);
 
 	return magic;
 }
@@ -142,14 +153,21 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente)
 	free(a_enviar);
 }
 
+void enviar_buffer(t_buffer* buffer, int socket_cliente){
+	int bytes = buffer->size + sizeof(int);
+	void* a_enviar = serializar_buffer(buffer, bytes);
+
+	send(socket_cliente, a_enviar, bytes, 0);
+
+	free(a_enviar);
+}
+
 void eliminar_paquete(t_paquete* paquete)
 {
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
 }
-
-
 
 int esperar_cliente(int socket_servidor)
 {
@@ -173,11 +191,11 @@ int recibir_operacion(int socket_cliente)
 	}
 }
 
-void* recibir_buffer(int* size, int socket_cliente)
+void* recibir_buffer(uint32_t* size, int socket_cliente)
 {
 	void * buffer;
 
-	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+	recv(socket_cliente, size, sizeof(uint32_t), MSG_WAITALL);
 	buffer = malloc(*size);
 	recv(socket_cliente, buffer, *size, MSG_WAITALL);
 
@@ -216,15 +234,3 @@ t_list* recibir_paquete(int socket_cliente)
 	return valores;
 	return NULL;
 }
-
-//void holiwis(){
-//	printf("Holiwis\n");
-//}
-//
-//void comoAndas(){
-//	printf("Como andas?\n");
-//}
-//
-//void bien(){
-//	printf("Mal\n");
-//}

@@ -21,28 +21,30 @@ int DURACION_SABOTAJE;
 int RETARDO_CICLO_CPU;
 
 typedef struct{
-	int cantidadTripulantes;
+	uint32_t cantidadTripulantes;
 	char* rutaDeTareas;
 	t_list* coordenadasTripulantes;
 }t_iniciar_patota;
 
 typedef struct{
-	int coordenadaX;
-	int coordenadaY;
+	uint32_t coordenadaX;
+	uint32_t coordenadaY;
 }coordenadasTripulante;
 
 typedef struct{
 	uint32_t pid;
-	uint32_t direccionTareas;
-}PCB;
+	char* archivoTareas;
+	t_list* tripulantes;
+}t_patota;
 
 typedef struct{
 	uint32_t tid;
 	char estado;
-	coordenadasTripulante posicion;
+	coordenadasTripulante* posicion;
 	uint32_t proxInstruccion;
 	uint32_t direccionPCB;
-}TCB;
+	uint32_t idPatota;
+}t_tripulante;
 
 t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
@@ -52,21 +54,28 @@ int socket_cliente_miRam;
 int socket_cliente_iMongo;
 int socket_escucha_iMongo;
 
+uint32_t idTripulante;
+uint32_t idPatota;
+
+t_list* patotas;
 t_list* tripulantes;
 
 void inicializarVariables();
 
-void iniciarPatota(t_iniciar_patota);
+void iniciarPatota(t_iniciar_patota*);
 void listarTripulantes();
 void expulsarTripulante(int);
 void iniciarPlanificacion();
 void pausarPlanificacion();
 void obtenerBitacora(int);
 
-void leer_consola(t_dictionary*,t_log*);
+void* serializar_tripulante(t_tripulante*);
+void gestionarTripulante(t_tripulante*);
+void ingresar_comandos(t_dictionary*,t_log*);
 void paquete(int,int);
 void terminar_programa();
 void partirCadena(char**);
 void crearDiccionarioComandos(t_dictionary*);
+t_iniciar_patota* obtenerDatosPatota(char**);
 
 #endif /* DISCORDIADOR_H_ */

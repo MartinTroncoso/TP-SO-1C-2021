@@ -49,16 +49,24 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
+typedef enum{
+	INICIAR_PATOTA=1,
+	EXPULSAR_TRIPULANTE=2,
+	OBTENER_BITACORA=3
+}tipo_mensaje;
+
 int crearConexionCliente(char*,char*);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 t_paquete* crear_paquete(void);
 void* serializar_paquete(t_paquete*, int);
+void* serializar_buffer(t_buffer* buffer, int bytes);
 void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
 void enviar_paquete(t_paquete* paquete, int socket_cliente);
+void enviar_buffer(t_buffer* buffer, int socket_cliente);
 void liberar_conexion(int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 
-void* recibir_buffer(int*, int);
+void* recibir_buffer(uint32_t*, int);
 
 int iniciarServidor(char*,char*);
 int esperar_cliente(int);

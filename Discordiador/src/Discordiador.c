@@ -9,7 +9,6 @@
  */
 
 #include "Discordiador.h"
-#include <commons/process.h>
 
 void inicializarVariables(){
 	configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
@@ -27,6 +26,10 @@ void inicializarVariables(){
 	RETARDO_CICLO_CPU = config_get_int_value(configuracionDiscordiador,"RETARDO_CICLO_CPU");
 	crearDiccionarioComandos(diccionarioDiscordiador);
 	tripulantes = list_create();
+	patotas = list_create();
+
+	idTripulante = 1;
+	idPatota = 1;
 
 	socket_cliente_miRam = crearConexionCliente(IP_MI_RAM, PUERTO_MI_RAM);
 	socket_cliente_iMongo = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
@@ -44,23 +47,83 @@ void crearDiccionarioComandos(t_dictionary* diccionario)
 	//printf("diccionario %d\n", (int) dictionary_get(diccionario,"OBTENER_BITACORA"));
 }
 
-void iniciarPatota(t_iniciar_patota estructura){
-	//crea una patota
-	//crea estructura->cantidadTripulantes tripulantes
-	//le asigna a cada uno su posición
-	//cada tripulante arranca en estado NEW
-	//ir asignadole a cada tripulante su id
-	//mandarle a Mi-RAM todos los tripulantes para que los ponga en memoria
+void sumarIdTripulante(){
+	idTripulante++;
+}
 
-	//PCB* patota = malloc(sizeof(PCB));
-	//patota->pid = ;
-	//patota->direccionTareas = ;
-	//TCB* tripulante = malloc(sizeof(tripulante));
-	//tripulante->tid = process_get_thread_id();
-	//send(socket_cliente_miRam,tripulantesSerializados,sizeof(tripulantes),0);
+void sumarIdPatota(){
+	idPatota++;
+}
+
+//SOLO METO EN EL BUFFER EL ID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
+void* serializar_tripulante(t_tripulante* tripulante){
+	int bytes = sizeof(uint32_t) + sizeof(coordenadasTripulante) + sizeof(char);
+	void* magic = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(magic + desplazamiento,&(tripulante->tid),sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento,&(tripulante->estado),sizeof(char));
+	desplazamiento += sizeof(char);
+	memcpy(magic + desplazamiento,&(tripulante->posicion->coordenadaX),sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento,&(tripulante->posicion->coordenadaY),sizeof(uint32_t));
+
+	return magic;
+}
+
+void iniciarPatota(t_iniciar_patota* estructura){
+	t_patota* patota = malloc(sizeof(t_patota));
+	patota->tripulantes = list_create();
+	patota->pid = idPatota;
+	patota->archivoTareas = estructura->rutaDeTareas;
+	sumarIdPatota();
+	list_add(patotas,patota);
+
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = INICIAR_PATOTA;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = 2*sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	memcpy(paquete->buffer->stream, &(patota->pid), sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + sizeof(uint32_t), &(estructura->cantidadTripulantes), sizeof(uint32_t));
+	enviar_paquete(paquete,socket_cliente_miRam);
+	eliminar_paquete(paquete);
+
+	for(int i=0; i<estructura->cantidadTripulantes; i++){
+		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+		tripulante->estado = 'N';
+		tripulante->tid = idTripulante;
+		tripulante->direccionPCB = 0;
+		tripulante->proxInstruccion = 0;
+		tripulante->posicion = (void*) list_get(estructura->coordenadasTripulantes,i);
+		list_add(patota->tripulantes,tripulante);
+		list_add(tripulantes,tripulante);
+
+		sumarIdTripulante();
+
+		pthread_t hiloTripulante;
+		pthread_create(&hiloTripulante,NULL, (void*) gestionarTripulante, tripulante);
+		pthread_join(hiloTripulante,NULL);
+	}
+}
+
+void gestionarTripulante(t_tripulante* tripulante){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint32_t) + sizeof(coordenadasTripulante) + sizeof(char);
+	buffer->stream = serializar_tripulante(tripulante);
+	enviar_buffer(buffer,socket_cliente_miRam);
+	free(buffer->stream);
+	free(buffer);
+//	while(1){
+//		//solicita una tarea a MI-RAM
+//		//MI-RAM le manda la primer tarea del archivo
+//		//
+//	}
 }
 
 void listarTripulantes(){
+
 	//imprime todos los tripulantes
 	/*
 	 Por ejemplo
@@ -96,25 +159,38 @@ void obtenerBitacora(int idTripulante){
 	//se manda un mensaje a I-MONGO solicitando la bitacora de un tripulante
 }
 
-void leer_consola(t_dictionary* diccionario,t_log* logger)
+void ingresar_comandos(t_dictionary* diccionario,t_log* logger)
 {
 	char** palabras;
 	char* comando = readline(">");
 
-	while(strcmp(comando,"")!=0){
-		log_info(logger,comando);
+	while(1){
 		palabras = string_split(comando, " ");
 		switch((int) dictionary_get(diccionario,palabras[0]))
 		{
 		case 1:{
 			//INICIAR_PATOTA [cant_tripulantes] [path] [pos1] [pos2] ...
 			//PRIMER COMANDO A MANDAR
-			if(palabras[1]!=NULL)
+
+			if(palabras[1]!=NULL){
+//				printf("Cantidad de tripulantes: %d\n",datosPatota->cantidadTripulantes);
+//				printf("Ruta de tareas: %s\n",datosPatota->rutaDeTareas);
+//				for(int i=0; i<list_size(datosPatota->coordenadasTripulantes); i++){
+//					coordenadasTripulante* posicion = list_get(datosPatota->coordenadasTripulantes,i);
+//					printf("Posicion: %d|%d\n",posicion->coordenadaX,posicion->coordenadaY);
+//				}
+				t_iniciar_patota* datosPatota = obtenerDatosPatota(palabras);
+				iniciarPatota(datosPatota);
+
+				list_destroy(datosPatota->coordenadasTripulantes);
+				free(datosPatota);
+			}
+			else
 			{
-				partirCadena(palabras);
+				log_info(logger,"Metiste mal el comando");
 			}
 
-			//iniciarPatota(t_iniciar_patota);
+//			iniciarPatota(datosPatota);
 			break;
 		}
 		case 2:{
@@ -124,7 +200,6 @@ void leer_consola(t_dictionary* diccionario,t_log* logger)
 		}
 		case 3:{
 			//EXPULSAR_TRIPULANTE [idTripulante]
-			int idTripulante = atoi(strtok(NULL," "));
 			expulsarTripulante(idTripulante);
 			break;
 		}
@@ -140,7 +215,6 @@ void leer_consola(t_dictionary* diccionario,t_log* logger)
 		}
 		case 6:{
 			//OBTENER_BITACORA [idTripulante]
-			int idTripulante = atoi(strtok(NULL," "));
 			obtenerBitacora(idTripulante);
 			break;
 		}
@@ -181,68 +255,62 @@ void terminar_programa()
 	config_destroy(configuracionDiscordiador);
 }
 
-void partirCadena(char** cadena){
+t_iniciar_patota* obtenerDatosPatota(char** array){
 	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
-	t_list* listaCoordenadas = list_create();
+	parametrosPatota->coordenadasTripulantes = list_create();
+
 	int flag = 3;
-	if(atoi(cadena[1])!=0 && cadena[1]!=NULL){
-		if(cadena[2]!=NULL)
+	if(atoi(array[1])!=0 && array[1]!=NULL){
+		parametrosPatota->cantidadTripulantes = atoi(array[1]);
+		if(array[2]!=NULL)
 		{
-			parametrosPatota->cantidadTripulantes = atoi(cadena[1]);
-			parametrosPatota->rutaDeTareas = cadena[2];
-			printf("%d\n",parametrosPatota->cantidadTripulantes);
-			printf("%s\n",parametrosPatota->rutaDeTareas);
-			printf("cantidad de tripulantes: %d\n",parametrosPatota->cantidadTripulantes);
-			while(cadena[flag]!=NULL)
+			parametrosPatota->rutaDeTareas = array[2];
+			while(array[flag]!=NULL)
 			{
-				printf("valor de flag: %d\n", flag);
 				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-				if(cadena[flag]!=NULL)
+				if(array[flag]!=NULL)
 				{
-					char** coordenadas = string_split(cadena[flag], "|");
+					char** coordenadas = string_split(array[flag], "|");
 					posicionTripulante->coordenadaX = atoi(coordenadas[0]);
 					posicionTripulante->coordenadaY = atoi(coordenadas[1]);
-					list_add(listaCoordenadas,posicionTripulante);
-					printf("Posicion del tripulante: x: %d, y: %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+					list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
 					flag++;
 				}
 			}
-			if(parametrosPatota->cantidadTripulantes-list_size(listaCoordenadas)!=0)
+
+			if(parametrosPatota->cantidadTripulantes-list_size(parametrosPatota->coordenadasTripulantes)!=0)
 			{
-				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(listaCoordenadas);
+				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes);
 				for(int i = 0; i<tripulantesFaltantes;i++)
 				{
 					coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
 					posicionTripulante->coordenadaX= 0;
 					posicionTripulante->coordenadaY= 0;
-					printf("coordenadas del tripulantes por defecto: posX: %d, posY: %d\n",posicionTripulante->coordenadaX,posicionTripulante->coordenadaY);
+					list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
 				}
-
+			}
+		}
+		else
+		{
+			parametrosPatota->rutaDeTareas = "";
+			for(int i = 0; i<parametrosPatota->cantidadTripulantes; i++)
+			{
+				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
+				posicionTripulante->coordenadaX= 0;
+				posicionTripulante->coordenadaY= 0;
+				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
 			}
 		}
 	}
+
+	return parametrosPatota;
 }
 
 int main(void)
 {
 	inicializarVariables();
 
-	char palabras[] = "COMANDO 5 1|4 1|7";
-	char* token = strtok(palabras," |");
-	while(token!=NULL)
-	{
-		printf("%s\n",token);
-		token = strtok(NULL," |");
-	}
-
-	leer_consola(diccionarioDiscordiador, loggerDiscordiador);
-
-	//SE ENVIA EL ALGORITMO A LOS 2 PROCESOS
-	enviar_mensaje(ALGORITMO,socket_cliente_miRam);
-	enviar_mensaje(ALGORITMO,socket_cliente_iMongo);
-
-	//SE ARMA UN PAQUETE CON LOS MENSAJES QUE SE ESCRIBAN EN CONSOLA Y CUANDO SE APRIETA 'ENTER' SE MANDA TODO JUNTO
-	paquete(socket_cliente_miRam, socket_cliente_iMongo);
+	ingresar_comandos(diccionarioDiscordiador,loggerDiscordiador);
 
 	terminar_programa();
 
