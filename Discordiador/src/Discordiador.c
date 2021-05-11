@@ -130,7 +130,7 @@ void listarTripulantes(){
 	else
 	{
 		printf("--------------------------------------------\n");
-		printf("Estado de la Nave: %s\n",temporal_get_string_time());
+		printf("Estado de la Nave: %s\n",temporal_get_string_time("%d/%m/%y %H:%M:%S"));
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = list_get(tripulantes,i);
 			printf("Tripulante: %d	Patota: %d	Status: %c\n",tripulante->tid, tripulante->idPatota, tripulante->estado);

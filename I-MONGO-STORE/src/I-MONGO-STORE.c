@@ -27,11 +27,11 @@ void inicializarVariables(){
 	socket_discordiador = esperar_cliente(socket_servidor);
 	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
+
 void inicializarFileSystem()
 {
 	inicializarSuperBloque();
 	inicializarBlocks();
-
 }
 
 void inicializarSuperBloque()
@@ -45,7 +45,6 @@ void inicializarSuperBloque()
 	{
 		void* memoriaArray = malloc(cantidadDeBloques/8);
 		t_bitarray* bitArraySuperBloque = bitarray_create(memoriaArray, cantidadDeBloques);
-
 	}
 }
 
@@ -86,23 +85,23 @@ void actualizarBitacora(int idTripulante, operacionBitacora idOperacion, char* s
 
 	switch(idOperacion)
 	{
-	case MOVIMIENTOTRIPULANTE: //EN ESTE CASO EL PARAMETRO DEBE SER UN STRING DEL FORMATO "X|Y X'|Y' (ejemplo 1|2 a 2|2"
+	case MOVIMIENTO_TRIPULANTE: //EN ESTE CASO EL PARAMETRO DEBE SER UN STRING DEL FORMATO "X|Y X'|Y' (ejemplo 1|2 a 2|2"
 		txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %s a %s\n",parametros[0],parametros[1]));
 		free(parametros);
 		break;
-	case COMIENZOEJECUCIONDETAREA: // PARAMETRO: "NOMBRETAREA"
+	case COMIENZO_EJECUCION_DE_TAREA: // PARAMETRO: "NOMBRETAREA"
 		txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",parametros[0]));
 		free(parametros);
 		break;
-	case FINALIZATAREA: //PARAMETRO "NOMBRETAREA"
+	case FINALIZA_TAREA: //PARAMETRO "NOMBRETAREA"
 		txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",parametros[0]));
 		free(parametros);
 		break;
-	case CORREENPANICOSABOTAJE: //PARAMETRO INDISTINTO
+	case CORRE_EN_PANICO_SABOTAJE: //PARAMETRO INDISTINTO
 		txt_write_in_file(bitacoraTripulante, "Se corre en panico hacia la ubicacion del sabotaje");
 		free(parametros);
 		break;
-	case SABOTAJERESUELTO: //PARAMETRO INDISTINTO
+	case SABOTAJE_RESUELTO: //PARAMETRO INDISTINTO
 		txt_write_in_file(bitacoraTripulante, "sSe resuelve el sabotaje");
 		free(parametros);
 		break;
@@ -149,5 +148,3 @@ int main(void) {
 	dictionary_destroy(caracterAsociadoATarea);
 	return EXIT_SUCCESS;
 }
-
-

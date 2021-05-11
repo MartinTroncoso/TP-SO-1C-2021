@@ -204,7 +204,7 @@ void* recibir_buffer(uint32_t* size, int socket_cliente)
 
 void recibir_mensaje(int socket_cliente)
 {
-	int size;
+	uint32_t size;
 	char* buffer = recibir_buffer(&size, socket_cliente);
 	printf("%s\n",buffer);
 	free(buffer);
@@ -213,7 +213,7 @@ void recibir_mensaje(int socket_cliente)
 //podemos usar la lista de valores para poder hablar del for y de como recorrer la lista
 t_list* recibir_paquete(int socket_cliente)
 {
-	int size;
+	uint32_t size;
 	int desplazamiento = 0;
 	void * buffer;
 	t_list* valores = list_create();

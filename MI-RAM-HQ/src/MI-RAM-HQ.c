@@ -29,9 +29,12 @@ void inicializarVariables(){
 }
 
 void atenderTripulante(TCB* tripulante){
-	printf("IdTripulante: %d\n",tripulante->tid);
-	printf("Estado: %c\n",tripulante->estado);
-	printf("Posicion: %d|%d\n",tripulante->posicion->coordenadaX,tripulante->posicion->coordenadaY);
+	printf("IdTripulante: %d		Estado: %c	Posicion: %d|%d\n",
+			tripulante->tid,
+			tripulante->estado,
+			tripulante->posicion->coordenadaX,
+			tripulante->posicion->coordenadaY
+	);
 }
 
 void atenderComandosDiscordiador(){
@@ -48,6 +51,7 @@ void atenderComandosDiscordiador(){
 			patota->direccionTareas = 0; //por ahora
 			list_add(patotas,patota);
 
+			printf("Se crea la patota %d cuyos tripulantes son:\n",patota->pid);
 			for(uint32_t i=0; i<cantidadTripulantes; i++){
 				TCB* tripulante = malloc(sizeof(TCB));
 				tripulante->posicion = malloc(sizeof(coordenadasTripulante));
