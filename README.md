@@ -1,9 +1,10 @@
 # tp-2021-1c-No-C-Aprueba-+
 
-* Adrián: I-MONGO-STORE
-* Paul: MI-RAM
+* Adri: I-MONGO-STORE
+* Paul: MI-RAM-HQ
 * Martín: Discordiador
-* Lean y Gastón: van viendo xD
+* Gastón: I-MONGO-STORE y Discordiador
+* Lean: MI-RAM-HQ
 
 ### :point_right: CLONAR EL REPO PARADOS EN /home/utnso/workspace     
         
