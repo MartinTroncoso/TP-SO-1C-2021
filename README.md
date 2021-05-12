@@ -1,5 +1,10 @@
 # tp-2021-1c-No-C-Aprueba-+
 
+## Adrián: I-MONGO-STORE
+## Paul: MI-RAM
+## Martín: Discordiador
+## Lean y Gastón: van viendo xD
+
 ### :point_right: CLONAR EL REPO PARADOS EN /home/utnso/workspace     
         
         git clone https://github.com/sisoputnfrba/tp-2021-1c-No-C-Aprueba-
