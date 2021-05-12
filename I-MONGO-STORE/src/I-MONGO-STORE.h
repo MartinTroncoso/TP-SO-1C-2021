@@ -36,5 +36,8 @@ void inicializarSuperBloque();
 void inicializarBlocks();
 void inicializarDiccionario();
 void actualizarBitacora(int idTripulante, operacionBitacora idOperacion, char* stringParametros);
+void inicializarSuperBloque();
+t_bitarray recuperarBitArray();
+void guardarBitArray(t_bitarray*);
 
 #endif /* I_MONGO_STORE_H_ */

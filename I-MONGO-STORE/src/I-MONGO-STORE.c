@@ -23,7 +23,7 @@ void inicializarVariables(){
 	inicializarDiccionario();
 	inicializarFileSystem();
 	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
-	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
+	//log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
 	socket_discordiador = esperar_cliente(socket_servidor);
 	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
@@ -31,21 +31,46 @@ void inicializarVariables(){
 void inicializarFileSystem()
 {
 	inicializarSuperBloque();
-	inicializarBlocks();
+	//inicializarBlocks();
 }
 
 void inicializarSuperBloque()
 {
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
-	uint32_t tamanioDeBloque = config_get_int_value(configuracionSuperBloque,"BLOCK_SIZE");
+//	config_set_value(configuracionSuperBloque,"BLOCKS","5555");
+//	config_save(configuracionSuperBloque);
 	config_destroy(configuracionSuperBloque);
 	FILE* superBloque = fopen(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),"r+");
 	if(superBloque!=NULL)
 	{
-		void* memoriaArray = malloc(cantidadDeBloques/8);
-		t_bitarray* bitArraySuperBloque = bitarray_create(memoriaArray, cantidadDeBloques);
+		fseek(superBloque,-1,SEEK_END);//puntero del archivo apunta a la posicion anterior del EOF
+		if(fgetc(superBloque)=='=') //si el caracter anterior al EOF es = entonces el campo de BITMAP esta vacio
+		{
+
+			void* memoriaArray = malloc(cantidadDeBloques/8);
+			t_bitarray* bitArraySuperBloque = bitarray_create(memoriaArray, cantidadDeBloques);
+			//fseek(superBloque,0,SEEK_END);
+			txt_write_in_file(superBloque, bitArraySuperBloque->bitarray);
+		}
 	}
+}
+
+t_bitarray recuperarBitArray()
+{
+	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
+	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque,"BLOCKS");
+	t_bitarray* bitArrayARecuperar = bitarray_create(malloc(cantidadDeBloques/8),cantidadDeBloques);
+	bitArrayARecuperar->bitarray = config_get_string_value(configuracionSuperBloque,"BITMAP");
+	config_destroy(configuracionSuperBloque);
+
+	return *bitArrayARecuperar;
+}
+
+void guardarBitArray(t_bitarray* arrayAGuardar)
+{
+	//Buscar puntero siguiente al tercer '='
+	//si uso config_set_value y config_save cambia de posicion los valores dentro del archivo
 }
 
 void inicializarBlocks()
