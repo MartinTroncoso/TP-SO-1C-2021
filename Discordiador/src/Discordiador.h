@@ -27,9 +27,8 @@ typedef struct{
 }t_iniciar_patota;
 
 typedef struct{
-	uint32_t coordenadaX;
-	uint32_t coordenadaY;
-}coordenadasTripulante;
+	posicion posicion;
+}t_tarea;
 
 typedef struct{
 	uint32_t pid;
@@ -40,9 +39,8 @@ typedef struct{
 typedef struct{
 	uint32_t tid;
 	char estado; //N-R-E-B
-	coordenadasTripulante* posicion;
-	uint32_t proxInstruccion;
-	uint32_t direccionPCB;
+	posicion* posicion;
+	t_tarea proxTarea;
 	uint32_t idPatota;
 }t_tripulante;
 
@@ -50,8 +48,6 @@ t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
 t_dictionary* diccionarioDiscordiador;
 
-int socket_cliente_miRam;
-int socket_cliente_iMongo;
 int socket_escucha_iMongo;
 
 uint32_t idTripulante;
@@ -72,9 +68,9 @@ void obtenerBitacora(int);
 void* serializar_tripulante(t_tripulante*);
 void gestionarTripulante(t_tripulante*);
 void ingresar_comandos();
-void paquete(int,int);
 void terminar_programa();
 void partirCadena(char**);
+char* obtenerTareasComoCadena(char*);
 void crearDiccionarioComandos(t_dictionary*);
 t_iniciar_patota* obtenerDatosPatota(char**);
 

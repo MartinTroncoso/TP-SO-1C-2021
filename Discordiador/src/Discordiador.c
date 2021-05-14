@@ -30,9 +30,6 @@ void inicializarVariables(){
 
 	idTripulante = 1;
 	idPatota = 1;
-
-	socket_cliente_miRam = crearConexionCliente(IP_MI_RAM, PUERTO_MI_RAM);
-	socket_cliente_iMongo = crearConexionCliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -47,6 +44,42 @@ void crearDiccionarioComandos(t_dictionary* diccionario)
 	//printf("diccionario %d\n", (int) dictionary_get(diccionario,"OBTENER_BITACORA"));
 }
 
+char* obtenerTareasComoCadena(char* path){
+	FILE* tareas = fopen(path,"r");
+	if(tareas == NULL){
+		return "NO SE PUDO ABRIR EL ARCHIVO DE TAREAS";
+	}
+
+	int MAX_PER_LINE = 50;
+	int MAX_TOTAL = 400;
+	char* buffer = malloc(sizeof(char) * MAX_PER_LINE);
+	char* buffer_total = malloc(sizeof(char) * MAX_TOTAL);
+	char* result_string;
+	int linesize;
+
+	while(fgets(buffer, MAX_PER_LINE, tareas) != NULL){
+		linesize = strlen(buffer);
+		if(linesize>0 && buffer[linesize - 1] == 10)
+			buffer[linesize - 1] = 0;
+
+		strcat(buffer_total, buffer);
+		strcat(buffer_total, "|");
+	}
+
+	linesize = strlen(buffer_total);
+	if(linesize > 0 && buffer_total[linesize - 1] == '|')
+		buffer_total[linesize - 1] = 0;
+
+	result_string = malloc(sizeof(char)*(strlen(buffer_total) + 1));
+	strcpy(result_string,buffer_total);
+
+	fclose(tareas);
+	free(buffer);
+	free(buffer_total);
+
+	return result_string;
+}
+
 void sumarIdTripulante(){
 	idTripulante++;
 }
@@ -57,7 +90,7 @@ void sumarIdPatota(){
 
 //SOLO METO EN EL BUFFER EL ID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
 void* serializar_tripulante(t_tripulante* tripulante){
-	int bytes = sizeof(uint32_t) + sizeof(coordenadasTripulante) + sizeof(char);
+	int bytes = sizeof(uint32_t) + sizeof(posicion) + sizeof(char);
 	void* magic = malloc(bytes);
 	int desplazamiento = 0;
 
@@ -65,39 +98,98 @@ void* serializar_tripulante(t_tripulante* tripulante){
 	desplazamiento += sizeof(uint32_t);
 	memcpy(magic + desplazamiento,&(tripulante->estado),sizeof(char));
 	desplazamiento += sizeof(char);
-	memcpy(magic + desplazamiento,&(tripulante->posicion->coordenadaX),sizeof(uint32_t));
+	memcpy(magic + desplazamiento,&(tripulante->posicion->posX),sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(magic + desplazamiento,&(tripulante->posicion->coordenadaY),sizeof(uint32_t));
+	memcpy(magic + desplazamiento,&(tripulante->posicion->posY),sizeof(uint32_t));
 
 	return magic;
 }
 
+t_iniciar_patota* obtenerDatosPatota(char** array){
+	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
+	parametrosPatota->coordenadasTripulantes = list_create();
+
+	int flag = 3;
+	if(atoi(array[1])!=0 && array[1]!=NULL){
+		parametrosPatota->cantidadTripulantes = atoi(array[1]);
+		if(array[2]!=NULL)
+		{
+			parametrosPatota->rutaDeTareas = array[2];
+			while(array[flag]!=NULL)
+			{
+				posicion* posicionTripulante = malloc(sizeof(posicion));
+				char** coordenadas = string_split(array[flag], "|");
+				posicionTripulante->posX = atoi(coordenadas[0]);
+				posicionTripulante->posY = atoi(coordenadas[1]);
+				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
+				flag++;
+			}
+
+			if(parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes)!=0)
+			{
+				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes);
+				for(int i=0; i<tripulantesFaltantes ;i++)
+				{
+					posicion* posicionTripulante = malloc(sizeof(posicion));
+					posicionTripulante->posX = 0;
+					posicionTripulante->posY = 0;
+					list_add(parametrosPatota->coordenadasTripulantes, posicionTripulante);
+				}
+			}
+		}
+		else
+		{
+			parametrosPatota->rutaDeTareas = "";
+			for(int i = 0; i<parametrosPatota->cantidadTripulantes; i++)
+			{
+				posicion* posicionTripulante = malloc(sizeof(posicion));
+				posicionTripulante->posX= 0;
+				posicionTripulante->posY= 0;
+				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
+			}
+		}
+	}
+
+	return parametrosPatota;
+}
+
 void iniciarPatota(t_iniciar_patota* estructura){
+	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+
 	t_patota* patota = malloc(sizeof(t_patota));
 	patota->tripulantes = list_create();
 	patota->pid = idPatota;
 	patota->archivoTareas = estructura->rutaDeTareas;
+	char* tareas = obtenerTareasComoCadena(patota->archivoTareas);
+	int sizeTareas = strlen(tareas) + 1;
 	sumarIdPatota();
 	list_add(patotas,patota);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_PATOTA;
 	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = 2*sizeof(uint32_t);
+	paquete->buffer->size = 3*sizeof(uint32_t) + strlen(tareas) + 1;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, &(patota->pid), sizeof(uint32_t));
-	memcpy(paquete->buffer->stream + sizeof(uint32_t), &(estructura->cantidadTripulantes), sizeof(uint32_t));
-	enviar_paquete(paquete,socket_cliente_miRam);
+
+	int desplazamiento = 0;
+	memcpy(paquete->buffer->stream + desplazamiento, &(patota->pid), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(estructura->cantidadTripulantes), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &sizeTareas, sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, tareas, sizeTareas);
+
+	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
+	close(socket_cliente_MIRAM);
 
 	for(int i=0; i<estructura->cantidadTripulantes; i++){
 		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 		tripulante->estado = 'N';
 		tripulante->tid = idTripulante;
 		tripulante->idPatota = patota->pid;
-		tripulante->direccionPCB = 0; //capaz esto no vaya en esta estructura, solo iria en el TCB de MI-RAM
-		tripulante->proxInstruccion = 0; //idem
-		tripulante->posicion = (void*) list_get(estructura->coordenadasTripulantes,i);
+		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		list_add(patota->tripulantes,tripulante);
 		list_add(tripulantes,tripulante);
 
@@ -105,22 +197,28 @@ void iniciarPatota(t_iniciar_patota* estructura){
 
 		pthread_t hiloTripulante;
 		pthread_create(&hiloTripulante,NULL, (void*) gestionarTripulante, tripulante);
-		pthread_join(hiloTripulante,NULL);
+		pthread_detach(hiloTripulante);
 	}
 }
 
 void gestionarTripulante(t_tripulante* tripulante){
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(uint32_t) + sizeof(coordenadasTripulante) + sizeof(char);
-	buffer->stream = serializar_tripulante(tripulante);
-	enviar_buffer(buffer,socket_cliente_miRam);
-	free(buffer->stream);
-	free(buffer);
-//	while(1){
-//		//solicita una tarea a MI-RAM
-//		//MI-RAM le manda la primer tarea del archivo
-//		//
-//	}
+	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = INICIAR_TRIPULANTE;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = sizeof(uint32_t) + sizeof(posicion) + sizeof(char);
+	paquete->buffer->stream = serializar_tripulante(tripulante);
+	enviar_paquete(paquete,socket_cliente_MIRAM);
+	eliminar_paquete(paquete);
+
+	close(socket_cliente_MIRAM);
+
+	while(1){
+		//solicita una tarea a MI-RAM
+		//MI-RAM le manda la primer tarea del archivo
+		//
+	}
 }
 
 void listarTripulantes(){
@@ -224,84 +322,13 @@ void ingresar_comandos()
 	free(comando);
 }
 
-void paquete(int socket_cliente, int otro_socket_cliente)
-{
-	char* leido;
-	t_paquete* paquete = crear_paquete();
-	leido = readline(">");
-	while(strcmp(leido,"")!=0){
-		agregar_a_paquete(paquete,leido,strlen(leido) + 1);
-		free(leido);
-		leido = readline(">");
-	}
-
-	free(leido);
-	enviar_paquete(paquete,socket_cliente);
-	enviar_paquete(paquete,otro_socket_cliente);
-
-	eliminar_paquete(paquete);
-}
-
 void terminar_programa()
 {
-	close(socket_cliente_iMongo);
-	close(socket_cliente_miRam);
 	log_destroy(loggerDiscordiador);
 	config_destroy(configuracionDiscordiador);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
 	dictionary_destroy(diccionarioDiscordiador);
-}
-
-t_iniciar_patota* obtenerDatosPatota(char** array){
-	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
-	parametrosPatota->coordenadasTripulantes = list_create();
-
-	int flag = 3;
-	if(atoi(array[1])!=0 && array[1]!=NULL){
-		parametrosPatota->cantidadTripulantes = atoi(array[1]);
-		if(array[2]!=NULL)
-		{
-			parametrosPatota->rutaDeTareas = array[2];
-			while(array[flag]!=NULL)
-			{
-				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-				if(array[flag]!=NULL)
-				{
-					char** coordenadas = string_split(array[flag], "|");
-					posicionTripulante->coordenadaX = atoi(coordenadas[0]);
-					posicionTripulante->coordenadaY = atoi(coordenadas[1]);
-					list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
-					flag++;
-				}
-			}
-
-			if(parametrosPatota->cantidadTripulantes-list_size(parametrosPatota->coordenadasTripulantes)!=0)
-			{
-				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes);
-				for(int i = 0; i<tripulantesFaltantes;i++)
-				{
-					coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-					posicionTripulante->coordenadaX= 0;
-					posicionTripulante->coordenadaY= 0;
-					list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
-				}
-			}
-		}
-		else
-		{
-			parametrosPatota->rutaDeTareas = "";
-			for(int i = 0; i<parametrosPatota->cantidadTripulantes; i++)
-			{
-				coordenadasTripulante* posicionTripulante = malloc(sizeof(coordenadasTripulante));
-				posicionTripulante->coordenadaX= 0;
-				posicionTripulante->coordenadaY= 0;
-				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
-			}
-		}
-	}
-
-	return parametrosPatota;
 }
 
 int main(void)

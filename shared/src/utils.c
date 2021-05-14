@@ -171,17 +171,17 @@ void eliminar_paquete(t_paquete* paquete)
 
 int esperar_cliente(int socket_servidor)
 {
-	struct sockaddr_in dir_cliente;
-	int tam_direccion = sizeof(struct sockaddr_in);
+	struct sockaddr_in addr;
+	socklen_t tam_direccion = sizeof(addr);
 
-	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente,(void*) &tam_direccion);
+	int socket_cliente = accept(socket_servidor, (struct sockaddr*) &addr, &tam_direccion);
 
 	return socket_cliente;
 }
 
-int recibir_operacion(int socket_cliente)
+tipo_mensaje recibir_operacion(int socket_cliente)
 {
-	int cod_op;
+	tipo_mensaje cod_op;
 	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) != 0)
 		return cod_op;
 	else

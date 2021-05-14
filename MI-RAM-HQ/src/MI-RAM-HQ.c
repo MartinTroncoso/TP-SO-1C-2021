@@ -16,118 +16,133 @@ void inicializarVariables(){
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
-	PUERTO = config_get_string_value(configuracionMiRam,"PUERTO");
+	IP_MI_RAM = config_get_string_value(configuracionMiRam,"IP_MI_RAM");
+	PUERTO_MI_RAM = config_get_string_value(configuracionMiRam,"PUERTO");
 	ESQUEMA_MEMORIA = config_get_string_value(configuracionMiRam,"ESQUEMA_MEMORIA");
 	PATH_SWAP = config_get_string_value(configuracionMiRam,"PATH_SWAP");
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
 	tripulantes = list_create();
 	patotas = list_create();
-	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
-	log_info(loggerMiRam, "MI-RAM-HQ listo para recibir al Discordiador");
-	socket_discordiador = esperar_cliente(socket_servidor);
-	printf("SE CONECTÓ EL DISCORDIADOR!\n");
+}
+
+void atenderConexionTripulantes(int socket_escucha){
+	pthread_t hiloAtenderTripulantes;
+	pthread_create(&hiloAtenderTripulantes,NULL,(void*) atenderConexiones,&socket_escucha);
+	pthread_join(hiloAtenderTripulantes,NULL);
+}
+
+void atenderConexiones(int socket_escucha){
+	while(1){
+		int socket_tripulante = esperar_cliente(socket_escucha);
+		atenderComandosDiscordiador(socket_tripulante);
+	}
 }
 
 void atenderTripulante(TCB* tripulante){
 	printf("IdTripulante: %d		Estado: %c	Posicion: %d|%d\n",
 			tripulante->tid,
 			tripulante->estado,
-			tripulante->posicion->coordenadaX,
-			tripulante->posicion->coordenadaY
+			tripulante->posicion->posX,
+			tripulante->posicion->posY
 	);
 }
 
-void atenderComandosDiscordiador(){
-	while(1){
-		int op_code = recibir_operacion(socket_discordiador);
-		switch(op_code){
-		case INICIAR_PATOTA:{
-			PCB* patota = malloc(sizeof(PCB));
-			uint32_t cantidadTripulantes;
-			uint32_t size;
-			void* buffer = recibir_buffer(&size,socket_discordiador);
-			memcpy(&(patota->pid), buffer, sizeof(uint32_t));
-			memcpy(&cantidadTripulantes, buffer + sizeof(uint32_t), sizeof(uint32_t));
-			patota->direccionTareas = 0; //por ahora
-			list_add(patotas,patota);
+void atenderComandosDiscordiador(int socket_tripulante){
+	tipo_mensaje op_code = recibir_operacion(socket_tripulante);
+	switch(op_code){
+	case INICIAR_PATOTA:{
+		printf("Me llegan los datos de una patota.\n");
+		PCB* patota = malloc(sizeof(PCB));
+		patota->tareas = list_create();
+		patota->direccionTareas = 0; //por ahora
+		uint32_t cantidadTripulantes;
+		uint32_t size;
+		int sizeCadenaTareas;
+		void* buffer = recibir_buffer(&size,socket_tripulante);
 
-			printf("Se crea la patota %d cuyos tripulantes son:\n",patota->pid);
-			for(uint32_t i=0; i<cantidadTripulantes; i++){
-				TCB* tripulante = malloc(sizeof(TCB));
-				tripulante->posicion = malloc(sizeof(coordenadasTripulante));
-				uint32_t sizeTripulante;
-				void* tripulanteSerializado = recibir_buffer(&sizeTripulante,socket_discordiador);
+		int desplazamiento = 0;
 
-				uint32_t desplazamiento = 0;
-				memcpy(&(tripulante->tid),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
-				desplazamiento+=sizeof(uint32_t);
-				memcpy(&(tripulante->estado),tripulanteSerializado + desplazamiento,sizeof(char));
-				desplazamiento+=sizeof(char);
-				memcpy(&(tripulante->posicion->coordenadaX),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
-				desplazamiento+=sizeof(uint32_t);
-				memcpy(&(tripulante->posicion->coordenadaY),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
-				tripulante->direccionPCB = 0; //por ahora
-				tripulante->proxInstruccion = 0; //por ahora
-				list_add(tripulantes,tripulante);
+		memcpy(&(patota->pid), buffer + desplazamiento, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
 
-				pthread_t hiloTripulante;
-				pthread_create(&hiloTripulante,NULL,(void*) atenderTripulante, tripulante);
-				pthread_join(hiloTripulante,NULL);
+		memcpy(&cantidadTripulantes, buffer + desplazamiento, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
 
-				free(tripulanteSerializado);
-			}
-			break;
-		}
-		case EXPULSAR_TRIPULANTE:{
-			printf("Todavia no hago nothing\n");
-			break;
-		}
-		default:{
-			printf("No reconozco ese comando\n");
-			break;
-		}
-		}
+		memcpy(&sizeCadenaTareas, buffer + desplazamiento, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+
+		char* tareasEncadenadas = malloc(sizeCadenaTareas);
+		memcpy(tareasEncadenadas, buffer + desplazamiento, sizeCadenaTareas);
+
+		printf("%s\n",tareasEncadenadas);
+		free(buffer);
+		free(tareasEncadenadas);
+		close(socket_tripulante);
+		break;
+	}
+	case INICIAR_TRIPULANTE:{
+		printf("Me llegan los datos de un tripulante.\n");
+		TCB* tripulante = malloc(sizeof(TCB));
+		tripulante->direccionPCB = 0; //por ahora
+		tripulante->proxInstruccion = 0; //por ahora
+		tripulante->posicion = malloc(sizeof(posicion));
+		uint32_t sizeTripulante;
+		void* tripulanteSerializado = recibir_buffer(&sizeTripulante,socket_tripulante);
+
+		uint32_t desplazamiento = 0;
+
+		memcpy(&(tripulante->tid),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+
+		memcpy(&(tripulante->estado),tripulanteSerializado + desplazamiento,sizeof(char));
+		desplazamiento += sizeof(char);
+
+		memcpy(&(tripulante->posicion->posX),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+
+		memcpy(&(tripulante->posicion->posY),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+
+		pthread_t hiloTripulante;
+		pthread_create(&hiloTripulante,NULL,(void*) atenderTripulante, tripulante);
+		pthread_join(hiloTripulante,NULL);
+
+		free(tripulanteSerializado);
+
+		close(socket_tripulante);
+		break;
+	}
+	case EXPULSAR_TRIPULANTE:{
+		printf("Todavia no hago nothing\n");
+		close(socket_tripulante);
+		break;
+	}
+	case PROXIMA_TAREA:{
+		printf("Todavia no hago nothing\n");
+		close(socket_tripulante);
+		break;
+	}
+	case INFORMAR_MOVIMIENTO:{
+		printf("Todavia no hago nothing\n");
+		close(socket_tripulante);
+		break;
+	}
+	default:{
+		printf("No reconozco ese comando\n");
+		close(socket_tripulante);
+		break;
+	}
 	}
 }
 
 int main(void) {
 
 	inicializarVariables();
-//	void* memoria = malloc(TAMANIO_MEMORIA);
 
-//	void iterator(char* value)
-//	{
-//		printf("%s\n", value);
-//	}
-//
-//	t_list* lista;
-//	while(1)
-//	{
-//		int cod_op = recibir_operacion(socket_discordiador);
-//		switch(cod_op)
-//		{
-//		case MENSAJE:
-//			recibir_mensaje(socket_discordiador);
-//			break;
-//		case PAQUETE:
-//			lista = recibir_paquete(socket_discordiador);
-//			printf("ME LLEGARON LOS SIGUIENTES VALORES:\n");
-//			list_iterate(lista, (void*) iterator);
-//			break;
-//		case -1:
-//			log_error(loggerMiRam, "SE DESCONECTÓ EL DISCORDIADOR. FINALIZO");
-//			return EXIT_FAILURE;
-//		default:
-//			log_warning(loggerMiRam, "Operacion desconocida. No quieras meter la pata");
-//			break;
-//		}
-//	}
-//
+	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
 
-	atenderComandosDiscordiador();
+	atenderConexiones(socket_escucha);
 
-	close(socket_servidor);
-	close(socket_discordiador);
+	close(socket_escucha);
 	log_destroy(loggerMiRam);
 	config_destroy(configuracionMiRam);
 

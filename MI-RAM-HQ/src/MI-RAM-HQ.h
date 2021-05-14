@@ -16,22 +16,19 @@ int TAMANIO_PAGINA;
 int TAMANIO_SWAP;
 char* PATH_SWAP;
 char* ALGORITMO_REEMPLAZO;
-char* PUERTO;
-
-typedef struct{
-	int coordenadaX;
-	int coordenadaY;
-}coordenadasTripulante;
+char* IP_MI_RAM;
+char* PUERTO_MI_RAM;
 
 typedef struct{
 	uint32_t pid;
 	uint32_t direccionTareas;
+	t_list* tareas; //hasta pasarlas a la memoria
 }PCB;
 
 typedef struct{
 	uint32_t tid;
 	char estado;
-	coordenadasTripulante* posicion;
+	posicion* posicion;
 	uint32_t proxInstruccion;
 	uint32_t direccionPCB;
 }TCB;
@@ -42,10 +39,9 @@ t_log* loggerMiRam;
 t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en memoria
 t_list* patotas; //idem
 
-int socket_servidor;
-int socket_discordiador;
-
 void inicializarVariables();
+void atenderConexiones(int socket_escucha);
+void atenderConexionTripulantes(int socket_escucha);
 void atenderComandosDiscordiador();
 void atenderTripulante(TCB*);
 

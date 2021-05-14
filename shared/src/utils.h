@@ -54,19 +54,25 @@ typedef struct
 
 typedef enum{
 	INICIAR_PATOTA=1,
-	EXPULSAR_TRIPULANTE=2,
-	OBTENER_BITACORA=3,
-	PROXIMA_TAREA=4,
-	INFORMAR_MOVIMIENTO=5,
-	FINALIZO_TAREA=6,
-	INFORMAR_DESPLAZAMIENTO_FS=7,
-	INICIO_TAREA=8,
-	ATENDER_SABOTAJE=9,
-	RESOLUCION_SABOTAJE=10,
-	FINALIZA_FSCK=11,
-	INVOCAR_FSCK=12,
-	ESTADO_ALERTA=13
+	INICIAR_TRIPULANTE=2,
+	EXPULSAR_TRIPULANTE=3,
+	OBTENER_BITACORA=4,
+	PROXIMA_TAREA=5,
+	INICIO_TAREA=6,
+	FINALIZO_TAREA=7,
+	INFORMAR_MOVIMIENTO=8,
+	INFORMAR_DESPLAZAMIENTO_FS=9,
+	ATENDER_SABOTAJE=10,
+	RESOLUCION_SABOTAJE=11,
+	FINALIZA_FSCK=12,
+	INVOCAR_FSCK=13,
+	ESTADO_ALERTA=14
 }tipo_mensaje;
+
+typedef struct{
+	int posX;
+	int posY;
+}posicion;
 
 int crearConexionCliente(char*,char*);
 void enviar_mensaje(char* mensaje, int socket_cliente);
@@ -85,6 +91,6 @@ int iniciarServidor(char*,char*);
 int esperar_cliente(int);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int);
-int recibir_operacion(int);
+tipo_mensaje recibir_operacion(int);
 
 #endif /* UTILS_H_ */
