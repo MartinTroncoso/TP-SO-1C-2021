@@ -40,6 +40,7 @@ t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en mem
 t_list* patotas; //idem
 
 void inicializarVariables();
+void asignarTareasAPatota(PCB*,char*);
 void atenderConexiones(int socket_escucha);
 void atenderConexionTripulantes(int socket_escucha);
 void atenderComandosDiscordiador();

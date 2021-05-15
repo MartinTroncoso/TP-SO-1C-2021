@@ -74,6 +74,14 @@ typedef struct{
 	int posY;
 }posicion;
 
+typedef struct{
+	uint32_t longNombre;
+	char* nombre;
+	uint32_t parametro;
+	posicion posicion;
+	uint32_t tiempo;
+}tarea;
+
 int crearConexionCliente(char*,char*);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 t_paquete* crear_paquete(void);
@@ -92,5 +100,7 @@ int esperar_cliente(int);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int);
 tipo_mensaje recibir_operacion(int);
+char* getNombreTarea(char*);
+void liberarArray(char**);
 
 #endif /* UTILS_H_ */

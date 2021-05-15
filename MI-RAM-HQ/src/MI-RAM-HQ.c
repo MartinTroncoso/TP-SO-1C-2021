@@ -25,10 +25,29 @@ void inicializarVariables(){
 	patotas = list_create();
 }
 
+void asignarTareasAPatota(PCB* patota, char* tareasEncadenadas){
+	char** tareas = string_split(tareasEncadenadas,"|");
+	for(int i=0; tareas[i] != NULL ;i++){
+		char** tareaSpliteada = string_split(tareas[i]," ");
+		char* parametros = tareaSpliteada[1];
+		char** parametrosSpliteados = string_split(parametros,";");
+
+		tarea* tarea = malloc(sizeof(tarea));
+		tarea->nombre = tareaSpliteada[0];
+		tarea->longNombre = strlen(tarea->nombre) + 1;
+		tarea->parametro = atoi(parametrosSpliteados[0]);
+		tarea->posicion.posX = atoi(parametrosSpliteados[1]);
+		tarea->posicion.posY = atoi(parametrosSpliteados[2]);
+		tarea->tiempo = atoi(parametrosSpliteados[3]); //ESTA AGARRANDO UN 0 Y NO SE POR QUÉ
+
+		list_add(patota->tareas,tarea);
+	}
+}
+
 void atenderConexionTripulantes(int socket_escucha){
 	pthread_t hiloAtenderTripulantes;
 	pthread_create(&hiloAtenderTripulantes,NULL,(void*) atenderConexiones,&socket_escucha);
-	pthread_join(hiloAtenderTripulantes,NULL);
+	pthread_detach(hiloAtenderTripulantes);
 }
 
 void atenderConexiones(int socket_escucha){
@@ -39,19 +58,17 @@ void atenderConexiones(int socket_escucha){
 }
 
 void atenderTripulante(TCB* tripulante){
-	printf("IdTripulante: %d		Estado: %c	Posicion: %d|%d\n",
-			tripulante->tid,
-			tripulante->estado,
-			tripulante->posicion->posX,
-			tripulante->posicion->posY
-	);
+	printf("IdTripulante: %d		Estado: %c	Posicion: %d|%d\n",tripulante->tid,tripulante->estado,tripulante->posicion->posX,tripulante->posicion->posY);
+	while(1){
+
+	}
 }
 
 void atenderComandosDiscordiador(int socket_tripulante){
 	tipo_mensaje op_code = recibir_operacion(socket_tripulante);
 	switch(op_code){
 	case INICIAR_PATOTA:{
-		printf("Me llegan los datos de una patota.\n");
+		log_info(loggerMiRam,"Me llegan los datos de una patota");
 		PCB* patota = malloc(sizeof(PCB));
 		patota->tareas = list_create();
 		patota->direccionTareas = 0; //por ahora
@@ -74,37 +91,48 @@ void atenderComandosDiscordiador(int socket_tripulante){
 		char* tareasEncadenadas = malloc(sizeCadenaTareas);
 		memcpy(tareasEncadenadas, buffer + desplazamiento, sizeCadenaTareas);
 
-		printf("%s\n",tareasEncadenadas);
+		list_add(patotas,patota);
+
+		asignarTareasAPatota(patota,tareasEncadenadas);
+
 		free(buffer);
 		free(tareasEncadenadas);
 		close(socket_tripulante);
 		break;
 	}
 	case INICIAR_TRIPULANTE:{
-		printf("Me llegan los datos de un tripulante.\n");
+		log_info(loggerMiRam,"Se conectó un Tripulante!");
 		TCB* tripulante = malloc(sizeof(TCB));
 		tripulante->direccionPCB = 0; //por ahora
 		tripulante->proxInstruccion = 0; //por ahora
 		tripulante->posicion = malloc(sizeof(posicion));
 		uint32_t sizeTripulante;
+		uint32_t idPatota;
 		void* tripulanteSerializado = recibir_buffer(&sizeTripulante,socket_tripulante);
 
 		uint32_t desplazamiento = 0;
 
-		memcpy(&(tripulante->tid),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+		memcpy(&idPatota, tripulanteSerializado + desplazamiento, sizeof(uint32_t));
 		desplazamiento += sizeof(uint32_t);
 
-		memcpy(&(tripulante->estado),tripulanteSerializado + desplazamiento,sizeof(char));
+		memcpy(&(tripulante->tid), tripulanteSerializado + desplazamiento, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+
+		memcpy(&(tripulante->estado), tripulanteSerializado + desplazamiento, sizeof(char));
 		desplazamiento += sizeof(char);
 
-		memcpy(&(tripulante->posicion->posX),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+		memcpy(&(tripulante->posicion->posX), tripulanteSerializado + desplazamiento, sizeof(uint32_t));
 		desplazamiento += sizeof(uint32_t);
 
-		memcpy(&(tripulante->posicion->posY),tripulanteSerializado + desplazamiento,sizeof(uint32_t));
+		memcpy(&(tripulante->posicion->posY), tripulanteSerializado + desplazamiento, sizeof(uint32_t));
+
+		list_add(tripulantes,tripulante);
+
+		log_info(loggerMiRam,"El Tripulante %d pertenece a la patota %d",tripulante->tid,idPatota);
 
 		pthread_t hiloTripulante;
 		pthread_create(&hiloTripulante,NULL,(void*) atenderTripulante, tripulante);
-		pthread_join(hiloTripulante,NULL);
+		pthread_detach(hiloTripulante);
 
 		free(tripulanteSerializado);
 
@@ -134,6 +162,14 @@ void atenderComandosDiscordiador(int socket_tripulante){
 	}
 }
 
+void terminar_programa(int socket_escucha){
+	close(socket_escucha);
+	log_destroy(loggerMiRam);
+	config_destroy(configuracionMiRam);
+	list_destroy_and_destroy_elements(tripulantes,free);
+	list_destroy_and_destroy_elements(patotas,free);
+}
+
 int main(void) {
 
 	inicializarVariables();
@@ -142,9 +178,7 @@ int main(void) {
 
 	atenderConexiones(socket_escucha);
 
-	close(socket_escucha);
-	log_destroy(loggerMiRam);
-	config_destroy(configuracionMiRam);
+	terminar_programa(socket_escucha);
 
 	return EXIT_SUCCESS;
 }

@@ -143,6 +143,25 @@ void* serializar_buffer(t_buffer* buffer, int bytes){
 	return magic;
 }
 
+void* serializar_tarea(tarea* tarea, int bytes){
+	void* magic = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(magic + desplazamiento, &(tarea->longNombre), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento, tarea->nombre, tarea->longNombre);
+	desplazamiento += tarea->longNombre;
+	memcpy(magic + desplazamiento, &(tarea->parametro), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento, &(tarea->posicion.posX), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento, &(tarea->posicion.posY), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento, &(tarea->tiempo), sizeof(uint32_t));
+
+	return magic;
+}
+
 void enviar_paquete(t_paquete* paquete, int socket_cliente)
 {
 	int bytes = paquete->buffer->size + 2*sizeof(int);
@@ -208,6 +227,13 @@ void recibir_mensaje(int socket_cliente)
 	char* buffer = recibir_buffer(&size, socket_cliente);
 	printf("%s\n",buffer);
 	free(buffer);
+}
+
+void liberarArray(char** array){
+	for(int i=0; array[i]!=NULL ;i++){
+		free(array[i]);
+	}
+	free(array);
 }
 
 //podemos usar la lista de valores para poder hablar del for y de como recorrer la lista

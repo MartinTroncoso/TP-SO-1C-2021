@@ -90,17 +90,19 @@ void sumarIdPatota(){
 
 //SOLO METO EN EL BUFFER EL ID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
 void* serializar_tripulante(t_tripulante* tripulante){
-	int bytes = sizeof(uint32_t) + sizeof(posicion) + sizeof(char);
+	int bytes = 2*sizeof(uint32_t) + sizeof(char) + sizeof(posicion);
 	void* magic = malloc(bytes);
 	int desplazamiento = 0;
 
-	memcpy(magic + desplazamiento,&(tripulante->tid),sizeof(uint32_t));
+	memcpy(magic + desplazamiento, &(tripulante->idPatota), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(magic + desplazamiento,&(tripulante->estado),sizeof(char));
+	memcpy(magic + desplazamiento, &(tripulante->tid), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(magic + desplazamiento, &(tripulante->estado), sizeof(char));
 	desplazamiento += sizeof(char);
-	memcpy(magic + desplazamiento,&(tripulante->posicion->posX),sizeof(uint32_t));
+	memcpy(magic + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(magic + desplazamiento,&(tripulante->posicion->posY),sizeof(uint32_t));
+	memcpy(magic + desplazamiento, &(tripulante->posicion->posY), sizeof(uint32_t));
 
 	return magic;
 }
@@ -182,13 +184,14 @@ void iniciarPatota(t_iniciar_patota* estructura){
 
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
+	free(tareas);
 	close(socket_cliente_MIRAM);
 
 	for(int i=0; i<estructura->cantidadTripulantes; i++){
 		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-		tripulante->estado = 'N';
-		tripulante->tid = idTripulante;
 		tripulante->idPatota = patota->pid;
+		tripulante->tid = idTripulante;
+		tripulante->estado = 'N';
 		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		list_add(patota->tripulantes,tripulante);
 		list_add(tripulantes,tripulante);
@@ -207,7 +210,7 @@ void gestionarTripulante(t_tripulante* tripulante){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_TRIPULANTE;
 	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = sizeof(uint32_t) + sizeof(posicion) + sizeof(char);
+	paquete->buffer->size = 2*sizeof(uint32_t) + sizeof(char) + sizeof(posicion);
 	paquete->buffer->stream = serializar_tripulante(tripulante);
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
@@ -223,7 +226,7 @@ void gestionarTripulante(t_tripulante* tripulante){
 
 void listarTripulantes(){
 	if(list_is_empty(tripulantes)){
-		printf("NO HAY TRIPULANTES!\n");
+		log_info(loggerDiscordiador,"NO HAY TRIPULANTES!\n");
 	}
 	else
 	{

@@ -27,10 +27,6 @@ typedef struct{
 }t_iniciar_patota;
 
 typedef struct{
-	posicion posicion;
-}t_tarea;
-
-typedef struct{
 	uint32_t pid;
 	char* archivoTareas;
 	t_list* tripulantes;
@@ -40,7 +36,7 @@ typedef struct{
 	uint32_t tid;
 	char estado; //N-R-E-B
 	posicion* posicion;
-	t_tarea proxTarea;
+	tarea proxTarea;
 	uint32_t idPatota;
 }t_tripulante;
 
