@@ -32,13 +32,14 @@ void asignarTareasAPatota(PCB* patota, char* tareasEncadenadas){
 		char* parametros = tareaSpliteada[1];
 		char** parametrosSpliteados = string_split(parametros,";");
 
+		int tiempo = atoi(parametrosSpliteados[3]); //SI NO LO HAGO ASI, tarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
 		tarea* tarea = malloc(sizeof(tarea));
 		tarea->nombre = tareaSpliteada[0];
 		tarea->longNombre = strlen(tarea->nombre) + 1;
 		tarea->parametro = atoi(parametrosSpliteados[0]);
 		tarea->posicion.posX = atoi(parametrosSpliteados[1]);
 		tarea->posicion.posY = atoi(parametrosSpliteados[2]);
-		tarea->tiempo = atoi(parametrosSpliteados[3]); //ESTA AGARRANDO UN 0 Y NO SE POR QUÉ
+		tarea->tiempo = tiempo;
 
 		list_add(patota->tareas,tarea);
 	}
