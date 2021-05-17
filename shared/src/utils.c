@@ -210,6 +210,24 @@ tipo_mensaje recibir_operacion(int socket_cliente)
 	}
 }
 
+void enviar_respuesta(tipo_respuesta cod_respuesta, int socket_cliente) {
+	void* a_enviar = malloc(sizeof(int));
+	send(socket_cliente, a_enviar, 1, 0);
+	free(a_enviar);
+}
+
+tipo_respuesta recibir_respuesta(int socket_servidor)
+{
+	tipo_respuesta cod_respuesta;
+	if(recv(socket_servidor, &cod_respuesta, sizeof(int), MSG_WAITALL) != 0)
+		return cod_respuesta;
+	else
+	{
+		close(socket_servidor);
+		return -1;
+	}
+}
+
 void* recibir_buffer(uint32_t* size, int socket_cliente)
 {
 	void * buffer;

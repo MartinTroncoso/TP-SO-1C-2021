@@ -96,6 +96,9 @@ void recibir_datos_patota(int socket_cliente) {
 
 	list_add(patotas, nuevo_pcb);
 
+	//Envio el OK
+	enviar_respuesta(OK, socket_cliente);
+
 	log_info(loggerMiRam, "Se ha creado el PCB: %d\nSus instrucciones son: %s", nuevo_pcb->pid, nuevo_pcb->tareas);
 
 	free(buffer);

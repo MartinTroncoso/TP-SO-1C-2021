@@ -185,6 +185,18 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
 	free(tareas);
+
+	//Espero el OK
+	tipo_respuesta cod_respuesta = recibir_respuesta(socket_cliente_MIRAM);
+	switch(cod_respuesta) {
+	case OK:
+		log_info(loggerDiscordiador, "MIRAM envio el OK");
+		break;
+	default:
+		log_error(loggerDiscordiador, "MIRAM fallo, me salgo");
+		return;
+	}
+
 	close(socket_cliente_MIRAM);
 
 	for(int i=0; i<estructura->cantidadTripulantes; i++){

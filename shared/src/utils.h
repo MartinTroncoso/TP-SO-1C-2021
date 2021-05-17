@@ -69,6 +69,13 @@ typedef enum{
 	ESTADO_ALERTA=14
 }tipo_mensaje;
 
+typedef enum {
+	OK=0,
+	WARNING=1,
+	ERROR=2
+}tipo_respuesta;
+
+
 typedef struct{
 	int posX;
 	int posY;
@@ -84,6 +91,7 @@ typedef struct{
 
 int crearConexionCliente(char*,char*);
 void enviar_mensaje(char* mensaje, int socket_cliente);
+void enviar_respuesta(tipo_respuesta cod_respuesta, int socket_cliente);
 t_paquete* crear_paquete(void);
 void* serializar_paquete(t_paquete*, int);
 void* serializar_buffer(t_buffer* buffer, int bytes);
@@ -100,6 +108,7 @@ int esperar_cliente(int);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int);
 tipo_mensaje recibir_operacion(int);
+tipo_respuesta recibir_respuesta(int);
 char* getNombreTarea(char*);
 void liberarArray(char**);
 
