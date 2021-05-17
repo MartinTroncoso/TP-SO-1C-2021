@@ -22,11 +22,12 @@ char* PUERTO_MI_RAM;
 typedef struct{
 	uint32_t pid;
 	uint32_t direccionTareas;
-	t_list* tareas; //hasta pasarlas a la memoria
+	char* tareas; //hasta pasarlas a la memoria
 }PCB;
 
 typedef struct{
 	uint32_t tid;
+	uint32_t pid;
 	char estado;
 	posicion* posicion;
 	uint32_t proxInstruccion;
@@ -40,10 +41,11 @@ t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en mem
 t_list* patotas; //idem
 
 void inicializarVariables();
-void asignarTareasAPatota(PCB*,char*);
-void atenderConexiones(int socket_escucha);
-void atenderConexionTripulantes(int socket_escucha);
-void atenderComandosDiscordiador();
-void atenderTripulante(TCB*);
+
+void* receptor_conexion(void*);
+void recibir_datos_patota(int);
+void recibir_datos_tripulante(int);
+
+void terminar_programa();
 
 #endif /* MI_RAM_HQ_H_ */
