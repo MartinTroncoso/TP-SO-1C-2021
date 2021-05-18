@@ -271,8 +271,32 @@ void pausarPlanificacion(){
 	//se pausa la planificacion
 }
 
-void obtenerBitacora(int idTripulante){
+void obtenerBitacora(uint32_t idTripulante){ //debe devolver un stream o string de la bitacora
 	//se manda un mensaje a I-MONGO solicitando la bitacora de un tripulante
+	int socketClienteIMONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = OBTENER_BITACORA;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream,&idTripulante,sizeof(uint32_t));
+
+	enviar_paquete(paquete,socketClienteIMONGO);
+
+//	tipo_respuesta respuesta = recibir_respuesta(socketClienteIMONGO);
+//	switch(respuesta)
+//	{
+//	case OK:
+//		printf("TODO OK\n");
+//		break;
+//	default:
+//		break;
+//	}
+
+	close(socketClienteIMONGO);
+	//levanto un socket server? para recibir la respuesta? mando el socket int
+	//return "Funciona";
 }
 
 void ingresar_comandos()
@@ -323,7 +347,7 @@ void ingresar_comandos()
 		}
 		case 6:{
 			//OBTENER_BITACORA [idTripulante]
-			obtenerBitacora(idTripulante);
+			obtenerBitacora((uint32_t) atoi(palabras[1]));
 			break;
 		}
 		default:

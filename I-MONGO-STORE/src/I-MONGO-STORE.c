@@ -22,10 +22,10 @@ void inicializarVariables(){
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
 	inicializarDiccionario();
 	inicializarFileSystem();
-	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
+	//socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
 	//log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
-	socket_discordiador = esperar_cliente(socket_servidor);
-	printf("SE CONECTÓ EL DISCORDIADOR!\n");
+	//socket_discordiador = esperar_cliente(socket_servidor);
+	//printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
 
 void inicializarFileSystem()
@@ -38,21 +38,41 @@ void inicializarSuperBloque()
 {
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
-//	config_set_value(configuracionSuperBloque,"BLOCKS","5555");
-//	config_save(configuracionSuperBloque);
-	config_destroy(configuracionSuperBloque);
-	FILE* superBloque = fopen(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),"r+");
-	if(superBloque!=NULL)
+	printf("cantidad de bits a reservar: %d\n",(cantidadDeBloques/8));
+	//printf("bool: %d\n",(int) bitsExcedentes(15));
+	if(string_is_empty(config_get_string_value(configuracionSuperBloque,"BITMAP")))
 	{
-		fseek(superBloque,-1,SEEK_END);//puntero del archivo apunta a la posicion anterior del EOF
-		if(fgetc(superBloque)=='=') //si el caracter anterior al EOF es = entonces el campo de BITMAP esta vacio
-		{
+		printf("BITMAP ESTA VACIO \n");
+		t_bitarray* bitArraySuperBloque = bitarray_create(malloc(cantidadDeBloques/8+cantidadDeBloques%8), cantidadDeBloques/8+cantidadDeBloques%8);
+		printf("cantidad de bits en el bitarray %d\n",bitarray_get_max_bit(bitArraySuperBloque));
 
-			void* memoriaArray = malloc(cantidadDeBloques/8);
-			t_bitarray* bitArraySuperBloque = bitarray_create(memoriaArray, cantidadDeBloques);
-			//fseek(superBloque,0,SEEK_END);
-			txt_write_in_file(superBloque, bitArraySuperBloque->bitarray);
+		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+		{
+			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
 		}
+		printf("\n\n");
+
+		//clean deja el bit en 0, set lo deja en 1
+		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+		{
+			bitarray_clean_bit(bitArraySuperBloque,i);
+			//bitarray_set_bit(bitArraySuperBloque,i);
+		}
+		bitarray_set_bit(bitArraySuperBloque,0);
+		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+		{
+			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
+		}
+		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
+
+
+		config_set_value(configuracionSuperBloque,"BITMAP",bitArraySuperBloque->bitarray);
+		config_save(configuracionSuperBloque);
+		config_destroy(configuracionSuperBloque);
+	}else
+	{
+		printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
+		config_destroy(configuracionSuperBloque);
 	}
 }
 
@@ -103,41 +123,135 @@ void inicializarDiccionario()
 	dictionary_put(caracterAsociadoATarea, "DESCARTAR_BASURA",(char*) "B");
 }
 
-void actualizarBitacora(int idTripulante, operacionBitacora idOperacion, char* stringParametros)
+void* recibirOperacion(void* socketCliente)
 {
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante));
-	char** parametros = string_split(stringParametros," ");
+	int cliente = (int) socketCliente;
+	tipo_mensaje idMensaje = recibir_operacion(cliente);
+	//FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante));
+	//char** parametros = string_split(stringParametros," ");
 
-	switch(idOperacion)
+	switch(idMensaje)
 	{
-	case MOVIMIENTO_TRIPULANTE: //EN ESTE CASO EL PARAMETRO DEBE SER UN STRING DEL FORMATO "X|Y X'|Y' (ejemplo 1|2 a 2|2"
-		txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %s a %s\n",parametros[0],parametros[1]));
-		free(parametros);
+	case INFORMAR_DESPLAZAMIENTO_FS:
+
+		// recibe 4 uint32_t, los primero 2 son x y originales y los siguientes x' y' son a los que se desplaza
 		break;
-	case COMIENZO_EJECUCION_DE_TAREA: // PARAMETRO: "NOMBRETAREA"
-		txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",parametros[0]));
-		free(parametros);
+	case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
 		break;
-	case FINALIZA_TAREA: //PARAMETRO "NOMBRETAREA"
-		txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",parametros[0]));
-		free(parametros);
+	case FINALIZO_TAREA: //PARAMETRO "NOMBRETAREA"
 		break;
-	case CORRE_EN_PANICO_SABOTAJE: //PARAMETRO INDISTINTO
-		txt_write_in_file(bitacoraTripulante, "Se corre en panico hacia la ubicacion del sabotaje");
-		free(parametros);
+	case ATENDER_SABOTAJE: //PARAMETRO INDISTINTO
 		break;
-	case SABOTAJE_RESUELTO: //PARAMETRO INDISTINTO
-		txt_write_in_file(bitacoraTripulante, "sSe resuelve el sabotaje");
-		free(parametros);
+	case RESOLUCION_SABOTAJE: //PARAMETRO INDISTINTO
+		break;
+	case OBTENER_BITACORA:
+		recibirPeticionDeBitacora(cliente);
 		break;
 	default:
 		break;
 	}
 
+	return NULL;
+
+}
+
+void recibirInformeDeDesplazamiento(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+	uint32_t coorXAnterior;
+	uint32_t coorYAnterior;
+	uint32_t coorXNueva;
+	uint32_t coorYNueva;
+	uint32_t desplazamiento = 0;
+
+	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
+	memcpy(&tid, buffer+desplazamiento,sizeof(uint32_t));
+	desplazamiento+=sizeof(uint32_t);
+	memcpy(&coorXAnterior,buffer+desplazamiento,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(&coorYAnterior,buffer+desplazamiento,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(&coorXNueva,buffer+desplazamiento,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(&coorYNueva,buffer+desplazamiento,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
+	free(buffer);
+	txt_close_file(bitacoraTripulante);
+}
+
+void recibirInicioDeTarea(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+	uint32_t desplazamiento = 0;
+	char* tarea;
+
+	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
+	memcpy(&tid,buffer,sizeof(uint32_t));
+	desplazamiento+=sizeof(uint32_t);
+	memcpy(&tarea,buffer,tamanioBuffer-sizeof(uint32_t));
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",tarea));
+	free(buffer);
+	txt_close_file(bitacoraTripulante);
+}
+
+void recibirFinalizaTarea(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+	uint32_t desplazamiento = 0;
+	char* tarea;
+
+	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
+	memcpy(&tid,buffer,sizeof(uint32_t));
+	desplazamiento+=sizeof(uint32_t);
+	memcpy(&tarea,buffer,tamanioBuffer-sizeof(uint32_t));
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",tarea));
+	free(buffer);
+	txt_close_file(bitacoraTripulante);
+}
+
+void recibirPeticionDeBitacora(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+
+	buffer = recibir_buffer(&tamanioBuffer,socketCliente);
+	memcpy(&tid,buffer,sizeof(uint32_t));
+	printf("PETICION DE BITACORA DEL TRIPULANTE: %d\n",tid);
+	//enviar_respuesta(OK, socketCliente);
+	free(buffer);
+}
+int bitsExcedentes(int cantidadDeBits)
+{
+	return (cantidadDeBits%8)>0;
 }
 int main(void) {
 	inicializarVariables();
+	int socketServer;
+	int socketCliente;
+	pthread_t hilo_receptor;
 
+	socketServer = iniciarServidor("127.0.0.1",PUERTO);
+	while(1)
+	{
+		socketCliente = esperar_cliente(socketServer);
+
+		pthread_create(&hilo_receptor , NULL , recibirOperacion, (void*) socketCliente);
+		pthread_detach(hilo_receptor);
+	}
+	close(socketServer);
+	return EXIT_SUCCESS;
 	void iterator(char* value)
 	{
 		printf("%s\n", value);

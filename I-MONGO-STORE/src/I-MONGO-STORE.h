@@ -10,14 +10,7 @@
 
 #include <utils.h>
 
-typedef enum
-{
-	MOVIMIENTO_TRIPULANTE,
-	COMIENZO_EJECUCION_DE_TAREA,
-	FINALIZA_TAREA,
-	CORRE_EN_PANICO_SABOTAJE,
-	SABOTAJE_RESUELTO
-}operacionBitacora;
+
 
 char* PUNTO_MONTAJE;
 char* PUERTO;
@@ -35,9 +28,9 @@ void inicializarFileSystem();
 void inicializarSuperBloque();
 void inicializarBlocks();
 void inicializarDiccionario();
-void actualizarBitacora(int idTripulante, operacionBitacora idOperacion, char* stringParametros);
 void inicializarSuperBloque();
 t_bitarray recuperarBitArray();
 void guardarBitArray(t_bitarray*);
+void recibirPeticionDeBitacora(int);
 
 #endif /* I_MONGO_STORE_H_ */

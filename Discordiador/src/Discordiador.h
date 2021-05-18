@@ -59,7 +59,7 @@ void listarTripulantes();
 void expulsarTripulante(int);
 void iniciarPlanificacion();
 void pausarPlanificacion();
-void obtenerBitacora(int);
+void obtenerBitacora(uint32_t);
 
 void* serializar_tripulante(t_tripulante*);
 void gestionarTripulante(t_tripulante*);
