@@ -3113,3 +3113,52 @@
 [INFO] 14:04:53:407 MIRA-RAM-HQ/(6187:6187): El Tripulante 4 pertenece a la patota 2
 [INFO] 14:04:53:410 MIRA-RAM-HQ/(6187:6187): Se conectó un Tripulante!
 [INFO] 14:04:53:410 MIRA-RAM-HQ/(6187:6187): El Tripulante 5 pertenece a la patota 2
+[INFO] 23:08:50:648 MIRA-RAM-HQ/(10221:10221): Se lee config e inician variables iniciales
+[INFO] 23:08:50:648 MIRA-RAM-HQ/(10221:10221): MI-RAM-HQ listo para recibir conexiones
+[INFO] 23:09:29:924 MIRA-RAM-HQ/(10221:10221): Se recibio una conexion del cliente 5
+[INFO] 23:09:29:925 MIRA-RAM-HQ/(10221:10222): Me llegan los datos de una patota
+[INFO] 23:09:29:925 MIRA-RAM-HQ/(10221:10222): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 23:09:29:925 MIRA-RAM-HQ/(10221:10222): Se cerra la conexión con el cliente 5
+[INFO] 23:34:16:079 MIRA-RAM-HQ/(10457:10457): Se lee config e inician variables iniciales
+[INFO] 23:34:16:079 MIRA-RAM-HQ/(10457:10457): MI-RAM-HQ listo para recibir conexiones
+[INFO] 23:34:28:012 MIRA-RAM-HQ/(10457:10457): Se recibio una conexion del cliente 5
+[INFO] 23:34:28:012 MIRA-RAM-HQ/(10457:10460): Me llegan los datos de una patota
+[INFO] 23:34:28:013 MIRA-RAM-HQ/(10457:10460): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 23:34:28:013 MIRA-RAM-HQ/(10457:10460): Se cerra la conexión con el cliente 5
+[INFO] 23:34:43:739 MIRA-RAM-HQ/(10457:10457): Se recibio una conexion del cliente 7
+[INFO] 23:34:43:740 MIRA-RAM-HQ/(10457:10466): Me llegan los datos de una patota
+[INFO] 23:34:43:741 MIRA-RAM-HQ/(10457:10466): Se ha creado el PCB: 2
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 23:34:43:741 MIRA-RAM-HQ/(10457:10466): Se cerra la conexión con el cliente 7
+[INFO] 23:46:31:530 MIRA-RAM-HQ/(10628:10628): Se lee config e inician variables iniciales
+[INFO] 23:46:31:531 MIRA-RAM-HQ/(10628:10628): MI-RAM-HQ listo para recibir conexiones
+[INFO] 23:46:50:501 MIRA-RAM-HQ/(10628:10628): Se recibio una conexion del cliente 5
+[INFO] 23:46:50:502 MIRA-RAM-HQ/(10628:10630): Me llegan los datos de una patota
+[INFO] 23:46:50:502 MIRA-RAM-HQ/(10628:10630): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 23:46:50:502 MIRA-RAM-HQ/(10628:10630): Se cerra la conexión con el cliente 5
+[INFO] 23:46:50:502 MIRA-RAM-HQ/(10628:10628): Se recibio una conexion del cliente 7
+[INFO] 23:46:50:503 MIRA-RAM-HQ/(10628:10628): Se recibio una conexion del cliente 5
+[INFO] 23:46:50:512 MIRA-RAM-HQ/(10628:10633): Se conectó un Tripulante!
+[INFO] 23:46:50:512 MIRA-RAM-HQ/(10628:10633): El Tripulante 2 pertenece a la patota 1. Posiciones: 0|0
+[INFO] 23:46:50:512 MIRA-RAM-HQ/(10628:10633): Se cerra la conexión con el cliente 7
+[INFO] 23:46:50:512 MIRA-RAM-HQ/(10628:10634): Se conectó un Tripulante!
+[INFO] 23:46:50:513 MIRA-RAM-HQ/(10628:10634): El Tripulante 1 pertenece a la patota 1. Posiciones: 1|1
+[INFO] 23:46:50:513 MIRA-RAM-HQ/(10628:10634): Se cerra la conexión con el cliente 5
+[INFO] 14:02:13:361 MIRA-RAM-HQ/(13855:13855): Se lee config e inician variables iniciales
+[INFO] 14:02:13:362 MIRA-RAM-HQ/(13855:13855): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:02:22:717 MIRA-RAM-HQ/(13855:13855): Se recibio una conexion del cliente 5
+[INFO] 14:02:22:717 MIRA-RAM-HQ/(13855:13856): Me llegan los datos de una patota
+[INFO] 14:02:22:718 MIRA-RAM-HQ/(13855:13856): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:02:22:718 MIRA-RAM-HQ/(13855:13856): Se cierra la conexión con el cliente 5
+[INFO] 14:02:22:718 MIRA-RAM-HQ/(13855:13855): Se recibio una conexion del cliente 7
+[INFO] 14:02:22:719 MIRA-RAM-HQ/(13855:13855): Se recibio una conexion del cliente 5
+[INFO] 14:02:22:726 MIRA-RAM-HQ/(13855:13859): Se conectó un Tripulante!
+[INFO] 14:02:22:726 MIRA-RAM-HQ/(13855:13859): El Tripulante 2 pertenece a la patota 1. Posiciones: 2|2
+[INFO] 14:02:22:726 MIRA-RAM-HQ/(13855:13859): Se cierra la conexión con el cliente 7
+[INFO] 14:02:22:726 MIRA-RAM-HQ/(13855:13860): Se conectó un Tripulante!
+[INFO] 14:02:22:727 MIRA-RAM-HQ/(13855:13860): El Tripulante 1 pertenece a la patota 1. Posiciones: 1|1
+[INFO] 14:02:22:727 MIRA-RAM-HQ/(13855:13860): Se cierra la conexión con el cliente 5

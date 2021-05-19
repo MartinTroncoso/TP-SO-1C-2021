@@ -75,7 +75,7 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	paquete->codigo_operacion = MENSAJE;
+	paquete->codigo_operacion = INICIAR_PATOTA;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = strlen(mensaje) + 1;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
@@ -89,22 +89,6 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 
 	free(a_enviar);
 	eliminar_paquete(paquete);
-}
-
-
-void crear_buffer(t_paquete* paquete)
-{
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = 0;
-	paquete->buffer->stream = NULL;
-}
-
-t_paquete* crear_paquete(void)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PAQUETE;
-	crear_buffer(paquete);
-	return paquete;
 }
 
 void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
@@ -211,8 +195,9 @@ tipo_mensaje recibir_operacion(int socket_cliente)
 }
 
 void enviar_respuesta(tipo_respuesta cod_respuesta, int socket_cliente) {
-	void* a_enviar = malloc(sizeof(int));
-	send(socket_cliente, a_enviar, 1, 0);
+	void* a_enviar = malloc(sizeof(tipo_respuesta));
+	memcpy(a_enviar,&cod_respuesta,sizeof(tipo_respuesta));
+	send(socket_cliente, a_enviar, sizeof(tipo_respuesta), 0);
 	free(a_enviar);
 }
 

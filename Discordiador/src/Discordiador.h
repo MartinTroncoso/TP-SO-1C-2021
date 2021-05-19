@@ -30,19 +30,35 @@ typedef struct{
 	uint32_t pid;
 	char* archivoTareas;
 	t_list* tripulantes;
+	int cantidadTareas;
 }t_patota;
+
+typedef enum{
+	NEW,
+	READY,
+	EXEC,
+	BLOCK,
+	EXIT
+}estado;
 
 typedef struct{
 	uint32_t tid;
-	char estado; //N-R-E-B
+	char estado;
 	posicion* posicion;
-	tarea proxTarea;
+	tarea* proxTarea;
+	uint32_t tareasPendientes;
 	uint32_t idPatota;
 }t_tripulante;
 
+typedef enum{
+	FIFO,
+	RR
+}t_algoritmo;
+
 t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
-t_dictionary* diccionarioDiscordiador;
+t_dictionary* diccionarioComandos;
+t_dictionary* diccionarioTareas;
 
 int socket_escucha_iMongo;
 
@@ -62,12 +78,21 @@ void pausarPlanificacion();
 void obtenerBitacora(uint32_t);
 
 void* serializar_tripulante(t_tripulante*);
+void planificarTripulanteFIFO(t_tripulante*);
 void gestionarTripulante(t_tripulante*);
 void ingresar_comandos();
 void terminar_programa();
 void partirCadena(char**);
 char* obtenerTareasComoCadena(char*);
 void crearDiccionarioComandos(t_dictionary*);
+void crearDiccionarioTareasEntradaSalida(t_dictionary*);
 t_iniciar_patota* obtenerDatosPatota(char**);
+int getCantidadTareasPatota(char*);
+t_patota* buscarPatotaPorId(uint32_t);
+bool tieneTareasPendientes(t_tripulante*);
+tarea* solitarProximaTarea(int);
+void moverXDelTripulante(t_tripulante*);
+void moverYDelTripulante(t_tripulante*);
+t_algoritmo getAlgoritmoPlanificacion();
 
 #endif /* DISCORDIADOR_H_ */

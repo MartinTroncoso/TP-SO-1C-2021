@@ -24,7 +24,7 @@ int main(void) {
 		socket_cliente = esperar_cliente(socket_escucha);
 		log_info(loggerMiRam, "Se recibio una conexion del cliente %d", socket_cliente);
 
-		pthread_create(&hilo_receptor, NULL, receptor_conexion, (void*)socket_cliente);
+		pthread_create(&hilo_receptor, NULL, receptor_conexion, (void*) socket_cliente);
 		pthread_detach(hilo_receptor);
 	}
 
@@ -32,8 +32,6 @@ int main(void) {
 	//terminar_programa();
 	return EXIT_SUCCESS;
 }
-
-
 
 void* receptor_conexion(void* socket_cliente)
 {
@@ -59,7 +57,7 @@ void* receptor_conexion(void* socket_cliente)
 		break;
 	}
 
-	log_info(loggerMiRam, "Se cerra la conexión con el cliente %d", cliente);
+	log_info(loggerMiRam, "Se cierra la conexión con el cliente %d", cliente);
 	close(cliente);
 	return NULL;
 }
@@ -140,8 +138,7 @@ void recibir_datos_tripulante(int socket_tripulante) {
 	free(buffer);
 }
 
-void inicializarVariables() {
-
+void inicializarVariables(){
 	configuracionMiRam = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.config");
 	loggerMiRam = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.log", "MIRA-RAM-HQ", 1, LOG_LEVEL_INFO);
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");

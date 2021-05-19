@@ -34,24 +34,6 @@
 
 t_log* logger;
 
-typedef enum
-{
-	MENSAJE,
-	PAQUETE
-}op_code;
-
-typedef struct
-{
-	int size;
-	void* stream;
-} t_buffer;
-
-typedef struct
-{
-	op_code codigo_operacion;
-	t_buffer* buffer;
-} t_paquete;
-
 typedef enum{
 	INICIAR_PATOTA=1,
 	INICIAR_TRIPULANTE=2,
@@ -68,6 +50,18 @@ typedef enum{
 	INVOCAR_FSCK=13,
 	ESTADO_ALERTA=14
 }tipo_mensaje;
+
+typedef struct
+{
+	int size;
+	void* stream;
+} t_buffer;
+
+typedef struct
+{
+	tipo_mensaje codigo_operacion;
+	t_buffer* buffer;
+} t_paquete;
 
 typedef enum {
 	OK=0,

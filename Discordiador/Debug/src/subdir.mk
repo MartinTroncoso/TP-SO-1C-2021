@@ -4,13 +4,16 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/Discordiador.c 
+../src/Discordiador.c \
+../src/Tripulantes.c 
 
 OBJS += \
-./src/Discordiador.o 
+./src/Discordiador.o \
+./src/Tripulantes.o 
 
 C_DEPS += \
-./src/Discordiador.d 
+./src/Discordiador.d \
+./src/Tripulantes.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
