@@ -27,11 +27,11 @@ typedef struct{
 
 typedef struct{
 	uint32_t tid;
-	uint32_t pid;
 	char estado;
-	posicion* posicion;
-	uint32_t proxInstruccion;
-	uint32_t direccionPCB;
+	uint32_t posX;
+	uint32_t posY;
+	char* proxInstruccion; //hasta pasarlas a memoria, luego debe ser uint32_t
+	PCB* direccionPCB;
 }TCB;
 
 t_config* configuracionMiRam;
@@ -42,9 +42,15 @@ t_list* patotas; //idem
 
 void inicializarVariables();
 
-void* receptor_conexion(void*);
-void recibir_datos_patota(int);
-void recibir_datos_tripulante(int);
+void* receptor_conexion_tripulante(void*);
+void* recibir_datos_patota(void*);
+TCB* recibir_datos_tripulante(int);
+
+PCB* buscar_patota(uint32_t);
+
+void recibir_movimiento_tripulante(TCB*, int);
+void enviar_proxima_tarea(TCB*, int);
+void avanzar_proxima_instruccion(TCB*);
 
 void terminar_programa();
 

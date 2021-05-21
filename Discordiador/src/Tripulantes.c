@@ -137,8 +137,25 @@ bool tieneTareasPendientes(t_tripulante* tripulante){
 	return tripulante->tareasPendientes > 0;
 }
 
-void informarMovimiento(int socket_cliente, posicion origen, posicion destino){
+void informarMovimiento(int socket_cliente, posicion* origen, posicion* destino){
 
+	//Preparo paquete para enviar
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+	int desplazamiento = 0;
+
+	paquete->codigo_operacion = INFORMAR_MOVIMIENTO;
+	paquete->buffer->size = 2 * sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream + desplazamiento, &(destino->posX), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(destino->posY), sizeof(uint32_t));
+
+	fflush(stdout);
+	printf("Envioo");
+	enviar_paquete(paquete, socket_cliente);
+	eliminar_paquete(paquete);
 }
 
 tarea* solitarProximaTarea(int idTripulante){
@@ -190,7 +207,20 @@ void gestionarTripulante(t_tripulante* tripulante){
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
 
-	close(socket_cliente_MIRAM);
+	//close(socket_cliente_MIRAM);
+
+	sleep(5);
+	posicion* posicion_ej = malloc(sizeof(posicion));
+	posicion_ej->posX = 10;
+	posicion_ej->posY = 50;
+	informarMovimiento(socket_cliente_MIRAM, posicion_ej, posicion_ej);
+
+	sleep(5);
+	posicion_ej->posY = 2;
+	informarMovimiento(socket_cliente_MIRAM, posicion_ej, posicion_ej);
+
+	free(posicion_ej);
+
 
 	while(1){
 		if(tieneTareasPendientes(tripulante)){
