@@ -25,8 +25,7 @@ int main(void) {
 
 		switch(tipo_msg) {
 		case INICIAR_PATOTA:
-			pthread_create(&hilo_receptor, NULL,(void*) recibir_datos_patota, (void*) socket_cliente);
-			pthread_detach(hilo_receptor);
+			recibir_datos_patota((void*) socket_cliente);
 			break;
 		case INICIAR_TRIPULANTE:
 			pthread_create(&hilo_receptor, NULL,(void*) atenderTripulante, (void*) socket_cliente);
@@ -106,7 +105,7 @@ void recibir_datos_patota(void* _cliente) {
 	uint32_t cantidadTripulantes;
 
 	PCB* nuevo_pcb = malloc(sizeof(PCB));
-	printf("Socket PATOTA: %d\n",socket_cliente);
+
 	log_info(loggerMiRam,"Me llegan los datos de una patota");
 
 	buffer = recibir_buffer(&buffer_size, socket_cliente);
@@ -147,7 +146,7 @@ TCB* recibir_datos_tripulante(int socket_tripulante) {
 	PCB* patota;
 
 	TCB* nuevo_tcb = malloc(sizeof(TCB));
-	printf("Socket TRIPULANTE: %d\n",socket_tripulante);
+
 	buffer = recibir_buffer(&buffer_size, socket_tripulante);
 
 	memcpy(&posible_pid, buffer + desplazamiento, sizeof(uint32_t));
