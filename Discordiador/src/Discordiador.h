@@ -71,6 +71,7 @@ t_list* tripulantes;
 t_list* colaReady;
 
 sem_t multiprocesamiento;
+sem_t mutexTripulantes;
 
 void inicializarVariables();
 
@@ -96,7 +97,7 @@ int getCantidadTareasPatota(char*);
 t_patota* buscarPatotaPorId(uint32_t);
 bool tieneTareasPendientes(t_tripulante*);
 Tarea* solitarProximaTarea(int,int);
-void informarMovimiento(int,posicion*);
+void informarMovimiento(int,t_tripulante*);
 void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
 t_algoritmo getAlgoritmoPlanificacion();

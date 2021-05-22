@@ -25,8 +25,7 @@ int main(void) {
 
 		switch(tipo_msg) {
 		case INICIAR_PATOTA:
-			pthread_create(&hilo_receptor, NULL,(void*) recibir_datos_patota, (void*) socket_cliente);
-			pthread_detach(hilo_receptor);
+			recibir_datos_patota((void*) socket_cliente);
 			break;
 		case INICIAR_TRIPULANTE:
 			pthread_create(&hilo_receptor, NULL,(void*) atenderTripulante, (void*) socket_cliente);
@@ -35,6 +34,7 @@ int main(void) {
 		default:
 			log_warning(loggerMiRam, "Tipo de mensaje desconocido!!!. Cierro conexion con dicho cliente");
 			close(socket_escucha);
+			return -1;
 			break;
 		}
 	}
@@ -76,13 +76,11 @@ void atenderTripulante(void* _cliente) {
 
 		switch(tipo_msg){
 		case PROXIMA_TAREA:
-			log_info(loggerMiRam, "[TRIPULANTE %d] Se ha recibido solicitud de proxima tarea", tripulante->tid);
 			enviar_proxima_tarea(tripulante, socket_tripulante);
 			avanzar_proxima_instruccion(tripulante);
 			log_info(loggerMiRam, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tripulante->tid);
 			break;
 		case INFORMAR_MOVIMIENTO:
-			log_info(loggerMiRam, "[TRIPULANTE %d] Se ha recibido un movimiento de este tripulante. Se procede a actualizar..", tripulante->tid);
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
 			break;
 		default:
@@ -106,7 +104,7 @@ void recibir_datos_patota(void* _cliente) {
 	uint32_t cantidadTripulantes;
 
 	PCB* nuevo_pcb = malloc(sizeof(PCB));
-	printf("Socket PATOTA: %d\n",socket_cliente);
+
 	log_info(loggerMiRam,"Me llegan los datos de una patota");
 
 	buffer = recibir_buffer(&buffer_size, socket_cliente);
@@ -139,7 +137,6 @@ void recibir_datos_patota(void* _cliente) {
 }
 
 TCB* recibir_datos_tripulante(int socket_tripulante) {
-
 	void* buffer;
 	uint32_t buffer_size;
 	uint32_t desplazamiento = 0;
@@ -147,7 +144,7 @@ TCB* recibir_datos_tripulante(int socket_tripulante) {
 	PCB* patota;
 
 	TCB* nuevo_tcb = malloc(sizeof(TCB));
-	printf("Socket TRIPULANTE: %d\n",socket_tripulante);
+
 	buffer = recibir_buffer(&buffer_size, socket_tripulante);
 
 	memcpy(&posible_pid, buffer + desplazamiento, sizeof(uint32_t));
@@ -227,7 +224,7 @@ void recibir_movimiento_tripulante(TCB* tripulante, int socket_tripulante) {
 	memcpy(&(tripulante->posY), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha movido a %d|%d", tripulante->tid, tripulante->posX, tripulante->posY);
+	log_info(loggerMiRam, "[TRIPULANTE %d] Se movió a %d|%d", tripulante->tid, tripulante->posX, tripulante->posY);
 
 	free(buffer);
 }

@@ -34,6 +34,7 @@ void inicializarVariables(){
 	idTripulante = 1;
 	idPatota = 1;
 
+	sem_init(&mutexTripulantes,0,1);
 	sem_init(&multiprocesamiento,0,GRADO_MULTITAREA);
 }
 

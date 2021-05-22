@@ -16,7 +16,10 @@ void sumarIdPatota(){
 }
 
 void agregarTripulanteAReady(t_tripulante* tripulante){
+	sem_wait(&mutexTripulantes);
 	list_add(colaReady,tripulante);
+	sem_post(&mutexTripulantes);
+
 	tripulante->estado = 'R';
 }
 
@@ -137,7 +140,7 @@ int getCantidadTareasPatota(char* cadena){
 	return cantidad+1;
 }
 
-void informarMovimiento(int socket_cliente, posicion* nuevaPosicion){
+void informarMovimiento(int socket_cliente, t_tripulante* tripulante){
 
 	//Preparo paquete para enviar
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -148,12 +151,12 @@ void informarMovimiento(int socket_cliente, posicion* nuevaPosicion){
 	paquete->buffer->size = 2 * sizeof(uint32_t);
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &(nuevaPosicion->posX), sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &(nuevaPosicion->posY), sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posY), sizeof(uint32_t));
 
 	fflush(stdout);
-	printf("Informo posición\n");
+
 	enviar_paquete(paquete, socket_cliente);
 	eliminar_paquete(paquete);
 }
@@ -164,10 +167,18 @@ Tarea* solitarProximaTarea(int idTripulante, int socket_cliente_MIRAM){
 	tipo_mensaje mensaje = PROXIMA_TAREA;
 	send(socket_cliente_MIRAM,&mensaje,sizeof(tipo_mensaje),0);
 
+	uint32_t sizeBuffer;
 	uint32_t sizeTarea;
-	void* stringTarea = recibir_buffer(&sizeTarea, socket_cliente_MIRAM);
+	int desplazamiento = 0;
+	void* buffer = recibir_buffer(&sizeBuffer, socket_cliente_MIRAM);
 
-	char** tareaSpliteada = string_split(stringTarea," ");
+	memcpy(&sizeTarea,buffer + desplazamiento, sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+
+	char* stringCadena = malloc(sizeTarea);
+	memcpy(stringCadena,buffer + desplazamiento,sizeTarea);
+
+	char** tareaSpliteada = string_split(stringCadena," ");
 	char* parametros = tareaSpliteada[1];
 	char** parametrosSpliteados = string_split(parametros,";");
 
@@ -179,7 +190,7 @@ Tarea* solitarProximaTarea(int idTripulante, int socket_cliente_MIRAM){
 	proximaTarea->posicion.posY = atoi(parametrosSpliteados[2]);
 	proximaTarea->tiempo = tiempo;
 
-	free(stringTarea);
+	free(buffer);
 
 	return proximaTarea;
 }
@@ -217,21 +228,17 @@ bool tieneTareasPendientes(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
-	sem_wait(&multiprocesamiento);
-
 	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
 		moverXDelTripulante(tripulante);
-		informarMovimiento(socket_cliente_MIRAM, tripulante->posicion);
+		informarMovimiento(socket_cliente_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
 
 	while(tripulante->posicion->posY != tripulante->proxTarea->posicion.posY){
 		moverYDelTripulante(tripulante);
-		informarMovimiento(socket_cliente_MIRAM, tripulante->posicion);
+		informarMovimiento(socket_cliente_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
-
-	sem_post(&multiprocesamiento);
 }
 
 void planificarTripulante(t_tripulante* tripulante, int socket_cliente_MIRAM){
@@ -262,59 +269,59 @@ void gestionarTripulante(t_tripulante* tripulante){
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
 
-	sleep(5);
-	posicion* posicion_ej = malloc(sizeof(posicion));
-	posicion_ej->posX = 10;
-	posicion_ej->posY = 50;
-	informarMovimiento(socket_cliente_MIRAM, posicion_ej);
-
-	sleep(5);
-	posicion_ej->posY = 2;
-	informarMovimiento(socket_cliente_MIRAM, posicion_ej);
-
-	free(posicion_ej);
-
 	while(1){
 		if(tieneTareasPendientes(tripulante)){
-//			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
-//			tripulante->proxTarea = proximaTarea;
-//			agregarTripulanteAReady(tripulante);
-//			planificarTripulante(tripulante, socket_cliente_MIRAM);
-//			switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
-//			case 1:{
-//				//GENERAR_OXIGENO
-//				break;
-//			}
-//			case 2:{
-//				//CONSUMIR_OXIGENO
-//				break;
-//			}
-//			case 3:{
-//				//GENERAR_COMIDA
-//				break;
-//			}
-//			case 4:{
-//				//CONSUMIR_COMIDA
-//				break;
-//			}
-//			case 5:{
-//				//GENERAR_BASURA
-//				break;
-//			}
-//			case 6:{
-//				//DESCARTAR_BASURA
-//				break;
-//			}
-//			default:{
-//				break;
-//			}
-//			}
+			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
+			tripulante->proxTarea = proximaTarea;
+
+			sem_wait(&multiprocesamiento);
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,proximaTarea->posicion.posX,proximaTarea->posicion.posY);
+
+			agregarTripulanteAReady(tripulante);
+
+			planificarTripulante(tripulante, socket_cliente_MIRAM);
+			sem_post(&multiprocesamiento);
+
+			switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
+			case 1:{
+				//GENERAR_OXIGENO
+				break;
+			}
+			case 2:{
+				//CONSUMIR_OXIGENO
+				break;
+			}
+			case 3:{
+				//GENERAR_COMIDA
+				break;
+			}
+			case 4:{
+				//CONSUMIR_COMIDA
+				break;
+			}
+			case 5:{
+				//GENERAR_BASURA
+				break;
+			}
+			case 6:{
+				//DESCARTAR_BASURA
+				break;
+			}
+			default:{
+				break;
+			}
+			}
+
+			//A VECES EN EL NOMBRE IMPRIME CUALQUIERA
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] LLEGUÉ A LA TAREA %s",tripulante->tid,proximaTarea->nombre);
+			tripulante->tareasPendientes--;
 		}
 		else
 		{
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 			tripulante->estado = 'F';
 			close(socket_cliente_MIRAM);
-			break;
+			return;
 		}
 	}
 }
@@ -371,8 +378,12 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		tripulante->estado = 'N';
 		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		tripulante->tareasPendientes = patota->cantidadTareas;
+
+		//USO SEMÁFORO PORQUE SON LISTAS GLOBALES (REGIÓN CRÍTICA)
+		sem_wait(&mutexTripulantes);
 		list_add(patota->tripulantes,tripulante);
 		list_add(tripulantes,tripulante);
+		sem_post(&mutexTripulantes);
 
 		sumarIdTripulante();
 
