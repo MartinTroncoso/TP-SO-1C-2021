@@ -251,37 +251,6 @@ int main(void) {
 		pthread_detach(hilo_receptor);
 	}
 	close(socketServer);
-	return EXIT_SUCCESS;
-	void iterator(char* value)
-	{
-		printf("%s\n", value);
-	}
-
-	t_list* lista;
-	while(1)
-	{
-		int cod_op = recibir_operacion(socket_discordiador);
-		switch(cod_op)
-		{
-		case MENSAJE:
-			recibir_mensaje(socket_discordiador);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(socket_discordiador);
-			printf("ME LLEGARON LOS SIGUIENTES VALORES:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(loggerMongo, "SE DESCONECTÓ EL DISCORDIADOR. FINALIZO");
-			return EXIT_FAILURE;
-		default:
-			log_warning(loggerMongo, "Operacion desconocida. No quieras meter la pata");
-			break;
-		}
-	}
-
-	close(socket_servidor);
-	close(socket_discordiador);
 	log_destroy(loggerMongo);
 	config_destroy(configuracionMongo);
 	dictionary_destroy(caracterAsociadoATarea);

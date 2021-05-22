@@ -42,8 +42,8 @@ t_list* patotas; //idem
 
 void inicializarVariables();
 
-void* receptor_conexion_tripulante(void*);
-void* recibir_datos_patota(void*);
+void atenderTripulante(void*);
+void recibir_datos_patota(void*);
 TCB* recibir_datos_tripulante(int);
 
 PCB* buscar_patota(uint32_t);

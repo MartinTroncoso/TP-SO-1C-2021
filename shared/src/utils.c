@@ -109,9 +109,8 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
 	desplazamiento+= sizeof(int);
 	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
-	desplazamiento+= sizeof(int);
+	desplazamiento += sizeof(int);
 	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
 
 	return magic;
 }
@@ -127,7 +126,7 @@ void* serializar_buffer(t_buffer* buffer, int bytes){
 	return magic;
 }
 
-void* serializar_tarea(tarea* tarea, int bytes){
+void* serializar_tarea(Tarea* tarea, int bytes){
 	void* magic = malloc(bytes);
 	int desplazamiento = 0;
 
@@ -182,9 +181,9 @@ int esperar_cliente(int socket_servidor)
 	return socket_cliente;
 }
 
-tipo_mensaje recibir_operacion(int socket_cliente)
+int recibir_operacion(int socket_cliente)
 {
-	tipo_mensaje cod_op;
+	int cod_op;
 	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) != 0)
 		return cod_op;
 	else
@@ -215,7 +214,7 @@ tipo_respuesta recibir_respuesta(int socket_servidor)
 
 void* recibir_buffer(uint32_t* size, int socket_cliente)
 {
-	void * buffer;
+	void* buffer;
 
 	recv(socket_cliente, size, sizeof(uint32_t), MSG_WAITALL);
 	buffer = malloc(*size);

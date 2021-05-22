@@ -15,6 +15,11 @@ void sumarIdPatota(){
 	idPatota++;
 }
 
+void agregarTripulanteAReady(t_tripulante* tripulante){
+	list_add(colaReady,tripulante);
+	tripulante->estado = 'R';
+}
+
 void moverXDelTripulante(t_tripulante* tripulante){
 	if(tripulante->posicion->posX > tripulante->proxTarea->posicion.posX){
 		tripulante->posicion->posX--;
@@ -49,33 +54,41 @@ void moverYDelTripulante(t_tripulante* tripulante){
 	}
 }
 
-void planificarTripulanteFIFO(t_tripulante* tripulante){
-	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
-		moverXDelTripulante(tripulante);
-		sleep(RETARDO_CICLO_CPU);
+t_iniciar_patota* obtenerDatosPatota(char** array){
+	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
+	parametrosPatota->coordenadasTripulantes = list_create();
+
+	int flag = 3;
+	if(atoi(array[1])!=0 && array[1]!=NULL){
+		parametrosPatota->cantidadTripulantes = atoi(array[1]);
+		if(array[2]!=NULL)
+		{
+			parametrosPatota->rutaDeTareas = array[2];
+			while(array[flag]!=NULL)
+			{
+				posicion* posicionTripulante = malloc(sizeof(posicion));
+				char** coordenadas = string_split(array[flag], "|");
+				posicionTripulante->posX = atoi(coordenadas[0]);
+				posicionTripulante->posY = atoi(coordenadas[1]);
+				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
+				flag++;
+			}
+
+			if(parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes)!=0)
+			{
+				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes);
+				for(int i=0; i<tripulantesFaltantes ;i++)
+				{
+					posicion* posicionTripulante = malloc(sizeof(posicion));
+					posicionTripulante->posX = 0;
+					posicionTripulante->posY = 0;
+					list_add(parametrosPatota->coordenadasTripulantes, posicionTripulante);
+				}
+			}
+		}
 	}
 
-	while(tripulante->posicion->posY != tripulante->proxTarea->posicion.posY){
-		moverYDelTripulante(tripulante);
-		sleep(RETARDO_CICLO_CPU);
-	}
-}
-
-void planificarTripulante(t_tripulante* tripulante){
-	t_algoritmo algoritmo = getAlgoritmoPlanificacion();
-	switch(algoritmo){
-	case FIFO:{
-		planificarTripulanteFIFO(tripulante);
-		break;
-	}
-	case RR:{
-//		planificarTripulanteRR(tripulante);
-		break;
-	}
-	default:{
-		log_error(loggerDiscordiador,"Hubo un error con el algoritmo de planificación.");
-	}
-	}
+	return parametrosPatota;
 }
 
 char* obtenerTareasComoCadena(char* path){
@@ -124,20 +137,7 @@ int getCantidadTareasPatota(char* cadena){
 	return cantidad+1;
 }
 
-t_patota* buscarPatotaPorId(uint32_t idPatota){
-	bool encontrarPatota(void* elemento){
-		t_patota* patota = elemento;
-		return patota->pid == idPatota;
-	}
-
-	return list_find(patotas,encontrarPatota);
-}
-
-bool tieneTareasPendientes(t_tripulante* tripulante){
-	return tripulante->tareasPendientes > 0;
-}
-
-void informarMovimiento(int socket_cliente, posicion* origen, posicion* destino){
+void informarMovimiento(int socket_cliente, posicion* nuevaPosicion){
 
 	//Preparo paquete para enviar
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -148,33 +148,40 @@ void informarMovimiento(int socket_cliente, posicion* origen, posicion* destino)
 	paquete->buffer->size = 2 * sizeof(uint32_t);
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &(destino->posX), sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(nuevaPosicion->posX), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &(destino->posY), sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(nuevaPosicion->posY), sizeof(uint32_t));
 
 	fflush(stdout);
-	printf("Envioo");
+	printf("Informo posición\n");
 	enviar_paquete(paquete, socket_cliente);
 	eliminar_paquete(paquete);
 }
 
-tarea* solitarProximaTarea(int idTripulante){
-//	tarea* proximaTarea = malloc(sizeof(tarea));
-	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+Tarea* solitarProximaTarea(int idTripulante, int socket_cliente_MIRAM){
+	Tarea* proximaTarea = malloc(sizeof(Tarea));
 
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->codigo_operacion = PROXIMA_TAREA;
-	paquete->buffer->size = sizeof(int);
-	paquete->buffer->stream = malloc(sizeof(paquete->buffer->size));
-	memcpy(paquete->buffer->stream, &idTripulante, sizeof(int));
-	enviar_paquete(paquete,socket_cliente_MIRAM);
-	eliminar_paquete(paquete);
+	tipo_mensaje mensaje = PROXIMA_TAREA;
+	send(socket_cliente_MIRAM,&mensaje,sizeof(tipo_mensaje),0);
 
-//	uint32_t size;
-//	void* buffer = recibir_buffer(&size,socket_cliente_MIRAM);
+	uint32_t sizeTarea;
+	void* stringTarea = recibir_buffer(&sizeTarea, socket_cliente_MIRAM);
 
-	return NULL;
+	char** tareaSpliteada = string_split(stringTarea," ");
+	char* parametros = tareaSpliteada[1];
+	char** parametrosSpliteados = string_split(parametros,";");
+
+	int tiempo = atoi(parametrosSpliteados[3]); //SI NO LO HAGO ASI, proximaTarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
+	proximaTarea->nombre = tareaSpliteada[0];
+	proximaTarea->longNombre = strlen(proximaTarea->nombre) + 1;
+	proximaTarea->parametro = atoi(parametrosSpliteados[0]);
+	proximaTarea->posicion.posX = atoi(parametrosSpliteados[1]);
+	proximaTarea->posicion.posY = atoi(parametrosSpliteados[2]);
+	proximaTarea->tiempo = tiempo;
+
+	free(stringTarea);
+
+	return proximaTarea;
 }
 
 //SOLO METO EN EL BUFFER EL ID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
@@ -196,6 +203,54 @@ void* serializar_tripulante(t_tripulante* tripulante){
 	return magic;
 }
 
+t_patota* buscarPatotaPorId(uint32_t idPatota){
+	bool encontrarPatota(void* elemento){
+		t_patota* patota = elemento;
+		return patota->pid == idPatota;
+	}
+
+	return list_find(patotas,encontrarPatota);
+}
+
+bool tieneTareasPendientes(t_tripulante* tripulante){
+	return tripulante->tareasPendientes > 0;
+}
+
+void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
+	sem_wait(&multiprocesamiento);
+
+	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
+		moverXDelTripulante(tripulante);
+		informarMovimiento(socket_cliente_MIRAM, tripulante->posicion);
+		sleep(RETARDO_CICLO_CPU);
+	}
+
+	while(tripulante->posicion->posY != tripulante->proxTarea->posicion.posY){
+		moverYDelTripulante(tripulante);
+		informarMovimiento(socket_cliente_MIRAM, tripulante->posicion);
+		sleep(RETARDO_CICLO_CPU);
+	}
+
+	sem_post(&multiprocesamiento);
+}
+
+void planificarTripulante(t_tripulante* tripulante, int socket_cliente_MIRAM){
+	t_algoritmo algoritmo = getAlgoritmoPlanificacion();
+	switch(algoritmo){
+	case FIFO:{
+		planificarTripulanteFIFO(tripulante, socket_cliente_MIRAM);
+		break;
+	}
+	case RR:{
+//		planificarTripulanteRR(tripulante, socket_cliente_MIRAM);
+		break;
+	}
+	default:{
+		log_error(loggerDiscordiador,"Hubo un error con el algoritmo de planificación.");
+	}
+	}
+}
+
 void gestionarTripulante(t_tripulante* tripulante){
 	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
 
@@ -207,26 +262,24 @@ void gestionarTripulante(t_tripulante* tripulante){
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
 
-	//close(socket_cliente_MIRAM);
-
 	sleep(5);
 	posicion* posicion_ej = malloc(sizeof(posicion));
 	posicion_ej->posX = 10;
 	posicion_ej->posY = 50;
-	informarMovimiento(socket_cliente_MIRAM, posicion_ej, posicion_ej);
+	informarMovimiento(socket_cliente_MIRAM, posicion_ej);
 
 	sleep(5);
 	posicion_ej->posY = 2;
-	informarMovimiento(socket_cliente_MIRAM, posicion_ej, posicion_ej);
+	informarMovimiento(socket_cliente_MIRAM, posicion_ej);
 
 	free(posicion_ej);
 
-
 	while(1){
 		if(tieneTareasPendientes(tripulante)){
-//			tarea* proximaTarea = solitarProximaTarea(tripulante->tid);
+//			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
 //			tripulante->proxTarea = proximaTarea;
-//			planificarTripulante(tripulante);
+//			agregarTripulanteAReady(tripulante);
+//			planificarTripulante(tripulante, socket_cliente_MIRAM);
 //			switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
 //			case 1:{
 //				//GENERAR_OXIGENO
@@ -257,44 +310,13 @@ void gestionarTripulante(t_tripulante* tripulante){
 //			}
 //			}
 		}
-	}
-}
-
-t_iniciar_patota* obtenerDatosPatota(char** array){
-	t_iniciar_patota* parametrosPatota = malloc(sizeof(t_iniciar_patota));
-	parametrosPatota->coordenadasTripulantes = list_create();
-
-	int flag = 3;
-	if(atoi(array[1])!=0 && array[1]!=NULL){
-		parametrosPatota->cantidadTripulantes = atoi(array[1]);
-		if(array[2]!=NULL)
+		else
 		{
-			parametrosPatota->rutaDeTareas = array[2];
-			while(array[flag]!=NULL)
-			{
-				posicion* posicionTripulante = malloc(sizeof(posicion));
-				char** coordenadas = string_split(array[flag], "|");
-				posicionTripulante->posX = atoi(coordenadas[0]);
-				posicionTripulante->posY = atoi(coordenadas[1]);
-				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
-				flag++;
-			}
-
-			if(parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes)!=0)
-			{
-				int tripulantesFaltantes = parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes);
-				for(int i=0; i<tripulantesFaltantes ;i++)
-				{
-					posicion* posicionTripulante = malloc(sizeof(posicion));
-					posicionTripulante->posX = 0;
-					posicionTripulante->posY = 0;
-					list_add(parametrosPatota->coordenadasTripulantes, posicionTripulante);
-				}
-			}
+			tripulante->estado = 'F';
+			close(socket_cliente_MIRAM);
+			break;
 		}
 	}
-
-	return parametrosPatota;
 }
 
 void iniciarPatota(t_iniciar_patota* estructura){
@@ -313,7 +335,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_PATOTA;
 	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = 3*sizeof(uint32_t) + strlen(tareas) + 1;
+	paquete->buffer->size = 3*sizeof(uint32_t) + sizeTareas;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
 	int desplazamiento = 0;

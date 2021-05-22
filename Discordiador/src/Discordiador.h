@@ -45,7 +45,7 @@ typedef struct{
 	uint32_t tid;
 	char estado;
 	posicion* posicion;
-	tarea* proxTarea;
+	Tarea* proxTarea;
 	uint32_t tareasPendientes;
 	uint32_t idPatota;
 }t_tripulante;
@@ -68,6 +68,10 @@ uint32_t idPatota;
 t_list* patotas;
 t_list* tripulantes;
 
+t_list* colaReady;
+
+sem_t multiprocesamiento;
+
 void inicializarVariables();
 
 void iniciarPatota(t_iniciar_patota*);
@@ -78,11 +82,12 @@ void pausarPlanificacion();
 void obtenerBitacora(uint32_t);
 
 void* serializar_tripulante(t_tripulante*);
-void planificarTripulanteFIFO(t_tripulante*);
+void planificarTripulanteFIFO(t_tripulante*,int);
+void planificarTripulanteRR(t_tripulante*,int);
+void planificarTripulante(t_tripulante*,int);
 void gestionarTripulante(t_tripulante*);
 void ingresar_comandos();
 void terminar_programa();
-void partirCadena(char**);
 char* obtenerTareasComoCadena(char*);
 void crearDiccionarioComandos(t_dictionary*);
 void crearDiccionarioTareasEntradaSalida(t_dictionary*);
@@ -90,9 +95,11 @@ t_iniciar_patota* obtenerDatosPatota(char**);
 int getCantidadTareasPatota(char*);
 t_patota* buscarPatotaPorId(uint32_t);
 bool tieneTareasPendientes(t_tripulante*);
-tarea* solitarProximaTarea(int);
+Tarea* solitarProximaTarea(int,int);
+void informarMovimiento(int,posicion*);
 void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
 t_algoritmo getAlgoritmoPlanificacion();
+void agregarTripulanteAReady(t_tripulante*);
 
 #endif /* DISCORDIADOR_H_ */

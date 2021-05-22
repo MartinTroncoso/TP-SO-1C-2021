@@ -29,9 +29,12 @@ void inicializarVariables(){
 	crearDiccionarioTareasEntradaSalida(diccionarioTareas);
 	tripulantes = list_create();
 	patotas = list_create();
+	colaReady = list_create();
 
 	idTripulante = 1;
 	idPatota = 1;
+
+	sem_init(&multiprocesamiento,0,GRADO_MULTITAREA);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)

@@ -11,29 +11,25 @@
 #include "MI-RAM-HQ.h"
 
 int main(void) {
-
-	int socket_escucha, socket_cliente;
-	pthread_t hilo_receptor;
-
 	inicializarVariables();
 
-	socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
+	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
 	log_info(loggerMiRam, "MI-RAM-HQ listo para recibir conexiones");
 
 	while(1) {
-		socket_cliente = esperar_cliente(socket_escucha);
-		log_info(loggerMiRam, "Se recibio una conexion del cliente %d", socket_cliente);
+		int socket_cliente = esperar_cliente(socket_escucha);
 
-		tipo_mensaje tipo_msg = recibir_operacion(socket_cliente);
+		int tipo_msg = recibir_operacion(socket_cliente);
+
+		pthread_t hilo_receptor;
 
 		switch(tipo_msg) {
-
 		case INICIAR_PATOTA:
-			pthread_create(&hilo_receptor, NULL, recibir_datos_patota, (void*) socket_cliente);
+			pthread_create(&hilo_receptor, NULL,(void*) recibir_datos_patota, (void*) socket_cliente);
 			pthread_detach(hilo_receptor);
 			break;
 		case INICIAR_TRIPULANTE:
-			pthread_create(&hilo_receptor, NULL, receptor_conexion_tripulante, (void*) socket_cliente);
+			pthread_create(&hilo_receptor, NULL,(void*) atenderTripulante, (void*) socket_cliente);
 			pthread_detach(hilo_receptor);
 			break;
 		default:
@@ -65,52 +61,43 @@ void inicializarVariables(){
 	log_info(loggerMiRam, "Se lee config e inician variables iniciales");
 }
 
-void* receptor_conexion_tripulante(void* _cliente) {
-
-	TCB* tripulante;
-	int socket_tripulante = (int) _cliente;
-
+void atenderTripulante(void* _cliente) {
 	log_info(loggerMiRam, "Se conectó un Tripulante!");
 	log_info(loggerMiRam, "Primero recibo sus datos y armo TCB");
 
-	tripulante = recibir_datos_tripulante(socket_tripulante);
+	int socket_tripulante = (int) _cliente;
+	TCB* tripulante = recibir_datos_tripulante(socket_tripulante);
 
-	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posiciones: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
+	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
 
-	while(1) {
-
+	while(1){
 		log_info(loggerMiRam, "[TRIPULANTE %d] Espero proxima operacion del tripulante", tripulante->tid);
-		tipo_mensaje tipo_msg = recibir_operacion(socket_tripulante);
+		int tipo_msg = recibir_operacion(socket_tripulante);
 
-		switch(tipo_msg) {
-
+		switch(tipo_msg){
 		case PROXIMA_TAREA:
 			log_info(loggerMiRam, "[TRIPULANTE %d] Se ha recibido solicitud de proxima tarea", tripulante->tid);
 			enviar_proxima_tarea(tripulante, socket_tripulante);
+			avanzar_proxima_instruccion(tripulante);
 			log_info(loggerMiRam, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tripulante->tid);
 			break;
 		case INFORMAR_MOVIMIENTO:
 			log_info(loggerMiRam, "[TRIPULANTE %d] Se ha recibido un movimiento de este tripulante. Se procede a actualizar..", tripulante->tid);
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
-			avanzar_proxima_instruccion(tripulante);
-			break;
-		case -1:
-			log_info(loggerMiRam, "[TRIPULANTE %d] Se ha cortado la conexionn", tripulante->tid);
-			close(socket_tripulante);
-			return NULL;
 			break;
 		default:
-			log_warning(loggerMiRam, "Tipo de mensaje desconocido!!!");
+			//ACÁ HABRÍA QUE BORRAR AL TRIPULANTE DE LA MEMORIA
+			log_warning(loggerMiRam, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!. Se desconecta",tripulante->tid);
+			close(socket_tripulante);
+			return;
 			break;
 		}
 	}
 
 	close(socket_tripulante);
-	return NULL;
 }
 
-void* recibir_datos_patota(void* _cliente) {
-
+void recibir_datos_patota(void* _cliente) {
 	int socket_cliente = (int) _cliente;
 	void* buffer;
 	uint32_t buffer_size;
@@ -119,7 +106,7 @@ void* recibir_datos_patota(void* _cliente) {
 	uint32_t cantidadTripulantes;
 
 	PCB* nuevo_pcb = malloc(sizeof(PCB));
-
+	printf("Socket PATOTA: %d\n",socket_cliente);
 	log_info(loggerMiRam,"Me llegan los datos de una patota");
 
 	buffer = recibir_buffer(&buffer_size, socket_cliente);
@@ -136,7 +123,7 @@ void* recibir_datos_patota(void* _cliente) {
 	memcpy(&inst_len, buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	//leo instrucciones, va sin &, porque tareas es un punterooo
+	//leo instrucciones, va sin &, porque tareas es un puntero
 	nuevo_pcb->tareas = malloc(inst_len);
 	memcpy(nuevo_pcb->tareas, buffer + desplazamiento, inst_len);
 
@@ -146,11 +133,9 @@ void* recibir_datos_patota(void* _cliente) {
 	enviar_respuesta(OK, socket_cliente);
 
 	log_info(loggerMiRam, "Se ha creado el PCB: %d\nSus instrucciones son: %s", nuevo_pcb->pid, nuevo_pcb->tareas);
-	log_info(loggerMiRam, "Se finaliza la operacion [INICIAR_PATOTA] con el cliente %d", socket_cliente);
 
 	close(socket_cliente);
 	free(buffer);
-	return NULL;
 }
 
 TCB* recibir_datos_tripulante(int socket_tripulante) {
@@ -162,7 +147,7 @@ TCB* recibir_datos_tripulante(int socket_tripulante) {
 	PCB* patota;
 
 	TCB* nuevo_tcb = malloc(sizeof(TCB));
-
+	printf("Socket TRIPULANTE: %d\n",socket_tripulante);
 	buffer = recibir_buffer(&buffer_size, socket_tripulante);
 
 	memcpy(&posible_pid, buffer + desplazamiento, sizeof(uint32_t));
@@ -209,25 +194,22 @@ void enviar_proxima_tarea(TCB* tripulante, int socket_tripulante) {
 		instruccion_enviar = string_duplicate(instrucciones_proximas);
 	}
 
-	//Preparo paquete para enviar
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
+	//Preparo buffer para enviar
+	t_buffer* buffer = malloc(sizeof(t_buffer));
 	int size_instruccion_enviar = strlen(instruccion_enviar) + 1;
 	int desplazamiento = 0;
 
-	paquete->codigo_operacion = OK;
-	paquete->buffer->size = 2 * sizeof(uint32_t) + size_instruccion_enviar;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
+	buffer->size = sizeof(uint32_t) + size_instruccion_enviar;
+	buffer->stream = malloc(buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->tid), sizeof(uint32_t));
+	memcpy(buffer->stream + desplazamiento, &size_instruccion_enviar, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &size_instruccion_enviar, sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, instruccion_enviar, size_instruccion_enviar);
+	memcpy(buffer->stream + desplazamiento, instruccion_enviar, size_instruccion_enviar);
 
-	enviar_paquete(paquete, socket_tripulante);
-	eliminar_paquete(paquete);
+	enviar_buffer(buffer, socket_tripulante);
 
+	free(buffer->stream);
+	free(buffer);
 	free(instruccion_enviar);
 }
 
@@ -250,14 +232,13 @@ void recibir_movimiento_tripulante(TCB* tripulante, int socket_tripulante) {
 	free(buffer);
 }
 
-
 void avanzar_proxima_instruccion(TCB* tripulante) {
 
 	char* instruccion_actual = tripulante->proxInstruccion;
 	char* pos_delimitador = strchr(instruccion_actual, '|');
 
 	if(&(tripulante->proxInstruccion) == 0) {
-		printf("OJOOOO");
+		printf("OJOOOO\n");
 		return;
 	}
 
@@ -265,7 +246,7 @@ void avanzar_proxima_instruccion(TCB* tripulante) {
 		tripulante->proxInstruccion = pos_delimitador + 1;
 	}
 	else {
-		// Voy al final de la cadenaaa
+		// Voy al final de la cadena
 		tripulante->proxInstruccion = instruccion_actual + strlen(instruccion_actual);
 	}
 }
@@ -285,24 +266,3 @@ void terminar_programa() {
 	log_info(loggerMiRam, "Se termina el programa...");
 	log_destroy(loggerMiRam);
 }
-
-/* Temporal por el momento
-void asignarTareasAPatota(PCB* patota, char* tareasEncadenadas){
-	char** tareas = string_split(tareasEncadenadas,"|");
-	for(int i=0; tareas[i] != NULL ;i++){
-		char** tareaSpliteada = string_split(tareas[i]," ");
-		char* parametros = tareaSpliteada[1];
-		char** parametrosSpliteados = string_split(parametros,";");
-
-		int tiempo = atoi(parametrosSpliteados[3]); //SI NO LO HAGO ASI, tarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
-		tarea* tarea = malloc(sizeof(tarea));
-		tarea->nombre = tareaSpliteada[0];
-		tarea->longNombre = strlen(tarea->nombre) + 1;
-		tarea->parametro = atoi(parametrosSpliteados[0]);
-		tarea->posicion.posX = atoi(parametrosSpliteados[1]);
-		tarea->posicion.posY = atoi(parametrosSpliteados[2]);
-		tarea->tiempo = tiempo;
-
-		list_add(patota->tareas,tarea);
-	}
-}*/
