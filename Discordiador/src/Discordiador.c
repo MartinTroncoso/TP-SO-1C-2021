@@ -33,6 +33,7 @@ void inicializarVariables(){
 
 	idTripulante = 1;
 	idPatota = 1;
+	planificacionActivada = false;
 
 	sem_init(&mutexTripulantes,0,1);
 	sem_init(&multiprocesamiento,0,GRADO_MULTITAREA);
@@ -110,12 +111,19 @@ void ingresar_comandos()
 		}
 		case 4:{
 			//INICIAR_PLANIFICACION
-			iniciarPlanificacion();
+			if(!planificacionActivada && !list_is_empty(tripulantes)){
+				iniciarPlanificacion();
+			}
+			else
+			{
+				log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
+			}
 			break;
 		}
 		case 5:{
 			//PAUSAR_PLANIFICACION
-			pausarPlanificacion();
+			if(planificacionActivada)
+				pausarPlanificacion();
 			break;
 		}
 		case 6:{

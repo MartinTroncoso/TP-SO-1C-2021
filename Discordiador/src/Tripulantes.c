@@ -229,13 +229,19 @@ bool tieneTareasPendientes(t_tripulante* tripulante){
 
 void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
 	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
+		sem_wait(&(tripulante->semaforoPlanificacion));
 		moverXDelTripulante(tripulante);
+		sem_post(&(tripulante->semaforoPlanificacion));
+
 		informarMovimiento(socket_cliente_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
 
 	while(tripulante->posicion->posY != tripulante->proxTarea->posicion.posY){
+		sem_wait(&(tripulante->semaforoPlanificacion));
 		moverYDelTripulante(tripulante);
+		sem_post(&(tripulante->semaforoPlanificacion));
+
 		informarMovimiento(socket_cliente_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
@@ -378,6 +384,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		tripulante->estado = 'N';
 		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		tripulante->tareasPendientes = patota->cantidadTareas;
+		sem_init(&(tripulante->semaforoPlanificacion),0,0);
 
 		//USO SEMÁFORO PORQUE SON LISTAS GLOBALES (REGIÓN CRÍTICA)
 		sem_wait(&mutexTripulantes);
@@ -391,6 +398,9 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		pthread_create(&hiloTripulante,NULL, (void*) gestionarTripulante, tripulante);
 		pthread_detach(hiloTripulante);
 	}
+
+	if(patota->pid == 1)
+		log_info(loggerDiscordiador,"Discordiador LISTO PARA PLANIFICAR");
 }
 
 void listarTripulantes(){
@@ -420,12 +430,29 @@ void expulsarTripulante(int idTripulante){
 }
 
 void iniciarPlanificacion(){
-	//se inicia la planificacion
-	//hasta este punto se supone que no hubo movimientos entre colas de planificacion ni de los tripulantes
+	void habilitarSemaforo(void* elemento){
+		t_tripulante* tripulante = (t_tripulante*) elemento;
+		sem_post(&tripulante->semaforoPlanificacion);
+	}
+
+	list_map(tripulantes,(void*) habilitarSemaforo);
+
+	planificacionActivada = true;
+
+	log_info(loggerDiscordiador,"SE INICIA LA PLANIFICACIÓN");
 }
 
 void pausarPlanificacion(){
-	//se pausa la planificacion
+	void deshabilitarSemaforo(void* elemento){
+		t_tripulante* tripulante = (t_tripulante*) elemento;
+		sem_wait(&tripulante->semaforoPlanificacion);
+	}
+
+	list_map(tripulantes,(void*) deshabilitarSemaforo);
+
+	planificacionActivada = false;
+
+	log_info(loggerDiscordiador,"SE PAUSA LA PLANIFICACIÓN");
 }
 
 void obtenerBitacora(uint32_t idTripulante){ //debe devolver un stream o string de la bitacora

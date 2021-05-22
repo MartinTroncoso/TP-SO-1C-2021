@@ -48,6 +48,7 @@ typedef struct{
 	Tarea* proxTarea;
 	uint32_t tareasPendientes;
 	uint32_t idPatota;
+	sem_t semaforoPlanificacion;
 }t_tripulante;
 
 typedef enum{
@@ -64,6 +65,8 @@ int socket_escucha_iMongo;
 
 uint32_t idTripulante;
 uint32_t idPatota;
+
+bool planificacionActivada;
 
 t_list* patotas;
 t_list* tripulantes;
