@@ -17,6 +17,10 @@
 ### :point_right: LEVANTAR PROCESO EN LA CONSOLA (CON LAS SHARED LIBRARY)
         
         LD_LIBRARY_PATH="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug" ./Debug/'Proceso'
+        
+### :point_right: PARA CORRER CON VALGRIND
+        
+        valgrind --tool=helgrind ./'Proceso'
 
 ### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
 
