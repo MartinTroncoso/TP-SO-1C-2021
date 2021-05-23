@@ -15,10 +15,22 @@ void sumarIdPatota(){
 	idPatota++;
 }
 
+bool esDeEntradaSalida(Tarea* tarea){
+	return dictionary_get(diccionarioTareas,tarea->nombre) != NULL;
+}
+
+bool puedePasarAExec(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	return list_any_satisfy(list_take(colaReady,GRADO_MULTITAREA),buscarTripulante);
+}
+
 void agregarTripulanteAReady(t_tripulante* tripulante){
-	sem_wait(&mutexTripulantes);
+	sem_wait(&mutexColaReady);
 	list_add(colaReady,tripulante);
-	sem_post(&mutexTripulantes);
+	sem_post(&mutexColaReady);
 
 	tripulante->estado = 'R';
 }
@@ -32,11 +44,6 @@ void moverXDelTripulante(t_tripulante* tripulante){
 		if(tripulante->posicion->posX < tripulante->proxTarea->posicion.posX){
 			tripulante->posicion->posX++;
 		}
-		else
-		{
-			log_info(loggerDiscordiador,"El tripulante %d ya llegó a la posición X de la tarea!",tripulante->tid);
-		}
-
 	}
 }
 
@@ -49,11 +56,6 @@ void moverYDelTripulante(t_tripulante* tripulante){
 		if(tripulante->posicion->posY < tripulante->proxTarea->posicion.posY){
 			tripulante->posicion->posY++;
 		}
-		else
-		{
-			log_info(loggerDiscordiador,"El tripulante %d ya llegó a la posición Y de la tarea!",tripulante->tid);
-		}
-
 	}
 }
 
@@ -214,6 +216,32 @@ void* serializar_tripulante(t_tripulante* tripulante){
 	return magic;
 }
 
+void habilitarProximoAEjecutar(){
+	bool primerTripulanteDeshabilitado(void* elemento){
+		return ((t_tripulante*) elemento)->habilitado == false;
+	}
+
+	//AGARRO AL PRIMER TRIPULANTE DE LA COLA DE READY QUE ESTÉ DESHABILITADO (QUE DEBERÍA SER SIEMPRE EL PRIMERO)
+	//PERO PUEDE HABER PROBLEMAS DE CONCURRENCIA, VER MEJOR ESTO
+	if(!list_is_empty(colaReady)){
+		sem_wait(&mutexColaReady);
+		sem_post(&((t_tripulante*) list_find(colaReady,primerTripulanteDeshabilitado))->puedeEjecutar);
+		((t_tripulante*) list_find(colaReady,primerTripulanteDeshabilitado))->habilitado = true;
+		sem_post(&mutexColaReady);
+	}
+}
+
+void habilitarSiCorresponde(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	if(list_any_satisfy(list_take(colaReady,GRADO_MULTITAREA),buscarTripulante) && list_size(colaExec)<GRADO_MULTITAREA && !tripulante->habilitado){
+		sem_post(&(tripulante->puedeEjecutar));
+		tripulante->habilitado = true;
+	}
+}
+
 t_patota* buscarPatotaPorId(uint32_t idPatota){
 	bool encontrarPatota(void* elemento){
 		t_patota* patota = elemento;
@@ -228,6 +256,25 @@ bool tieneTareasPendientes(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	sem_wait(&(tripulante->semaforoPlanificacion));
+
+	sem_wait(&mutexColaReady);
+	list_remove_by_condition(colaReady,buscarTripulante);
+	sem_post(&mutexColaReady);
+
+	sem_wait(&mutexColaExec);
+	list_add(colaExec,tripulante);
+	sem_post(&mutexColaExec);
+
+	sem_post(&(tripulante->semaforoPlanificacion));
+
+	tripulante->estado = 'E';
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] COMIENZO A EJECUTAR",tripulante->tid);
+
 	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
 		sem_wait(&(tripulante->semaforoPlanificacion));
 		moverXDelTripulante(tripulante);
@@ -245,6 +292,12 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 		informarMovimiento(socket_cliente_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
+
+	sem_wait(&mutexColaExec);
+	list_remove_by_condition(colaExec,buscarTripulante);
+	sem_post(&mutexColaExec);
+
+	tripulante->estado = 'R';
 }
 
 void planificarTripulante(t_tripulante* tripulante, int socket_cliente_MIRAM){
@@ -280,54 +333,73 @@ void gestionarTripulante(t_tripulante* tripulante){
 			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
 			tripulante->proxTarea = proximaTarea;
 
-			sem_wait(&multiprocesamiento);
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,proximaTarea->posicion.posX,proximaTarea->posicion.posY);
-
 			agregarTripulanteAReady(tripulante);
 
+			//HABILITA AL TRIPULANTE A EJECUTAR SOLO SI HAY COMO MUCHO 'GRADO_TAREA'-1 TRIPULANTES EN LA COLA DE EXEC
+			//ESTO VA A PASAR SOLO CUANDO SE CREE LA PRIMERA PATOTA O CUANDO TERMINEN DE EJECUTAR TODOS LOS TRIPULANTES
+			//Y SE VUELVA A CREAR UNA NUEVA PATOTA (MEDIO FIERO, PERO PARECE QUE ANDA xD)
+			habilitarSiCorresponde(tripulante);
+
+			sem_wait(&(tripulante->puedeEjecutar));
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,proximaTarea->posicion.posX,proximaTarea->posicion.posY);
 			planificarTripulante(tripulante, socket_cliente_MIRAM);
-			sem_post(&multiprocesamiento);
 
-			switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
-			case 1:{
-				//GENERAR_OXIGENO
-				break;
-			}
-			case 2:{
-				//CONSUMIR_OXIGENO
-				break;
-			}
-			case 3:{
-				//GENERAR_COMIDA
-				break;
-			}
-			case 4:{
-				//CONSUMIR_COMIDA
-				break;
-			}
-			case 5:{
-				//GENERAR_BASURA
-				break;
-			}
-			case 6:{
-				//DESCARTAR_BASURA
-				break;
-			}
-			default:{
-				break;
-			}
+			if(esDeEntradaSalida(proximaTarea)){
+				switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
+				case 1:{
+					//GENERAR_OXIGENO
+					break;
+				}
+				case 2:{
+					//CONSUMIR_OXIGENO
+					break;
+				}
+				case 3:{
+					//GENERAR_COMIDA
+					break;
+				}
+				case 4:{
+					//CONSUMIR_COMIDA
+					break;
+				}
+				case 5:{
+					//GENERAR_BASURA
+					break;
+				}
+				case 6:{
+					//DESCARTAR_BASURA
+					break;
+				}
+				default:{
+					break;
+				}
+				}
 			}
 
-			//A VECES EN EL NOMBRE IMPRIME CUALQUIERA
+			//A VECES EN EL NOMBRE IMPRIME COSAS QUE NADA QUE VER
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] LLEGUÉ A LA TAREA %s",tripulante->tid,proximaTarea->nombre);
 			tripulante->tareasPendientes--;
+			tripulante->habilitado = false;
+			habilitarProximoAEjecutar();
 		}
 		else
 		{
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 			tripulante->estado = 'F';
+
+			sem_wait(&mutexColaExit);
+			list_add(colaExit,tripulante);
+			sem_post(&mutexColaExit);
+
+			if(list_size(colaExit)==list_size(tripulantes)){
+				log_info(loggerDiscordiador,"NO HAY MÁS TRIPULANTES PARA PLANIFICAR. SE CIERRA LA PLANIFICACIÓN");
+				planificacionActivada = false;
+			}
+
+			tipo_mensaje finalizar = FINALIZA_TRIPULANTE;
+			send(socket_cliente_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
 			close(socket_cliente_MIRAM);
-			return;
+			break;
 		}
 	}
 }
@@ -368,7 +440,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	tipo_respuesta cod_respuesta = recibir_respuesta(socket_cliente_MIRAM);
 	switch(cod_respuesta) {
 	case OK:
-		log_info(loggerDiscordiador, "MIRAM envio el OK");
+		log_info(loggerDiscordiador,"Se creó la patota %d",patota->pid);
 		break;
 	default:
 		log_error(loggerDiscordiador, "MIRAM fallo, me salgo");
@@ -384,7 +456,9 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		tripulante->estado = 'N';
 		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		tripulante->tareasPendientes = patota->cantidadTareas;
+		tripulante->habilitado = false;
 		sem_init(&(tripulante->semaforoPlanificacion),0,0);
+		sem_init(&(tripulante->puedeEjecutar),0,0);
 
 		//USO SEMÁFORO PORQUE SON LISTAS GLOBALES (REGIÓN CRÍTICA)
 		sem_wait(&mutexTripulantes);

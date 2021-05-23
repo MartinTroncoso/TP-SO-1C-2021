@@ -49,6 +49,8 @@ typedef struct{
 	uint32_t tareasPendientes;
 	uint32_t idPatota;
 	sem_t semaforoPlanificacion;
+	sem_t puedeEjecutar;
+	bool habilitado;
 }t_tripulante;
 
 typedef enum{
@@ -72,11 +74,23 @@ t_list* patotas;
 t_list* tripulantes;
 
 t_list* colaReady;
+t_list* colaBlock;
+t_list* colaExec;
+t_list* colaExit;
 
-sem_t multiprocesamiento;
 sem_t mutexTripulantes;
+sem_t mutexColaReady;
+sem_t mutexColaExec;
+sem_t mutexColaExit;
 
 void inicializarVariables();
+void crearDiccionarioComandos(t_dictionary*);
+void crearDiccionarioTareasEntradaSalida(t_dictionary*);
+t_algoritmo getAlgoritmoPlanificacion();
+void ingresar_comandos();
+void destruirSemaforos();
+void destruirListasYDiccionarios();
+void terminar_programa();
 
 void iniciarPatota(t_iniciar_patota*);
 void listarTripulantes();
@@ -90,20 +104,17 @@ void planificarTripulanteFIFO(t_tripulante*,int);
 void planificarTripulanteRR(t_tripulante*,int);
 void planificarTripulante(t_tripulante*,int);
 void gestionarTripulante(t_tripulante*);
-void ingresar_comandos();
-void terminar_programa();
 char* obtenerTareasComoCadena(char*);
-void crearDiccionarioComandos(t_dictionary*);
-void crearDiccionarioTareasEntradaSalida(t_dictionary*);
 t_iniciar_patota* obtenerDatosPatota(char**);
 int getCantidadTareasPatota(char*);
 t_patota* buscarPatotaPorId(uint32_t);
 bool tieneTareasPendientes(t_tripulante*);
+bool esDeEntradaSalida(Tarea*);
 Tarea* solitarProximaTarea(int,int);
 void informarMovimiento(int,t_tripulante*);
 void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
-t_algoritmo getAlgoritmoPlanificacion();
 void agregarTripulanteAReady(t_tripulante*);
+bool puedePasarAExec(t_tripulante*);
 
 #endif /* DISCORDIADOR_H_ */

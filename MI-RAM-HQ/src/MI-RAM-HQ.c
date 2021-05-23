@@ -25,7 +25,8 @@ int main(void) {
 
 		switch(tipo_msg) {
 		case INICIAR_PATOTA:
-			recibir_datos_patota((void*) socket_cliente);
+			pthread_create(&hilo_receptor, NULL, (void*) recibir_datos_patota,(void*) socket_cliente);
+			pthread_detach(hilo_receptor);
 			break;
 		case INICIAR_TRIPULANTE:
 			pthread_create(&hilo_receptor, NULL,(void*) atenderTripulante, (void*) socket_cliente);
@@ -83,9 +84,14 @@ void atenderTripulante(void* _cliente) {
 		case INFORMAR_MOVIMIENTO:
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
 			break;
+		case FINALIZA_TRIPULANTE:
+			log_info(loggerMiRam, "[TRIPULANTE %d] FINALIZÓ. SE DESCONECTA",tripulante->tid);
+			close(socket_tripulante);
+			return;
+			break;
 		default:
 			//ACÁ HABRÍA QUE BORRAR AL TRIPULANTE DE LA MEMORIA
-			log_warning(loggerMiRam, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!. Se desconecta",tripulante->tid);
+			log_info(loggerMiRam, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",tripulante->tid);
 			close(socket_tripulante);
 			return;
 			break;

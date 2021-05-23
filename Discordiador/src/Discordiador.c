@@ -30,13 +30,18 @@ void inicializarVariables(){
 	tripulantes = list_create();
 	patotas = list_create();
 	colaReady = list_create();
+	colaExec = list_create();
+	colaBlock = list_create();
+	colaExit = list_create();
 
 	idTripulante = 1;
 	idPatota = 1;
 	planificacionActivada = false;
 
 	sem_init(&mutexTripulantes,0,1);
-	sem_init(&multiprocesamiento,0,GRADO_MULTITAREA);
+	sem_init(&mutexColaReady,0,1);
+	sem_init(&mutexColaExec,0,1);
+	sem_init(&mutexColaExit,0,1);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -94,9 +99,7 @@ void ingresar_comandos()
 				free(datosPatota);
 			}
 			else
-			{
 				log_info(loggerDiscordiador,"Metiste mal el comando");
-			}
 			break;
 		}
 		case 2:{
@@ -111,12 +114,11 @@ void ingresar_comandos()
 		}
 		case 4:{
 			//INICIAR_PLANIFICACION
-			if(!planificacionActivada && !list_is_empty(tripulantes)){
-				iniciarPlanificacion();
-			}
-			else
-			{
-				log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
+			if(!planificacionActivada){
+				if(list_size(tripulantes)!=list_size(colaExit))
+					iniciarPlanificacion();
+				else
+					log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
 			}
 			break;
 		}
@@ -124,6 +126,8 @@ void ingresar_comandos()
 			//PAUSAR_PLANIFICACION
 			if(planificacionActivada)
 				pausarPlanificacion();
+			else
+				log_info(loggerDiscordiador,"LA PLANIFICACIÓN NO EMPEZÓ O YA ESTÁ PAUSADA");
 			break;
 		}
 		case 6:{
@@ -142,14 +146,30 @@ void ingresar_comandos()
 	free(comando);
 }
 
-void terminar_programa()
-{
-	log_destroy(loggerDiscordiador);
-	config_destroy(configuracionDiscordiador);
+void destruirSemaforos(){
+	sem_destroy(&mutexTripulantes);
+	sem_destroy(&mutexColaReady);
+	sem_destroy(&mutexColaExec);
+	sem_destroy(&mutexColaExit);
+}
+
+void destruirListasYDiccionarios(){
+	list_destroy_and_destroy_elements(colaReady,free);
+	list_destroy_and_destroy_elements(colaExec,free);
+	list_destroy_and_destroy_elements(colaBlock,free);
+	list_destroy_and_destroy_elements(colaExit,free);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
 	dictionary_destroy(diccionarioComandos);
 	dictionary_destroy(diccionarioTareas);
+}
+
+void terminar_programa()
+{
+	log_destroy(loggerDiscordiador);
+	config_destroy(configuracionDiscordiador);
+	destruirListasYDiccionarios();
+	destruirSemaforos();
 }
 
 int main(void)
