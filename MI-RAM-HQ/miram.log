@@ -133,3 +133,719 @@ Sus instrucciones son: �Gi��Gi�GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3
 [INFO] 23:41:42:351 MIRA-RAM-HQ/(5496:5509): [TRIPULANTE 4] Espero proxima operacion del tripulante
 [INFO] 23:41:42:351 MIRA-RAM-HQ/(5496:5508): [TRIPULANTE 5] FINALIZÓ. SE DESCONECTA
 [INFO] 23:41:43:351 MIRA-RAM-HQ/(5496:5509): [TRIPULANTE 4] FINALIZÓ. SE DESCONECTA
+[INFO] 13:55:37:593 MIRA-RAM-HQ/(6633:6633): Se lee config e inician variables iniciales
+[INFO] 13:55:37:597 MIRA-RAM-HQ/(6633:6633): MI-RAM-HQ listo para recibir conexiones
+[INFO] 13:55:50:949 MIRA-RAM-HQ/(6633:6634): Me llegan los datos de una patota
+[INFO] 13:55:50:949 MIRA-RAM-HQ/(6633:6634): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 13:55:50:950 MIRA-RAM-HQ/(6633:6639): Se conectó un Tripulante!
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6639): Primero recibo sus datos y armo TCB
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6639): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6639): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6640): Se conectó un Tripulante!
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6640): Primero recibo sus datos y armo TCB
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6640): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6640): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6641): Se conectó un Tripulante!
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6641): Primero recibo sus datos y armo TCB
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6641): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6641): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:55:50:951 MIRA-RAM-HQ/(6633:6642): Se conectó un Tripulante!
+[INFO] 13:55:50:952 MIRA-RAM-HQ/(6633:6642): Primero recibo sus datos y armo TCB
+[INFO] 13:55:50:952 MIRA-RAM-HQ/(6633:6642): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:55:50:952 MIRA-RAM-HQ/(6633:6642): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:55:59:852 MIRA-RAM-HQ/(6633:6642): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6640): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6639): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6642): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6639): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6640): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6641): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 13:55:59:853 MIRA-RAM-HQ/(6633:6641): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:56:55:586 MIRA-RAM-HQ/(6633:6642): [TRIPULANTE 1] Tipo de mensaje desconocido!!!
+[INFO] 13:56:55:586 MIRA-RAM-HQ/(6633:6641): [TRIPULANTE 2] Tipo de mensaje desconocido!!!
+[INFO] 13:56:55:586 MIRA-RAM-HQ/(6633:6640): [TRIPULANTE 3] Tipo de mensaje desconocido!!!
+[INFO] 13:56:55:586 MIRA-RAM-HQ/(6633:6639): [TRIPULANTE 4] Tipo de mensaje desconocido!!!
+[INFO] 13:57:43:030 MIRA-RAM-HQ/(6698:6698): Se lee config e inician variables iniciales
+[INFO] 13:57:43:030 MIRA-RAM-HQ/(6698:6698): MI-RAM-HQ listo para recibir conexiones
+[INFO] 13:57:53:747 MIRA-RAM-HQ/(6698:6699): Me llegan los datos de una patota
+[INFO] 13:57:53:748 MIRA-RAM-HQ/(6698:6699): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 13:57:53:749 MIRA-RAM-HQ/(6698:6704): Se conectó un Tripulante!
+[INFO] 13:57:53:749 MIRA-RAM-HQ/(6698:6704): Primero recibo sus datos y armo TCB
+[INFO] 13:57:53:749 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:57:53:749 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:57:53:749 MIRA-RAM-HQ/(6698:6705): Se conectó un Tripulante!
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6705): Primero recibo sus datos y armo TCB
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6706): Se conectó un Tripulante!
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6706): Primero recibo sus datos y armo TCB
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 2|2
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6707): Se conectó un Tripulante!
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6707): Primero recibo sus datos y armo TCB
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 1|1
+[INFO] 13:57:53:750 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 1|0
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 1|0
+[INFO] 13:58:08:443 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:09:444 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 2|0
+[INFO] 13:58:09:444 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 2|0
+[INFO] 13:58:09:444 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:09:444 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:10:444 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|0
+[INFO] 13:58:10:444 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|0
+[INFO] 13:58:10:444 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:10:444 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:11:445 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|1
+[INFO] 13:58:11:445 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|1
+[INFO] 13:58:11:445 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:11:445 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:12:445 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|2
+[INFO] 13:58:12:445 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|2
+[INFO] 13:58:12:446 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:12:446 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:31:915 MIRA-RAM-HQ/(6698:6722): Me llegan los datos de una patota
+[INFO] 13:58:31:916 MIRA-RAM-HQ/(6698:6722): Se ha creado el PCB: 2
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6726): Se conectó un Tripulante!
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6726): Primero recibo sus datos y armo TCB
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se ha creado TCB . Pertenece a la patota 2. Posicion: 5|1
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6727): Se conectó un Tripulante!
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6727): Primero recibo sus datos y armo TCB
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se ha creado TCB . Pertenece a la patota 2. Posicion: 3|4
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:58:31:917 MIRA-RAM-HQ/(6698:6728): Se conectó un Tripulante!
+[INFO] 13:58:31:918 MIRA-RAM-HQ/(6698:6728): Primero recibo sus datos y armo TCB
+[INFO] 13:58:31:918 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se ha creado TCB . Pertenece a la patota 2. Posicion: 1|2
+[INFO] 13:58:31:918 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:58:51:138 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se envio proxima tarea para el tripulante
+[INFO] 13:58:51:138 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se envio proxima tarea para el tripulante
+[INFO] 13:58:51:138 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se envio proxima tarea para el tripulante
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|3
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|3
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:51:139 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:52:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|4
+[INFO] 13:58:52:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:52:139 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|4
+[INFO] 13:58:52:139 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:53:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 13:58:53:139 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 3|5
+[INFO] 13:58:53:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:53:140 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:54:139 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 3|2
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 2|1
+[INFO] 13:58:54:140 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:55:141 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 3|3
+[INFO] 13:58:55:141 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 3|1
+[INFO] 13:58:55:141 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:55:141 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:56:141 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 3|4
+[INFO] 13:58:56:142 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 3|2
+[INFO] 13:58:56:142 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:56:142 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:57:142 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 3|5
+[INFO] 13:58:57:142 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 3|3
+[INFO] 13:58:57:142 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:57:142 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:58:142 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 13:58:58:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 4|1
+[INFO] 13:58:58:143 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 3|4
+[INFO] 13:58:58:143 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:58:58:143 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:58:58:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:58:59:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 3|1
+[INFO] 13:58:59:143 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 3|5
+[INFO] 13:58:59:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:58:59:143 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:59:00:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 3|2
+[INFO] 13:59:00:143 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:00:143 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 13:59:00:143 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se movió a 3|5
+[INFO] 13:59:00:144 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:59:00:144 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:59:01:144 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 3|3
+[INFO] 13:59:01:144 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se envio proxima tarea para el tripulante
+[INFO] 13:59:01:144 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:01:144 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 2|2
+[INFO] 13:59:01:144 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:01:145 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:59:02:144 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 3|4
+[INFO] 13:59:02:144 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:02:145 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 3|2
+[INFO] 13:59:02:145 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:03:145 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 3|5
+[INFO] 13:59:03:145 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 3|3
+[INFO] 13:59:03:145 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:03:145 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:04:145 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se envio proxima tarea para el tripulante
+[INFO] 13:59:04:145 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 2|5
+[INFO] 13:59:04:145 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 3|4
+[INFO] 13:59:04:145 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:04:146 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:04:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:59:05:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 2|4
+[INFO] 13:59:05:146 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 3|5
+[INFO] 13:59:05:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:59:05:146 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:06:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Se movió a 2|3
+[INFO] 13:59:06:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 13:59:06:146 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se envio proxima tarea para el tripulante
+[INFO] 13:59:06:147 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 2|5
+[INFO] 13:59:06:147 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:06:147 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:59:07:146 MIRA-RAM-HQ/(6698:6705): [TRIPULANTE 3] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:07:146 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 2|5
+[INFO] 13:59:07:147 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:59:07:147 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 2|4
+[INFO] 13:59:07:147 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:59:08:147 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 2|4
+[INFO] 13:59:08:148 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Se movió a 2|3
+[INFO] 13:59:08:148 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:59:08:148 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 13:59:09:148 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Se movió a 2|3
+[INFO] 13:59:09:148 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 13:59:09:148 MIRA-RAM-HQ/(6698:6704): [TRIPULANTE 4] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:09:148 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 2|5
+[INFO] 13:59:09:148 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:59:10:148 MIRA-RAM-HQ/(6698:6706): [TRIPULANTE 2] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:10:148 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se movió a 2|5
+[INFO] 13:59:10:148 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:59:10:149 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 2|4
+[INFO] 13:59:10:149 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:59:11:148 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se movió a 2|4
+[INFO] 13:59:11:149 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Se movió a 2|3
+[INFO] 13:59:11:149 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:59:11:149 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 13:59:12:149 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Se movió a 2|3
+[INFO] 13:59:12:149 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] Espero proxima operacion del tripulante
+[INFO] 13:59:12:149 MIRA-RAM-HQ/(6698:6707): [TRIPULANTE 1] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:12:149 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 2|5
+[INFO] 13:59:12:149 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:13:149 MIRA-RAM-HQ/(6698:6727): [TRIPULANTE 6] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:13:149 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 2|5
+[INFO] 13:59:13:149 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:13:150 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 2|4
+[INFO] 13:59:13:150 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:14:149 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 2|4
+[INFO] 13:59:14:150 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:14:150 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Se movió a 2|3
+[INFO] 13:59:14:150 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] Espero proxima operacion del tripulante
+[INFO] 13:59:15:150 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Se movió a 2|3
+[INFO] 13:59:15:150 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 13:59:15:150 MIRA-RAM-HQ/(6698:6726): [TRIPULANTE 7] FINALIZÓ. SE DESCONECTA
+[INFO] 13:59:16:151 MIRA-RAM-HQ/(6698:6728): [TRIPULANTE 5] FINALIZÓ. SE DESCONECTA
+[INFO] 14:09:15:198 MIRA-RAM-HQ/(7161:7161): Se lee config e inician variables iniciales
+[INFO] 14:09:15:198 MIRA-RAM-HQ/(7161:7161): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:09:24:907 MIRA-RAM-HQ/(7161:7164): Me llegan los datos de una patota
+[INFO] 14:09:24:908 MIRA-RAM-HQ/(7161:7164): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:09:24:908 MIRA-RAM-HQ/(7161:7168): Se conectó un Tripulante!
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7168): Primero recibo sus datos y armo TCB
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7169): Se conectó un Tripulante!
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7169): Primero recibo sus datos y armo TCB
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 3|4
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7170): Se conectó un Tripulante!
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7170): Primero recibo sus datos y armo TCB
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 2|2
+[INFO] 14:09:24:909 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 3|2
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:30:067 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:30:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 1|0
+[INFO] 14:09:30:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:30:068 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:31:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 2|0
+[INFO] 14:09:31:068 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 3|3
+[INFO] 14:09:31:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:31:068 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:32:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|0
+[INFO] 14:09:32:068 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 3|4
+[INFO] 14:09:32:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:32:068 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:33:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|1
+[INFO] 14:09:33:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:33:068 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 3|5
+[INFO] 14:09:33:069 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:34:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|2
+[INFO] 14:09:34:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:34:069 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:09:34:069 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:34:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se movió a 3|5
+[INFO] 14:09:34:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:35:068 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|3
+[INFO] 14:09:35:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:35:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:09:35:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:35:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 2|5
+[INFO] 14:09:35:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:36:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|4
+[INFO] 14:09:36:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:36:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 2|4
+[INFO] 14:09:36:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:37:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 14:09:37:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:37:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Se movió a 2|3
+[INFO] 14:09:37:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:09:38:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:09:38:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se movió a 2|5
+[INFO] 14:09:38:069 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:38:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:38:070 MIRA-RAM-HQ/(7161:7170): [TRIPULANTE 1] FINALIZÓ. SE DESCONECTA
+[INFO] 14:09:38:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 2|5
+[INFO] 14:09:38:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:39:069 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se movió a 2|4
+[INFO] 14:09:39:070 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:39:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 2|4
+[INFO] 14:09:39:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:40:070 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Se movió a 2|3
+[INFO] 14:09:40:070 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:09:40:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Se movió a 2|3
+[INFO] 14:09:40:070 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:09:41:071 MIRA-RAM-HQ/(7161:7169): [TRIPULANTE 2] FINALIZÓ. SE DESCONECTA
+[INFO] 14:09:41:071 MIRA-RAM-HQ/(7161:7168): [TRIPULANTE 3] FINALIZÓ. SE DESCONECTA
+[INFO] 14:22:22:071 MIRA-RAM-HQ/(7161:7235): Me llegan los datos de una patota
+[INFO] 14:22:22:071 MIRA-RAM-HQ/(7161:7235): Se ha creado el PCB: 2
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:22:22:071 MIRA-RAM-HQ/(7161:7237): Se conectó un Tripulante!
+[INFO] 14:22:22:072 MIRA-RAM-HQ/(7161:7237): Primero recibo sus datos y armo TCB
+[INFO] 14:22:22:072 MIRA-RAM-HQ/(7161:7237): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 2. Posicion: 9|2
+[INFO] 14:22:22:072 MIRA-RAM-HQ/(7161:7237): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:22:113 MIRA-RAM-HQ/(7161:7237): [TRIPULANTE 4] Tipo de mensaje desconocido!!!
+[INFO] 14:35:25:284 MIRA-RAM-HQ/(7342:7342): Se lee config e inician variables iniciales
+[INFO] 14:35:25:284 MIRA-RAM-HQ/(7342:7342): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:35:37:266 MIRA-RAM-HQ/(7342:7344): Me llegan los datos de una patota
+[INFO] 14:35:37:266 MIRA-RAM-HQ/(7342:7344): Se ha creado el PCB: 1
+Sus instrucciones son: dmrcGENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:35:37:267 MIRA-RAM-HQ/(7342:7349): Se conectó un Tripulante!
+[INFO] 14:35:37:267 MIRA-RAM-HQ/(7342:7349): Primero recibo sus datos y armo TCB
+[INFO] 14:35:37:267 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 1. Posicion: 4|4
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7350): Se conectó un Tripulante!
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7350): Primero recibo sus datos y armo TCB
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 3|3
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7351): Se conectó un Tripulante!
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7351): Primero recibo sus datos y armo TCB
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 2|2
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7352): Se conectó un Tripulante!
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7352): Primero recibo sus datos y armo TCB
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 1|1
+[INFO] 14:35:37:268 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:35:40:945 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:35:40:945 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:35:40:945 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:35:40:945 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Se movió a 3|4
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Se movió a 3|4
+[INFO] 14:35:40:946 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:35:41:947 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Se movió a 3|5
+[INFO] 14:35:41:947 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 14:35:41:947 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:41:947 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Se movió a 2|1
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Se movió a 3|2
+[INFO] 14:35:42:948 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:35:43:948 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Se movió a 3|1
+[INFO] 14:35:43:949 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Se movió a 3|3
+[INFO] 14:35:43:949 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:35:43:949 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:35:44:409 MIRA-RAM-HQ/(7342:7352): [TRIPULANTE 1] Tipo de mensaje desconocido!!!
+[INFO] 14:35:44:409 MIRA-RAM-HQ/(7342:7351): [TRIPULANTE 2] Tipo de mensaje desconocido!!!
+[INFO] 14:35:44:409 MIRA-RAM-HQ/(7342:7350): [TRIPULANTE 3] Tipo de mensaje desconocido!!!
+[INFO] 14:35:44:409 MIRA-RAM-HQ/(7342:7349): [TRIPULANTE 4] Tipo de mensaje desconocido!!!
+[INFO] 14:46:30:583 MIRA-RAM-HQ/(7515:7515): Se lee config e inician variables iniciales
+[INFO] 14:46:30:583 MIRA-RAM-HQ/(7515:7515): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:46:50:405 MIRA-RAM-HQ/(7515:7516): Me llegan los datos de una patota
+[INFO] 14:46:50:406 MIRA-RAM-HQ/(7515:7516): Se ha creado el PCB: 1
+Sus instrucciones son: GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7520): Se conectó un Tripulante!
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7520): Primero recibo sus datos y armo TCB
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 1|9
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7521): Se conectó un Tripulante!
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7521): Primero recibo sus datos y armo TCB
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 3|1
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7522): Se conectó un Tripulante!
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7522): Primero recibo sus datos y armo TCB
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 2|2
+[INFO] 14:46:50:407 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:20:708 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:47:20:708 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:47:20:708 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:47:20:708 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 3|2
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 2|9
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:20:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:21:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 3|9
+[INFO] 14:47:21:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:21:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 3|3
+[INFO] 14:47:21:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:22:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 3|8
+[INFO] 14:47:22:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:22:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 3|4
+[INFO] 14:47:22:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:23:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 3|7
+[INFO] 14:47:23:709 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:23:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 3|5
+[INFO] 14:47:23:709 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 3|6
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se movió a 3|2
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:24:710 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:25:710 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 14:47:25:711 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se movió a 3|3
+[INFO] 14:47:25:711 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:25:711 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 2|5
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se movió a 3|4
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:26:711 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:26:744 MIRA-RAM-HQ/(7515:7526): Me llegan los datos de una patota
+[INFO] 14:47:26:748 MIRA-RAM-HQ/(7515:7526): Se ha creado el PCB: 2
+Sus instrucciones son: �7s��7s�GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7529): Se conectó un Tripulante!
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7530): Se conectó un Tripulante!
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7529): Primero recibo sus datos y armo TCB
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7529): [TRIPULANTE 5] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7529): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7530): Primero recibo sus datos y armo TCB
+[INFO] 14:47:26:749 MIRA-RAM-HQ/(7515:7530): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:47:26:750 MIRA-RAM-HQ/(7515:7530): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:47:27:711 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 2|4
+[INFO] 14:47:27:711 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se movió a 3|5
+[INFO] 14:47:27:712 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:27:712 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Se movió a 2|3
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 2|5
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:47:28:712 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:29:712 MIRA-RAM-HQ/(7515:7521): [TRIPULANTE 2] FINALIZÓ. SE DESCONECTA
+[INFO] 14:47:29:712 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Se movió a 2|5
+[INFO] 14:47:29:712 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Se movió a 2|4
+[INFO] 14:47:29:712 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:47:29:712 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:48:28:779 MIRA-RAM-HQ/(7515:7530): [TRIPULANTE 4] Tipo de mensaje desconocido!!!
+[INFO] 14:48:28:780 MIRA-RAM-HQ/(7515:7529): [TRIPULANTE 5] Tipo de mensaje desconocido!!!
+[INFO] 14:48:28:780 MIRA-RAM-HQ/(7515:7522): [TRIPULANTE 1] Tipo de mensaje desconocido!!!
+[INFO] 14:48:28:780 MIRA-RAM-HQ/(7515:7520): [TRIPULANTE 3] Tipo de mensaje desconocido!!!
+[INFO] 14:48:46:685 MIRA-RAM-HQ/(7556:7556): Se lee config e inician variables iniciales
+[INFO] 14:48:46:690 MIRA-RAM-HQ/(7556:7556): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:48:56:155 MIRA-RAM-HQ/(7556:7559): Me llegan los datos de una patota
+[INFO] 14:48:56:156 MIRA-RAM-HQ/(7556:7559): Se ha creado el PCB: 1
+Sus instrucciones son: lsGENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7563): Se conectó un Tripulante!
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7563): Primero recibo sus datos y armo TCB
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7563): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7563): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7564): Se conectó un Tripulante!
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7564): Primero recibo sus datos y armo TCB
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7564): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7564): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7565): Se conectó un Tripulante!
+[INFO] 14:48:56:157 MIRA-RAM-HQ/(7556:7565): Primero recibo sus datos y armo TCB
+[INFO] 14:48:56:158 MIRA-RAM-HQ/(7556:7565): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:48:56:158 MIRA-RAM-HQ/(7556:7565): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7565): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7564): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7563): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7565): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7563): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:49:00:155 MIRA-RAM-HQ/(7556:7564): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:07:118 MIRA-RAM-HQ/(7556:7565): [TRIPULANTE 1] Tipo de mensaje desconocido!!!
+[INFO] 14:50:07:118 MIRA-RAM-HQ/(7556:7564): [TRIPULANTE 2] Tipo de mensaje desconocido!!!
+[INFO] 14:50:07:118 MIRA-RAM-HQ/(7556:7563): [TRIPULANTE 3] Tipo de mensaje desconocido!!!
+[INFO] 14:50:15:027 MIRA-RAM-HQ/(7606:7606): Se lee config e inician variables iniciales
+[INFO] 14:50:15:027 MIRA-RAM-HQ/(7606:7606): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:50:22:810 MIRA-RAM-HQ/(7606:7610): Me llegan los datos de una patota
+[INFO] 14:50:22:810 MIRA-RAM-HQ/(7606:7610): Se ha creado el PCB: 1
+Sus instrucciones son: dbusGENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:50:22:811 MIRA-RAM-HQ/(7606:7614): Se conectó un Tripulante!
+[INFO] 14:50:22:811 MIRA-RAM-HQ/(7606:7614): Primero recibo sus datos y armo TCB
+[INFO] 14:50:22:811 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:50:22:811 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7615): Se conectó un Tripulante!
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7615): Primero recibo sus datos y armo TCB
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7616): Se conectó un Tripulante!
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7616): Primero recibo sus datos y armo TCB
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:50:22:812 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:50:27:569 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:50:27:569 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:50:27:569 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:50:27:569 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 1|0
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 1|0
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:27:570 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:28:571 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 2|0
+[INFO] 14:50:28:571 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 2|0
+[INFO] 14:50:28:571 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:28:571 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:29:572 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|0
+[INFO] 14:50:29:572 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|0
+[INFO] 14:50:29:572 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:29:572 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:30:572 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|1
+[INFO] 14:50:30:572 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|1
+[INFO] 14:50:30:572 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:30:572 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:31:572 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|2
+[INFO] 14:50:31:572 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|2
+[INFO] 14:50:31:573 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:31:573 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:32:573 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|3
+[INFO] 14:50:32:573 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|3
+[INFO] 14:50:32:573 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:32:573 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:32:890 MIRA-RAM-HQ/(7606:7617): Me llegan los datos de una patota
+[INFO] 14:50:32:891 MIRA-RAM-HQ/(7606:7617): Se ha creado el PCB: 2
+Sus instrucciones son: toryGENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): Se conectó un Tripulante!
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): Primero recibo sus datos y armo TCB
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): [TRIPULANTE 5] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): [TRIPULANTE 5] Se envio proxima tarea para el tripulante
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7620): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7621): Se conectó un Tripulante!
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7621): Primero recibo sus datos y armo TCB
+[INFO] 14:50:32:892 MIRA-RAM-HQ/(7606:7621): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:50:32:893 MIRA-RAM-HQ/(7606:7621): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:50:32:893 MIRA-RAM-HQ/(7606:7621): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 14:50:32:893 MIRA-RAM-HQ/(7606:7621): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:50:33:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|4
+[INFO] 14:50:33:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|4
+[INFO] 14:50:33:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:33:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:34:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 14:50:34:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se movió a 3|5
+[INFO] 14:50:34:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:34:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Se movió a 1|0
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:50:35:574 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:50:36:574 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Se movió a 2|0
+[INFO] 14:50:36:575 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:56:56:713 MIRA-RAM-HQ/(7606:7621): [TRIPULANTE 4] Tipo de mensaje desconocido!!!
+[INFO] 14:56:56:713 MIRA-RAM-HQ/(7606:7620): [TRIPULANTE 5] Tipo de mensaje desconocido!!!
+[INFO] 14:56:56:713 MIRA-RAM-HQ/(7606:7616): [TRIPULANTE 1] Tipo de mensaje desconocido!!!
+[INFO] 14:56:56:713 MIRA-RAM-HQ/(7606:7615): [TRIPULANTE 2] Tipo de mensaje desconocido!!!
+[INFO] 14:56:56:713 MIRA-RAM-HQ/(7606:7614): [TRIPULANTE 3] Tipo de mensaje desconocido!!!
+[INFO] 14:57:01:321 MIRA-RAM-HQ/(7713:7713): Se lee config e inician variables iniciales
+[INFO] 14:57:01:321 MIRA-RAM-HQ/(7713:7713): MI-RAM-HQ listo para recibir conexiones
+[INFO] 14:57:13:096 MIRA-RAM-HQ/(7713:7715): Me llegan los datos de una patota
+[INFO] 14:57:13:097 MIRA-RAM-HQ/(7713:7715): Se ha creado el PCB: 1
+Sus instrucciones son: �Wr��Wr�GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:57:13:098 MIRA-RAM-HQ/(7713:7719): Se conectó un Tripulante!
+[INFO] 14:57:13:098 MIRA-RAM-HQ/(7713:7719): Primero recibo sus datos y armo TCB
+[INFO] 14:57:13:098 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:57:13:098 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:13:098 MIRA-RAM-HQ/(7713:7720): Se conectó un Tripulante!
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7720): Primero recibo sus datos y armo TCB
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7721): Se conectó un Tripulante!
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7721): Primero recibo sus datos y armo TCB
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se ha creado TCB . Pertenece a la patota 1. Posicion: 0|0
+[INFO] 14:57:13:099 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:57:16:631 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 14:57:16:631 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:57:16:631 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 1|0
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 1|0
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:16:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:17:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 2|0
+[INFO] 14:57:17:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 2|0
+[INFO] 14:57:17:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:17:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:18:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|0
+[INFO] 14:57:18:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:18:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|0
+[INFO] 14:57:18:632 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:19:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|1
+[INFO] 14:57:19:632 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:19:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|1
+[INFO] 14:57:19:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:20:633 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|2
+[INFO] 14:57:20:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|2
+[INFO] 14:57:20:633 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:20:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:21:633 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|3
+[INFO] 14:57:21:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|3
+[INFO] 14:57:21:633 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:21:633 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:22:120 MIRA-RAM-HQ/(7713:7724): Me llegan los datos de una patota
+[INFO] 14:57:22:120 MIRA-RAM-HQ/(7713:7724): Se ha creado el PCB: 2
+Sus instrucciones son: �Wr��Wr�GENERAR_OXIGENO 12;3;5;2|CONSUMIR_OXIGENO 120;2;3;1
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): Se conectó un Tripulante!
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): Primero recibo sus datos y armo TCB
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se envio proxima tarea para el tripulante
+[INFO] 14:57:22:121 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): Se conectó un Tripulante!
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): Primero recibo sus datos y armo TCB
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se ha creado TCB . Pertenece a la patota 2. Posicion: 0|0
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 14:57:22:122 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 14:57:22:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|4
+[INFO] 14:57:22:634 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|4
+[INFO] 14:57:22:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:22:634 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:23:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 3|5
+[INFO] 14:57:23:634 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 3|5
+[INFO] 14:57:23:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:23:634 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:24:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se envio proxima tarea para el tripulante
+[INFO] 14:57:24:634 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 1|0
+[INFO] 14:57:24:634 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 14:57:24:634 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 14:57:24:635 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se envio proxima tarea para el tripulante
+[INFO] 14:57:24:635 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 14:57:24:635 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 1|0
+[INFO] 14:57:24:635 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:02:069 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 2|0
+[INFO] 15:03:02:069 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 2|0
+[INFO] 15:03:02:069 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:02:069 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:03:073 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|0
+[INFO] 15:03:03:073 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|0
+[INFO] 15:03:03:073 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:03:073 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:04:073 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|1
+[INFO] 15:03:04:073 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|1
+[INFO] 15:03:04:073 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:04:073 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:05:074 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|2
+[INFO] 15:03:05:074 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:05:074 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|2
+[INFO] 15:03:05:074 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:06:074 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|3
+[INFO] 15:03:06:074 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|3
+[INFO] 15:03:06:074 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:06:074 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:07:074 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|4
+[INFO] 15:03:07:075 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|4
+[INFO] 15:03:07:075 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:07:075 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:08:075 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 3|5
+[INFO] 15:03:08:075 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 3|5
+[INFO] 15:03:08:075 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:08:075 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:09:075 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se envio proxima tarea para el tripulante
+[INFO] 15:03:09:075 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:09:075 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 1|0
+[INFO] 15:03:09:076 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se envio proxima tarea para el tripulante
+[INFO] 15:03:09:076 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 2|5
+[INFO] 15:03:09:076 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:09:076 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:09:076 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 15:03:10:076 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 2|0
+[INFO] 15:03:10:076 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 2|4
+[INFO] 15:03:10:076 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:10:076 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 15:03:11:076 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|0
+[INFO] 15:03:11:076 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Se movió a 2|3
+[INFO] 15:03:11:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:11:077 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] Espero proxima operacion del tripulante
+[INFO] 15:03:12:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|1
+[INFO] 15:03:12:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:12:077 MIRA-RAM-HQ/(7713:7719): [TRIPULANTE 3] FINALIZÓ. SE DESCONECTA
+[INFO] 15:03:12:077 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 2|5
+[INFO] 15:03:12:077 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 15:03:13:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|2
+[INFO] 15:03:13:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:13:077 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 2|4
+[INFO] 15:03:13:077 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 15:03:14:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|3
+[INFO] 15:03:14:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:14:077 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Se movió a 2|3
+[INFO] 15:03:14:078 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] Espero proxima operacion del tripulante
+[INFO] 15:03:15:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|4
+[INFO] 15:03:15:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:15:078 MIRA-RAM-HQ/(7713:7720): [TRIPULANTE 2] FINALIZÓ. SE DESCONECTA
+[INFO] 15:03:15:078 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 2|5
+[INFO] 15:03:15:078 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:16:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 3|5
+[INFO] 15:03:16:077 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:16:079 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 2|4
+[INFO] 15:03:16:079 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:17:078 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se envio proxima tarea para el tripulante
+[INFO] 15:03:17:078 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 2|5
+[INFO] 15:03:17:078 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:17:078 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:17:079 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Se movió a 2|3
+[INFO] 15:03:17:079 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] Espero proxima operacion del tripulante
+[INFO] 15:03:18:079 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 2|4
+[INFO] 15:03:18:079 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:18:080 MIRA-RAM-HQ/(7713:7727): [TRIPULANTE 5] FINALIZÓ. SE DESCONECTA
+[INFO] 15:03:18:080 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 2|5
+[INFO] 15:03:18:080 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:19:080 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Se movió a 2|3
+[INFO] 15:03:19:080 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] Espero proxima operacion del tripulante
+[INFO] 15:03:19:080 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 2|4
+[INFO] 15:03:19:080 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:20:081 MIRA-RAM-HQ/(7713:7721): [TRIPULANTE 1] FINALIZÓ. SE DESCONECTA
+[INFO] 15:03:20:081 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Se movió a 2|3
+[INFO] 15:03:20:081 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] Espero proxima operacion del tripulante
+[INFO] 15:03:21:082 MIRA-RAM-HQ/(7713:7728): [TRIPULANTE 4] FINALIZÓ. SE DESCONECTA

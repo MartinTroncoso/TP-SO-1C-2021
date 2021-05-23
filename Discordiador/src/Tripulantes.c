@@ -260,7 +260,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 		return ((t_tripulante*) elemento)->tid == tripulante->tid;
 	}
 
-	sem_wait(&(tripulante->semaforoPlanificacion));
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
 
 	sem_wait(&mutexColaReady);
 	list_remove_by_condition(colaReady,buscarTripulante);
@@ -269,8 +269,6 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 	sem_wait(&mutexColaExec);
 	list_add(colaExec,tripulante);
 	sem_post(&mutexColaExec);
-
-	sem_post(&(tripulante->semaforoPlanificacion));
 
 	tripulante->estado = 'E';
 	log_info(loggerDiscordiador,"[TRIPULANTE %d] COMIENZO A EJECUTAR",tripulante->tid);
@@ -328,20 +326,23 @@ void gestionarTripulante(t_tripulante* tripulante){
 	enviar_paquete(paquete,socket_cliente_MIRAM);
 	eliminar_paquete(paquete);
 
+	if(planificacionActivada)
+		sem_post(&(tripulante->semaforoPlanificacion));
+
 	while(1){
 		if(tieneTareasPendientes(tripulante)){
+			sem_wait(&(tripulante->semaforoPlanificacion));
 			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
 			tripulante->proxTarea = proximaTarea;
 
 			agregarTripulanteAReady(tripulante);
+			sem_post(&(tripulante->semaforoPlanificacion));
 
-			//HABILITA AL TRIPULANTE A EJECUTAR SOLO SI HAY COMO MUCHO 'GRADO_TAREA'-1 TRIPULANTES EN LA COLA DE EXEC
-			//ESTO VA A PASAR SOLO CUANDO SE CREE LA PRIMERA PATOTA O CUANDO TERMINEN DE EJECUTAR TODOS LOS TRIPULANTES
-			//Y SE VUELVA A CREAR UNA NUEVA PATOTA (MEDIO FIERO, PERO PARECE QUE ANDA xD)
+			//HABILITA AL TRIPULANTE A EJECUTAR SOLO SI HAY COMO MUCHO 'GRADO_TAREA'-1 TRIPULANTES EN LA COLA DE EXEC ESTO VA A PASAR SOLO CUANDO SE CREE
+			//LA PRIMERA PATOTA O CUANDO TERMINEN DE EJECUTAR TODOS LOS TRIPULANTES Y SE VUELVA A CREAR UNA NUEVA PATOTA (MEDIO FIERO, PERO PARECE QUE ANDA xD)
 			habilitarSiCorresponde(tripulante);
 
 			sem_wait(&(tripulante->puedeEjecutar));
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,proximaTarea->posicion.posX,proximaTarea->posicion.posY);
 			planificarTripulante(tripulante, socket_cliente_MIRAM);
 
 			if(esDeEntradaSalida(proximaTarea)){
@@ -464,9 +465,8 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		sem_wait(&mutexTripulantes);
 		list_add(patota->tripulantes,tripulante);
 		list_add(tripulantes,tripulante);
-		sem_post(&mutexTripulantes);
-
 		sumarIdTripulante();
+		sem_post(&mutexTripulantes);
 
 		pthread_t hiloTripulante;
 		pthread_create(&hiloTripulante,NULL, (void*) gestionarTripulante, tripulante);
