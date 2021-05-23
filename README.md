@@ -7,16 +7,23 @@
 * Lean: MI-RAM-HQ
 
 ### :point_right: CLONAR EL REPO PARADOS EN /home/utnso/workspace     
-        
         git clone https://github.com/sisoputnfrba/tp-2021-1c-No-C-Aprueba-
 
 ### :point_right: File > Import > General > Existing Projects Into Workspace > tp-2021-1c-No-C-Aprueba-
 
 ### :point_right: SIEMPRE BUILDEAR PRIMERO LA CARPETA 'shared' Y DESPUÉS LOS 3 PROYECTOS PORQUE SINO NO RECONOCEN LAS LIBRERIAS
 
-### :point_right: LEVANTAR PROCESO EN LA CONSOLA (CON LAS SHARED LIBRARY)
+### :point_right: LEVANTAR 'PROCESO' EN LA CONSOLA (CON LAS SHARED LIBRARY)
+* LD_LIBRARY_PATH="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug" ./'Proceso'
+                                              
+        o también
+                                                
+* export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug
+
+        Y despúes levantar el proceso solo haciendo ./'Proceso'
         
-        LD_LIBRARY_PATH="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug" ./Debug/'Proceso'
+### :point_right: PARA CORRER CON VALGRIND
+        valgrind --tool=helgrind ./'Proceso'
 
 ### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
 
