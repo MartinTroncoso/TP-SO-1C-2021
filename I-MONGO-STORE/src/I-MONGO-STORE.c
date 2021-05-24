@@ -161,14 +161,19 @@ void atenderTripulante(void* _cliente)
 		{
 		case INFORMAR_DESPLAZAMIENTO_FS:
 			// recibe 4 uint32_t, los primero 2 son x y originales y los siguientes x' y' son a los que se desplaza
+			recibirInformeDeDesplazamiento(socket_tripulante);
 			break;
 		case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
+			recibirInicioDeTarea(socket_tripulante);
 			break;
 		case FINALIZO_TAREA: //PARAMETRO "NOMBRETAREA"
+			recibirFinalizaTarea(socket_tripulante);
 			break;
 		case ATENDER_SABOTAJE: //PARAMETRO INDISTINTO
+			recibirAtenderSabotaje(socket_tripulante);
 			break;
 		case RESOLUCION_SABOTAJE: //PARAMETRO INDISTINTO
+			recibirResolucionSabotaje(socket_tripulante);
 			break;
 		case OBTENER_BITACORA:
 			recibirPeticionDeBitacora(socket_tripulante);
@@ -256,6 +261,37 @@ void recibirPeticionDeBitacora(int socketCliente)
 	//enviar_respuesta(OK, socketCliente);
 	free(buffer);
 }
+
+void recibirAtenderSabotaje(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+
+	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
+	memcpy(&tid, buffer,sizeof(uint32_t));
+
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	txt_write_in_file(bitacoraTripulante, string_from_format("Se corre en panico hacia la ubicacion del sabotaje\n"));
+	free(buffer);
+	txt_close_file(bitacoraTripulante);
+}
+
+void recibirResolucionSabotaje(int socketCliente)
+{
+	void* buffer;
+	uint32_t tamanioBuffer;
+	uint32_t tid;
+
+	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
+	memcpy(&tid, buffer,sizeof(uint32_t));
+
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	txt_write_in_file(bitacoraTripulante, string_from_format("Se resuelve el sabotaje\n"));
+	free(buffer);
+	txt_close_file(bitacoraTripulante);
+}
+
 int bitsExcedentes(int cantidadDeBits)
 {
 	return (cantidadDeBits%8)>0;

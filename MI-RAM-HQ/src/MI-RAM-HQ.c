@@ -59,7 +59,8 @@ void inicializarVariables(){
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
 	tripulantes = list_create();
 	patotas = list_create();
-	log_info(loggerMiRam, "Se lee config e inician variables iniciales");
+	pthread_mutex_init(&mutexTripulantes,NULL);
+	pthread_mutex_init(&mutexPatotas,NULL);
 }
 
 void atenderTripulante(void* _cliente) {
@@ -67,6 +68,7 @@ void atenderTripulante(void* _cliente) {
 	log_info(loggerMiRam, "Primero recibo sus datos y armo TCB");
 
 	int socket_tripulante = (int) _cliente;
+
 	TCB* tripulante = recibir_datos_tripulante(socket_tripulante);
 
 	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
@@ -130,7 +132,9 @@ void recibir_datos_patota(void* _cliente) {
 	nuevo_pcb->tareas = malloc(inst_len);
 	memcpy(nuevo_pcb->tareas, buffer + desplazamiento, inst_len);
 
+	pthread_mutex_lock(&mutexPatotas);
 	list_add(patotas, nuevo_pcb);
+	pthread_mutex_unlock(&mutexPatotas);
 
 	//Envio el OK
 	enviar_respuesta(OK, socket_cliente);
@@ -170,7 +174,9 @@ TCB* recibir_datos_tripulante(int socket_tripulante) {
 
 	memcpy(&(nuevo_tcb->posY), buffer + desplazamiento, sizeof(uint32_t));
 
+	pthread_mutex_lock(&mutexTripulantes);
 	list_add(tripulantes,nuevo_tcb);
+	pthread_mutex_unlock(&mutexTripulantes);
 
 	free(buffer);
 
@@ -257,7 +263,11 @@ PCB* buscar_patota(uint32_t pid) {
 	bool patota_tiene_el_pid(void* pcb) {
 		return ((PCB*) pcb)->pid == pid;
 	}
-	return (PCB*) list_find(patotas, patota_tiene_el_pid);
+	pthread_mutex_lock(&mutexPatotas);
+	PCB* patota = list_find(patotas, patota_tiene_el_pid);
+	pthread_mutex_unlock(&mutexPatotas);
+
+	return patota;
 }
 
 void terminar_programa() {

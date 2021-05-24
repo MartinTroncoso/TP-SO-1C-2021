@@ -40,6 +40,9 @@ t_log* loggerMiRam;
 t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en memoria
 t_list* patotas; //idem
 
+pthread_mutex_t mutexTripulantes;
+pthread_mutex_t mutexPatotas;
+
 void inicializarVariables();
 
 void atenderTripulante(void*);

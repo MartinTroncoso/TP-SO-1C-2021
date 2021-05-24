@@ -52,6 +52,7 @@ typedef struct{
 	sem_t semaforoPlanificacion;
 	sem_t puedeEjecutar;
 	bool habilitado;
+	bool expulsado;
 	int socket_MIRAM;
 	int socket_MONGO;
 }t_tripulante;
@@ -81,11 +82,20 @@ t_list* colaBlockIO;
 t_list* colaExec;
 t_list* colaExit;
 
-sem_t mutexTripulantes;
-sem_t mutexColaReady;
-sem_t mutexColaExec;
-sem_t mutexColaBlockIO;
-sem_t mutexColaExit;
+pthread_mutex_t mutexTripulantes;
+pthread_mutex_t mutexColaReady;
+pthread_mutex_t mutexColaExec;
+pthread_mutex_t mutexColaBlockIO;
+pthread_mutex_t mutexColaExit;
+pthread_mutex_t mutexActivarPlanificacion;
+pthread_mutex_t mutexMientrasEjecutan;
+
+//sem_t mutexTripulantes;
+//sem_t mutexColaReady;
+//sem_t mutexColaExec;
+//sem_t mutexColaBlockIO;
+//sem_t mutexColaExit;
+//sem_t mutexActivarPlanificacion;
 
 void inicializarVariables();
 void crearDiccionarioComandos(t_dictionary*);
@@ -121,5 +131,9 @@ void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
 void agregarTripulanteAReady(t_tripulante*);
 void ejecutarTarea(t_tripulante*);
+void informarInicioDeTarea(int,uint32_t, Tarea*);
+void informarFinalizacionDeTarea(int,uint32_t,Tarea*);
+void informarTripulanteAtiendeSabotaje(int,uint32_t);
+void informarTripulanteResuelveSabotaje(int,uint32_t);
 
 #endif /* DISCORDIADOR_H_ */

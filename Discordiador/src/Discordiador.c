@@ -38,11 +38,14 @@ void inicializarVariables(){
 	idPatota = 1;
 	planificacionActivada = false;
 
-	sem_init(&mutexTripulantes,0,1);
-	sem_init(&mutexColaReady,0,1);
-	sem_init(&mutexColaExec,0,1);
-	sem_init(&mutexColaExit,0,1);
-	sem_init(&mutexColaBlockIO,0,1);
+	pthread_mutex_init(&mutexTripulantes,NULL);
+	pthread_mutex_init(&mutexColaReady,NULL);
+	pthread_mutex_init(&mutexColaExec,NULL);
+	pthread_mutex_init(&mutexColaExit,NULL);
+	pthread_mutex_init(&mutexColaBlockIO,NULL);
+	pthread_mutex_init(&mutexActivarPlanificacion,NULL);
+	pthread_mutex_init(&mutexMientrasEjecutan,NULL);
+
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -156,11 +159,13 @@ void ingresar_comandos()
 }
 
 void destruirSemaforos(){
-	sem_destroy(&mutexTripulantes);
-	sem_destroy(&mutexColaReady);
-	sem_destroy(&mutexColaExec);
-	sem_destroy(&mutexColaExit);
-	sem_destroy(&mutexColaBlockIO);
+	pthread_mutex_destroy(&mutexTripulantes);
+	pthread_mutex_destroy(&mutexColaReady);
+	pthread_mutex_destroy(&mutexColaExec);
+	pthread_mutex_destroy(&mutexColaExit);
+	pthread_mutex_destroy(&mutexColaBlockIO);
+	pthread_mutex_destroy(&mutexActivarPlanificacion);
+	pthread_mutex_destroy(&mutexMientrasEjecutan);
 }
 
 void destruirListasYDiccionarios(){

@@ -37,5 +37,10 @@ void atenderTripulante(void*);
 void guardarBitArray(t_bitarray*);
 void recibirPeticionDeBitacora(int);
 void terminar_programa();
+void recibirInformeDeDesplazamiento(int socket);
+void recibirInicioDeTarea(int socket);
+void recibirFinalizaTarea(int socket);
+void recibirAtenderSabotaje(int socket);
+void recibirResolucionSabotaje(int socket);
 
 #endif /* I_MONGO_STORE_H_ */
