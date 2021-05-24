@@ -15,16 +15,16 @@ void sumarIdPatota(){
 	idPatota++;
 }
 
-bool esDeEntradaSalida(Tarea* tarea){
-	return dictionary_get(diccionarioTareas,tarea->nombre) != NULL;
+char getEstadoComoCaracter(estado estado){
+	return estado==NEW?'N':estado==READY?'R':estado==EXEC?'E':estado==EXIT?'F':'B';
 }
 
-bool puedePasarAExec(t_tripulante* tripulante){
-	bool buscarTripulante(void* elemento){
-		return ((t_tripulante*) elemento)->tid == tripulante->tid;
-	}
+char* getEstadoComoCadena(estado estado){
+	return estado==NEW?"NEW":estado==READY?"READY":estado==EXEC?"EXEC":estado==EXIT?"EXIT":estado==BLOCK_IO?"BLOCK I/O":"BLOCK SABOTAJE";
+}
 
-	return list_any_satisfy(list_take(colaReady,GRADO_MULTITAREA),buscarTripulante);
+bool esDeEntradaSalida(Tarea* tarea){
+	return dictionary_get(diccionarioTareas,tarea->nombre) != NULL;
 }
 
 void agregarTripulanteAReady(t_tripulante* tripulante){
@@ -32,7 +32,7 @@ void agregarTripulanteAReady(t_tripulante* tripulante){
 	list_add(colaReady,tripulante);
 	sem_post(&mutexColaReady);
 
-	tripulante->estado = 'R';
+	tripulante->estado = READY;
 }
 
 void moverXDelTripulante(t_tripulante* tripulante){
@@ -163,16 +163,16 @@ void informarMovimiento(int socket_cliente, t_tripulante* tripulante){
 	eliminar_paquete(paquete);
 }
 
-Tarea* solitarProximaTarea(int idTripulante, int socket_cliente_MIRAM){
+Tarea* solitarProximaTarea(t_tripulante* tripulante){
 	Tarea* proximaTarea = malloc(sizeof(Tarea));
 
 	tipo_mensaje mensaje = PROXIMA_TAREA;
-	send(socket_cliente_MIRAM,&mensaje,sizeof(tipo_mensaje),0);
+	send(tripulante->socket_MIRAM,&mensaje,sizeof(tipo_mensaje),0);
 
 	uint32_t sizeBuffer;
 	uint32_t sizeTarea;
 	int desplazamiento = 0;
-	void* buffer = recibir_buffer(&sizeBuffer, socket_cliente_MIRAM);
+	void* buffer = recibir_buffer(&sizeBuffer, tripulante->socket_MIRAM);
 
 	memcpy(&sizeTarea,buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
@@ -201,13 +201,15 @@ Tarea* solitarProximaTarea(int idTripulante, int socket_cliente_MIRAM){
 void* serializar_tripulante(t_tripulante* tripulante){
 	int bytes = 2*sizeof(uint32_t) + sizeof(char) + sizeof(posicion);
 	void* magic = malloc(bytes);
+	char estado = getEstadoComoCaracter(tripulante->estado);
+
 	int desplazamiento = 0;
 
 	memcpy(magic + desplazamiento, &(tripulante->idPatota), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(magic + desplazamiento, &(tripulante->tid), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(magic + desplazamiento, &(tripulante->estado), sizeof(char));
+	memcpy(magic + desplazamiento, &(estado), sizeof(char));
 	desplazamiento += sizeof(char);
 	memcpy(magic + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
@@ -242,17 +244,71 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 	}
 }
 
-t_patota* buscarPatotaPorId(uint32_t idPatota){
-	bool encontrarPatota(void* elemento){
-		t_patota* patota = elemento;
-		return patota->pid == idPatota;
+bool existeElTripulante(uint32_t idTripulante){
+	bool encontrarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == idTripulante;
 	}
 
-	return list_find(patotas,encontrarPatota);
+	return list_find(tripulantes,encontrarTripulante)!=NULL;
 }
 
 bool tieneTareasPendientes(t_tripulante* tripulante){
 	return tripulante->tareasPendientes > 0;
+}
+
+void ejecutarTarea(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	if(esDeEntradaSalida(tripulante->proxTarea)){
+		switch((int) dictionary_get(diccionarioTareas,tripulante->proxTarea->nombre)){
+		case 1:{
+			//GENERAR_OXIGENO
+			break;
+		}
+		case 2:{
+			//CONSUMIR_OXIGENO
+			break;
+		}
+		case 3:{
+			//GENERAR_COMIDA
+			break;
+		}
+		case 4:{
+			//CONSUMIR_COMIDA
+			break;
+		}
+		case 5:{
+			//GENERAR_BASURA
+			break;
+		}
+		case 6:{
+			//DESCARTAR_BASURA
+			break;
+		}
+		default:{
+			log_warning(loggerDiscordiador,"¡CUIDADO! ESA TAREA NO ES DE ENTRADA SALIDA");
+			break;
+		}
+		}
+	}
+	else
+	{
+		log_info(loggerDiscordiador,"[TRIPULANTE %d] COMIENZO A EJECUTAR TAREA",tripulante->tid);
+		for(int i=0; i<tripulante->proxTarea->tiempo ;i++){
+			sem_wait(&(tripulante->semaforoPlanificacion));
+			sleep(RETARDO_CICLO_CPU);
+			sem_post(&(tripulante->semaforoPlanificacion));
+		}
+		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR LA TAREA",tripulante->tid);
+
+		sem_wait(&mutexColaExec);
+		list_remove_by_condition(colaExec,buscarTripulante);
+		sem_post(&mutexColaExec);
+
+		tripulante->estado = READY;
+	}
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
@@ -270,8 +326,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 	list_add(colaExec,tripulante);
 	sem_post(&mutexColaExec);
 
-	tripulante->estado = 'E';
-	log_info(loggerDiscordiador,"[TRIPULANTE %d] COMIENZO A EJECUTAR",tripulante->tid);
+	tripulante->estado = EXEC;
 
 	while(tripulante->posicion->posX != tripulante->proxTarea->posicion.posX){
 		sem_wait(&(tripulante->semaforoPlanificacion));
@@ -291,39 +346,37 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 		sleep(RETARDO_CICLO_CPU);
 	}
 
-	sem_wait(&mutexColaExec);
-	list_remove_by_condition(colaExec,buscarTripulante);
-	sem_post(&mutexColaExec);
-
-	tripulante->estado = 'R';
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] LLEGUÉ A LA TAREA",tripulante->tid);
+	ejecutarTarea(tripulante);
 }
 
-void planificarTripulante(t_tripulante* tripulante, int socket_cliente_MIRAM){
+void planificarTripulante(t_tripulante* tripulante){
 	t_algoritmo algoritmo = getAlgoritmoPlanificacion();
 	switch(algoritmo){
 	case FIFO:{
-		planificarTripulanteFIFO(tripulante, socket_cliente_MIRAM);
+		planificarTripulanteFIFO(tripulante, tripulante->socket_MIRAM);
 		break;
 	}
 	case RR:{
-//		planificarTripulanteRR(tripulante, socket_cliente_MIRAM);
+//		planificarTripulanteRR(tripulante, tripulante->socket_MIRAM);
 		break;
 	}
 	default:{
 		log_error(loggerDiscordiador,"Hubo un error con el algoritmo de planificación.");
+		break;
 	}
 	}
 }
 
 void gestionarTripulante(t_tripulante* tripulante){
-	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+	tripulante->socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_TRIPULANTE;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = 2*sizeof(uint32_t) + sizeof(char) + sizeof(posicion);
 	paquete->buffer->stream = serializar_tripulante(tripulante);
-	enviar_paquete(paquete,socket_cliente_MIRAM);
+	enviar_paquete(paquete,tripulante->socket_MIRAM);
 	eliminar_paquete(paquete);
 
 	if(planificacionActivada)
@@ -332,8 +385,11 @@ void gestionarTripulante(t_tripulante* tripulante){
 	while(1){
 		if(tieneTareasPendientes(tripulante)){
 			sem_wait(&(tripulante->semaforoPlanificacion));
-			Tarea* proximaTarea = solitarProximaTarea(tripulante->tid, socket_cliente_MIRAM);
+
+			sem_wait(&mutexTripulantes);
+			Tarea* proximaTarea = solitarProximaTarea(tripulante);
 			tripulante->proxTarea = proximaTarea;
+			sem_post(&mutexTripulantes);
 
 			agregarTripulanteAReady(tripulante);
 			sem_post(&(tripulante->semaforoPlanificacion));
@@ -343,50 +399,20 @@ void gestionarTripulante(t_tripulante* tripulante){
 			habilitarSiCorresponde(tripulante);
 
 			sem_wait(&(tripulante->puedeEjecutar));
-			planificarTripulante(tripulante, socket_cliente_MIRAM);
-
-			if(esDeEntradaSalida(proximaTarea)){
-				switch((int) dictionary_get(diccionarioTareas,proximaTarea->nombre)){
-				case 1:{
-					//GENERAR_OXIGENO
-					break;
-				}
-				case 2:{
-					//CONSUMIR_OXIGENO
-					break;
-				}
-				case 3:{
-					//GENERAR_COMIDA
-					break;
-				}
-				case 4:{
-					//CONSUMIR_COMIDA
-					break;
-				}
-				case 5:{
-					//GENERAR_BASURA
-					break;
-				}
-				case 6:{
-					//DESCARTAR_BASURA
-					break;
-				}
-				default:{
-					break;
-				}
-				}
-			}
+			planificarTripulante(tripulante);
 
 			//A VECES EN EL NOMBRE IMPRIME COSAS QUE NADA QUE VER
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] LLEGUÉ A LA TAREA %s",tripulante->tid,proximaTarea->nombre);
 			tripulante->tareasPendientes--;
 			tripulante->habilitado = false;
 			habilitarProximoAEjecutar();
+
+			free(proximaTarea->nombre);
+			free(proximaTarea);
 		}
 		else
 		{
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
-			tripulante->estado = 'F';
+			tripulante->estado = EXIT;
 
 			sem_wait(&mutexColaExit);
 			list_add(colaExit,tripulante);
@@ -397,9 +423,6 @@ void gestionarTripulante(t_tripulante* tripulante){
 				planificacionActivada = false;
 			}
 
-			tipo_mensaje finalizar = FINALIZA_TRIPULANTE;
-			send(socket_cliente_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
-			close(socket_cliente_MIRAM);
 			break;
 		}
 	}
@@ -454,7 +477,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 		tripulante->idPatota = patota->pid;
 		tripulante->tid = idTripulante;
-		tripulante->estado = 'N';
+		tripulante->estado = NEW;
 		tripulante->posicion = list_get(estructura->coordenadasTripulantes,i);
 		tripulante->tareasPendientes = patota->cantidadTareas;
 		tripulante->habilitado = false;
@@ -479,7 +502,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 
 void listarTripulantes(){
 	if(list_is_empty(tripulantes)){
-		log_info(loggerDiscordiador,"NO HAY TRIPULANTES!\n");
+		log_info(loggerDiscordiador,"NO HAY TRIPULANTES!");
 	}
 	else
 	{
@@ -487,20 +510,63 @@ void listarTripulantes(){
 		printf("Estado de la Nave: %s\n",temporal_get_string_time("%d/%m/%y %H:%M:%S"));
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = list_get(tripulantes,i);
-			printf("Tripulante: %d	Patota: %d	Status: %c\n",tripulante->tid, tripulante->idPatota, tripulante->estado);
+			printf("Tripulante: %d	Patota: %d	Status: %s\n",tripulante->tid, tripulante->idPatota, getEstadoComoCadena(tripulante->estado));
 		}
 		printf("--------------------------------------------\n");
 	}
 }
 
-void expulsarTripulante(int idTripulante){
-	//se finaliza un tripulante
-	//avisarle a MI-RAM que lo borre del mapa
-	//en caso de ser necesario tambien elimina su segmento de tareas
+void expulsarTripulante(int id_tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == id_tripulante;
+	}
 
-	//int op_code = 2;
-	//send(socket_cliente_miRam,&op_code,sizeof(int),0);
-	//send(socket_cliente_miRam,&idTripulante,sizeof(int),0);
+	sem_wait(&mutexTripulantes);
+	t_tripulante* tripulante = list_remove_by_condition(tripulantes,buscarTripulante);
+	sem_post(&mutexTripulantes);
+	switch(tripulante->estado){
+	case NEW:
+		break;
+	case READY:
+		sem_wait(&mutexColaReady);
+		list_remove_by_condition(colaReady,buscarTripulante);
+		sem_post(&mutexColaReady);
+		break;
+	case EXEC:
+		sem_wait(&mutexColaExec);
+		list_remove_by_condition(colaExec,buscarTripulante);
+		sem_post(&mutexColaExec);
+		break;
+	case BLOCK_IO:
+		sem_wait(&mutexColaBlockIO);
+		list_remove_by_condition(colaBlockIO,buscarTripulante);
+		sem_post(&mutexColaBlockIO);
+		break;
+	case BLOCK_SABOTAJE:
+		//se lo saca de la cola de bloqueados por sabotaje
+		break;
+	case EXIT:
+		sem_wait(&mutexColaExit);
+		list_remove_by_condition(colaExit,buscarTripulante);
+		sem_post(&mutexColaExit);
+		break;
+	default:
+		log_warning(loggerDiscordiador,"Hubo un error con el estado del Tripulante");
+		break;
+	}
+
+	tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+	send(tripulante->socket_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
+
+	close(tripulante->socket_MIRAM);
+
+	//FALTA AVISARLE A LA RAM QUE LO BORRE DE MEMORIA Y DEL MAPA
+	sem_destroy(&tripulante->semaforoPlanificacion);
+	sem_destroy(&tripulante->puedeEjecutar);
+	free(tripulante->posicion);
+	free(tripulante);
+
+	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
 }
 
 void iniciarPlanificacion(){

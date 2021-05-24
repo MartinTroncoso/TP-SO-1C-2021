@@ -10,12 +10,35 @@
 
 #include "I-MONGO-STORE.h"
 
+int main(void) {
+	inicializarVariables();
+
+	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
+	log_info(loggerMongo,"I-MONGO Listo para recibir a los Tripulantes!");
+
+	while(1)
+	{
+		int socketCliente = esperar_cliente(socket_escucha);
+		log_info(loggerMongo,"Se conectó un Tripulante!");
+
+		pthread_t hilo_receptor;
+		pthread_create(&hilo_receptor , NULL ,(void*) atenderTripulante, (void*) socketCliente);
+		pthread_detach(hilo_receptor);
+	}
+
+	close(socket_escucha);
+	terminar_programa();
+
+	return EXIT_SUCCESS;
+}
+
 void inicializarVariables(){
 	configuracionMongo = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.config");
 	loggerMongo = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.log", "I-MONGO-STORE", 1, LOG_LEVEL_INFO);
 	TIEMPO_SINCRONIZACION = config_get_int_value(configuracionMongo,"TIEMPO_SINCRONIZACION");
 	PUNTO_MONTAJE = config_get_string_value(configuracionMongo,"PUNTO_MONTAJE");
-	PUERTO = config_get_string_value(configuracionMongo,"PUERTO");
+	IP_I_MONGO = config_get_string_value(configuracionMongo,"IP_I_MONGO");
+	PUERTO_I_MONGO = config_get_string_value(configuracionMongo,"PUERTO_I_MONGO");
 
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
@@ -123,36 +146,37 @@ void inicializarDiccionario()
 	dictionary_put(caracterAsociadoATarea, "DESCARTAR_BASURA",(char*) "B");
 }
 
-void* recibirOperacion(void* socketCliente)
+void atenderTripulante(void* _cliente)
 {
-	int cliente = (int) socketCliente;
-	tipo_mensaje idMensaje = recibir_operacion(cliente);
-	//FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante));
-	//char** parametros = string_split(stringParametros," ");
+	int socket_tripulante = (int) _cliente;
 
-	switch(idMensaje)
-	{
-	case INFORMAR_DESPLAZAMIENTO_FS:
+	uint32_t idTripulante;
+	recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
 
-		// recibe 4 uint32_t, los primero 2 son x y originales y los siguientes x' y' son a los que se desplaza
-		break;
-	case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
-		break;
-	case FINALIZO_TAREA: //PARAMETRO "NOMBRETAREA"
-		break;
-	case ATENDER_SABOTAJE: //PARAMETRO INDISTINTO
-		break;
-	case RESOLUCION_SABOTAJE: //PARAMETRO INDISTINTO
-		break;
-	case OBTENER_BITACORA:
-		recibirPeticionDeBitacora(cliente);
-		break;
-	default:
-		break;
+	while(1){
+		log_info(loggerMongo, "[TRIPULANTE %d] Espero proxima operacion del tripulante", idTripulante);
+		int tipo_msg = recibir_operacion(socket_tripulante);
+
+		switch(tipo_msg)
+		{
+		case INFORMAR_DESPLAZAMIENTO_FS:
+			// recibe 4 uint32_t, los primero 2 son x y originales y los siguientes x' y' son a los que se desplaza
+			break;
+		case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
+			break;
+		case FINALIZO_TAREA: //PARAMETRO "NOMBRETAREA"
+			break;
+		case ATENDER_SABOTAJE: //PARAMETRO INDISTINTO
+			break;
+		case RESOLUCION_SABOTAJE: //PARAMETRO INDISTINTO
+			break;
+		case OBTENER_BITACORA:
+			recibirPeticionDeBitacora(socket_tripulante);
+			break;
+		default:
+			break;
+		}
 	}
-
-	return NULL;
-
 }
 
 void recibirInformeDeDesplazamiento(int socketCliente)
@@ -236,23 +260,9 @@ int bitsExcedentes(int cantidadDeBits)
 {
 	return (cantidadDeBits%8)>0;
 }
-int main(void) {
-	inicializarVariables();
-	int socketServer;
-	int socketCliente;
-	pthread_t hilo_receptor;
 
-	socketServer = iniciarServidor("127.0.0.1",PUERTO);
-	while(1)
-	{
-		socketCliente = esperar_cliente(socketServer);
-
-		pthread_create(&hilo_receptor , NULL , recibirOperacion, (void*) socketCliente);
-		pthread_detach(hilo_receptor);
-	}
-	close(socketServer);
+void terminar_programa(){
 	log_destroy(loggerMongo);
 	config_destroy(configuracionMongo);
 	dictionary_destroy(caracterAsociadoATarea);
-	return EXIT_SUCCESS;
 }

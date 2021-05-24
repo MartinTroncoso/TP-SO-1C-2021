@@ -31,7 +31,7 @@ void inicializarVariables(){
 	patotas = list_create();
 	colaReady = list_create();
 	colaExec = list_create();
-	colaBlock = list_create();
+	colaBlockIO = list_create();
 	colaExit = list_create();
 
 	idTripulante = 1;
@@ -42,6 +42,7 @@ void inicializarVariables(){
 	sem_init(&mutexColaReady,0,1);
 	sem_init(&mutexColaExec,0,1);
 	sem_init(&mutexColaExit,0,1);
+	sem_init(&mutexColaBlockIO,0,1);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -109,7 +110,13 @@ void ingresar_comandos()
 		}
 		case 3:{
 			//EXPULSAR_TRIPULANTE [idTripulante]
-			expulsarTripulante(idTripulante);
+			uint32_t idTripulanteAExpulsar = atoi(palabras[1]);
+			if(existeElTripulante(idTripulanteAExpulsar)){
+				expulsarTripulante(idTripulanteAExpulsar);
+				habilitarProximoAEjecutar();
+			}
+			else
+				log_info(loggerDiscordiador,"EL TRIPULANTE INDICADO NO EXISTE");
 			break;
 		}
 		case 4:{
@@ -120,6 +127,8 @@ void ingresar_comandos()
 				else
 					log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
 			}
+			else
+				log_info(loggerDiscordiador,"LA PLANIFICACIÓN YA ESTÁ ACTIVADA");
 			break;
 		}
 		case 5:{
@@ -151,12 +160,13 @@ void destruirSemaforos(){
 	sem_destroy(&mutexColaReady);
 	sem_destroy(&mutexColaExec);
 	sem_destroy(&mutexColaExit);
+	sem_destroy(&mutexColaBlockIO);
 }
 
 void destruirListasYDiccionarios(){
 	list_destroy_and_destroy_elements(colaReady,free);
 	list_destroy_and_destroy_elements(colaExec,free);
-	list_destroy_and_destroy_elements(colaBlock,free);
+	list_destroy_and_destroy_elements(colaBlockIO,free);
 	list_destroy_and_destroy_elements(colaExit,free);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);

@@ -14,7 +14,7 @@ int main(void) {
 	inicializarVariables();
 
 	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
-	log_info(loggerMiRam, "MI-RAM-HQ listo para recibir conexiones");
+	log_info(loggerMiRam, "MI-RAM-HQ Listo para recibir a los Tripulantes!");
 
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -72,7 +72,6 @@ void atenderTripulante(void* _cliente) {
 	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
 
 	while(1){
-		log_info(loggerMiRam, "[TRIPULANTE %d] Espero proxima operacion del tripulante", tripulante->tid);
 		int tipo_msg = recibir_operacion(socket_tripulante);
 
 		switch(tipo_msg){
@@ -84,8 +83,8 @@ void atenderTripulante(void* _cliente) {
 		case INFORMAR_MOVIMIENTO:
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
 			break;
-		case FINALIZA_TRIPULANTE:
-			log_info(loggerMiRam, "[TRIPULANTE %d] FINALIZÓ. SE DESCONECTA",tripulante->tid);
+		case EXPULSAR_TRIPULANTE:
+			log_info(loggerMiRam, "[TRIPULANTE %d] EXPULSADO DEL SISTEMA.",tripulante->tid);
 			close(socket_tripulante);
 			return;
 			break;
