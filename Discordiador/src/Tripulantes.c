@@ -622,3 +622,69 @@ void obtenerBitacora(uint32_t idTripulante){ //debe devolver un stream o string 
 	//levanto un socket server? para recibir la respuesta? mando el socket int
 	//return "Funciona";
 }
+
+void informarInicioDeTarea(int socketIMONGO, uint32_t tid, Tarea* tarea)
+{
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+	int desplazamiento = 0;
+
+	paquete->codigo_operacion = INICIO_TAREA;
+	paquete->buffer->size = sizeof(uint32_t) + sizeof(tarea->nombre);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream + desplazamiento, &tid,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &tarea->nombre,sizeof(tarea->nombre));
+
+	enviar_paquete(paquete, socketIMONGO);
+	eliminar_paquete(paquete);
+}
+
+void informarFinalizacionDeTarea(int socketIMONGO, uint32_t tid, Tarea* tarea)
+{
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+	int desplazamiento = 0;
+
+	paquete->codigo_operacion = FINALIZO_TAREA;
+	paquete->buffer->size = sizeof(uint32_t) + sizeof(tarea->nombre);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream + desplazamiento, &tid,sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &tarea->nombre,sizeof(tarea->nombre));
+
+	enviar_paquete(paquete, socketIMONGO);
+	eliminar_paquete(paquete);
+}
+
+void informarTripulanteAtiendeSabotaje(int socketIMONGO, uint32_t tid)
+{
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->codigo_operacion = ATENDER_SABOTAJE;
+	paquete->buffer->size = sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream,&tid,sizeof(uint32_t));
+
+	enviar_paquete(paquete, socketIMONGO);
+	eliminar_paquete(paquete);
+}
+
+void informarTripulanteResuelveSabotaje(int socketIMONGO, uint32_t tid)
+{
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+
+	paquete->codigo_operacion = RESOLUCION_SABOTAJE;
+	paquete->buffer->size = sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream,&tid,sizeof(uint32_t));
+
+	enviar_paquete(paquete, socketIMONGO);
+	eliminar_paquete(paquete);
+}
