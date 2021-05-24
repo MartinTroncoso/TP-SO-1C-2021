@@ -160,7 +160,6 @@ void atenderTripulante(void* _cliente)
 		switch(tipo_msg)
 		{
 		case INFORMAR_DESPLAZAMIENTO_FS:
-			// recibe 4 uint32_t, los primero 2 son x y originales y los siguientes x' y' son a los que se desplaza
 			recibirInformeDeDesplazamiento(socket_tripulante);
 			break;
 		case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
