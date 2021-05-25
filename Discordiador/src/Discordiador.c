@@ -44,8 +44,6 @@ void inicializarVariables(){
 	pthread_mutex_init(&mutexColaExit,NULL);
 	pthread_mutex_init(&mutexColaBlockIO,NULL);
 	pthread_mutex_init(&mutexActivarPlanificacion,NULL);
-	pthread_mutex_init(&mutexMientrasEjecutan,NULL);
-
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -165,7 +163,6 @@ void destruirSemaforos(){
 	pthread_mutex_destroy(&mutexColaExit);
 	pthread_mutex_destroy(&mutexColaBlockIO);
 	pthread_mutex_destroy(&mutexActivarPlanificacion);
-	pthread_mutex_destroy(&mutexMientrasEjecutan);
 }
 
 void destruirListasYDiccionarios(){

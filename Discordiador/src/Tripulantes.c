@@ -330,9 +330,15 @@ void ejecutarTarea(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexColaExec);
 	list_remove_by_condition(colaExec,buscarTripulante);
 	pthread_mutex_unlock(&mutexColaExec);
+
+	if(!planificacionActivada){
+		pthread_mutex_lock(&mutexColaExec);
+		tripulante->estado = READY;
+		pthread_mutex_unlock(&mutexColaExec);
+	}
 }
 
-void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM){
+void planificarTripulanteFIFO(t_tripulante* tripulante){
 	bool buscarTripulante(void* elemento){
 		return ((t_tripulante*) elemento)->tid == tripulante->tid;
 	}
@@ -356,7 +362,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 		moverXDelTripulante(tripulante);
 		sem_post(&(tripulante->semaforoPlanificacion));
 
-		informarMovimiento(socket_cliente_MIRAM,tripulante);
+		informarMovimiento(tripulante->socket_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
 
@@ -365,7 +371,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante, int socket_cliente_MIRAM
 		moverYDelTripulante(tripulante);
 		sem_post(&(tripulante->semaforoPlanificacion));
 
-		informarMovimiento(socket_cliente_MIRAM,tripulante);
+		informarMovimiento(tripulante->socket_MIRAM,tripulante);
 		sleep(RETARDO_CICLO_CPU);
 	}
 
@@ -381,11 +387,11 @@ void planificarTripulante(t_tripulante* tripulante){
 	t_algoritmo algoritmo = getAlgoritmoPlanificacion();
 	switch(algoritmo){
 	case FIFO:{
-		planificarTripulanteFIFO(tripulante, tripulante->socket_MIRAM);
+		planificarTripulanteFIFO(tripulante);
 		break;
 	}
 	case RR:{
-//		planificarTripulanteRR(tripulante, tripulante->socket_MIRAM);
+//		planificarTripulanteRR(tripulante);
 		break;
 	}
 	default:{
@@ -415,17 +421,20 @@ void gestionarTripulante(t_tripulante* tripulante){
 		if(tieneTareasPendientes(tripulante)){
 			sem_wait(&(tripulante->semaforoPlanificacion));
 
-			pthread_mutex_lock(&mutexTripulantes);
-			Tarea* proximaTarea = solitarProximaTarea(tripulante);
-			tripulante->proxTarea = proximaTarea;
-			pthread_mutex_unlock(&mutexTripulantes);
+			//SI ES EXPULSADO ANTES DE QUE INICIE LA PLANIFICACION (ESTADO 'NEW'), SE AHORRA DE PEDIR LA TAREA Y PASAR A LA COLA DE READY.
+			if(!tripulante->expulsado){
+				pthread_mutex_lock(&mutexTripulantes);
+				Tarea* proximaTarea = solitarProximaTarea(tripulante);
+				tripulante->proxTarea = proximaTarea;
+				pthread_mutex_unlock(&mutexTripulantes);
 
-			agregarTripulanteAReady(tripulante);
-			sem_post(&(tripulante->semaforoPlanificacion));
+				agregarTripulanteAReady(tripulante);
+				sem_post(&(tripulante->semaforoPlanificacion));
 
-			//HABILITA AL TRIPULANTE A EJECUTAR SOLO SI HAY COMO MUCHO 'GRADO_TAREA'-1 TRIPULANTES EN LA COLA DE EXEC ESTO VA A PASAR SOLO CUANDO SE CREE
-			//LA PRIMERA PATOTA O CUANDO TERMINEN DE EJECUTAR TODOS LOS TRIPULANTES Y SE VUELVA A CREAR UNA NUEVA PATOTA (MEDIO FIERO, PERO PARECE QUE ANDA xD)
-			habilitarSiCorresponde(tripulante);
+				//HABILITA AL TRIPULANTE A EJECUTAR SOLO SI HAY COMO MUCHO 'GRADO_TAREA'-1 TRIPULANTES EN LA COLA DE EXEC. ESTO VA A PASAR SOLO CUANDO SE CREE
+				//LA PRIMERA PATOTA O CUANDO TERMINEN DE EJECUTAR TODOS LOS TRIPULANTES Y SE VUELVA A CREAR UNA NUEVA PATOTA (MEDIO FIERO, PERO PARECE QUE ANDA xD)
+				habilitarSiCorresponde(tripulante);
+			}
 
 			sem_wait(&(tripulante->puedeEjecutar));
 
@@ -568,17 +577,29 @@ void expulsarTripulante(int id_tripulante){
 	}
 
 	pthread_mutex_lock(&mutexTripulantes);
-	t_tripulante* tripulante = list_remove_by_condition(tripulantes,buscarTripulante);
+	t_tripulante* tripulante = list_find(tripulantes,buscarTripulante);
 	pthread_mutex_unlock(&mutexTripulantes);
 
 	pthread_mutex_lock(&mutexTripulantes);
 	switch(tripulante->estado){
+	case EXIT:
+		log_info(loggerDiscordiador,"EL TRIPULANTE %d YA TERMINÓ",tripulante->tid);
+		break;
 	case NEW:
+		pthread_mutex_lock(&mutexColaExit);
+		list_add(colaExit,tripulante);
+		pthread_mutex_unlock(&mutexColaExit);
+
+		sem_post(&(tripulante->semaforoPlanificacion)); //PARA QUE SALGA DEL WHILE(1)
 		break;
 	case READY:
 		pthread_mutex_lock(&mutexColaReady);
 		list_remove_by_condition(colaReady,buscarTripulante);
 		pthread_mutex_unlock(&mutexColaReady);
+
+		pthread_mutex_lock(&mutexColaExit);
+		list_add(colaExit,tripulante);
+		pthread_mutex_unlock(&mutexColaExit);
 		break;
 	case EXEC:
 		pthread_mutex_lock(&mutexColaExec);
@@ -587,18 +608,24 @@ void expulsarTripulante(int id_tripulante){
 
 		list_remove_by_condition(colaExec,buscarTripulante);
 		pthread_mutex_unlock(&mutexColaExec);
+
+		pthread_mutex_lock(&mutexColaExit);
+		list_add(colaExit,tripulante);
+		pthread_mutex_unlock(&mutexColaExit);
 		break;
 	case BLOCK_IO:
 		pthread_mutex_lock(&mutexColaBlockIO);
 		list_remove_by_condition(colaBlockIO,buscarTripulante);
 		pthread_mutex_unlock(&mutexColaBlockIO);
+
+		pthread_mutex_lock(&mutexColaExit);
+		list_add(colaExit,tripulante);
+		pthread_mutex_unlock(&mutexColaExit);
 		break;
 	case BLOCK_SABOTAJE:
 		//se lo saca de la cola de bloqueados por sabotaje
-		break;
-	case EXIT:
 		pthread_mutex_lock(&mutexColaExit);
-		list_remove_by_condition(colaExit,buscarTripulante);
+		list_add(colaExit,tripulante);
 		pthread_mutex_unlock(&mutexColaExit);
 		break;
 	default:
@@ -614,14 +641,11 @@ void expulsarTripulante(int id_tripulante){
 
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->expulsado = true;
+	tripulante->estado = EXIT;
 	pthread_mutex_unlock(&mutexTripulantes);
 	sem_post(&(tripulante->puedeEjecutar)); //PARA QUE DEJE DE ESPERAR Y TERMINE EL HILO (HORRIBLE e.e)
 
 	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
-
-	free(tripulante->posicion);
-	free(tripulante->proxTarea->nombre);
-	free(tripulante->proxTarea);
 }
 
 void iniciarPlanificacion(){

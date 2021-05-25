@@ -88,14 +88,6 @@ pthread_mutex_t mutexColaExec;
 pthread_mutex_t mutexColaBlockIO;
 pthread_mutex_t mutexColaExit;
 pthread_mutex_t mutexActivarPlanificacion;
-pthread_mutex_t mutexMientrasEjecutan;
-
-//sem_t mutexTripulantes;
-//sem_t mutexColaReady;
-//sem_t mutexColaExec;
-//sem_t mutexColaBlockIO;
-//sem_t mutexColaExit;
-//sem_t mutexActivarPlanificacion;
 
 void inicializarVariables();
 void crearDiccionarioComandos(t_dictionary*);
@@ -114,8 +106,8 @@ void pausarPlanificacion();
 void obtenerBitacora(uint32_t);
 
 void* serializar_tripulante(t_tripulante*);
-void planificarTripulanteFIFO(t_tripulante*,int);
-void planificarTripulanteRR(t_tripulante*,int);
+void planificarTripulanteFIFO(t_tripulante*);
+void planificarTripulanteRR(t_tripulante*);
 void planificarTripulante(t_tripulante*);
 void gestionarTripulante(t_tripulante*);
 void habilitarProximoAEjecutar();

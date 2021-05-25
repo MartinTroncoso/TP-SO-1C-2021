@@ -86,7 +86,7 @@ void atenderTripulante(void* _cliente) {
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
 			break;
 		case EXPULSAR_TRIPULANTE:
-			log_info(loggerMiRam, "[TRIPULANTE %d] EXPULSADO DEL SISTEMA.",tripulante->tid);
+			log_info(loggerMiRam, "[TRIPULANTE %d] EXPULSADO.",tripulante->tid);
 			close(socket_tripulante);
 			return;
 			break;
