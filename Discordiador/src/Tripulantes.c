@@ -232,7 +232,10 @@ void habilitarProximoAEjecutar(){
 	if(!list_is_empty(colaReady) && list_size(colaExec)<GRADO_MULTITAREA){
 		t_tripulante* tripulante = list_find(colaReady,primerTripulanteDeshabilitado);
 		sem_post(&(tripulante->puedeEjecutar));
+
+		pthread_mutex_lock(&mutexTripulantes);
 		tripulante->habilitado = true;
+		pthread_mutex_unlock(&mutexTripulantes);
 	}
 	pthread_mutex_unlock(&mutexColaExec);
 	pthread_mutex_unlock(&mutexColaReady);
@@ -247,7 +250,10 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexColaReady);
 	if(list_any_satisfy(list_take(colaReady,GRADO_MULTITAREA),buscarTripulante) && list_size(colaExec)<GRADO_MULTITAREA && !tripulante->habilitado){
 		sem_post(&(tripulante->puedeEjecutar));
+
+		pthread_mutex_lock(&mutexTripulantes);
 		tripulante->habilitado = true;
+		pthread_mutex_unlock(&mutexTripulantes);
 	}
 	pthread_mutex_unlock(&mutexColaReady);
 	pthread_mutex_unlock(&mutexColaExec);
