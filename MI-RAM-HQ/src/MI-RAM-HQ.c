@@ -202,18 +202,26 @@ void enviar_proxima_tarea(TCB* tripulante, int socket_tripulante) {
 		instruccion_enviar = string_duplicate(instrucciones_proximas);
 	}
 
-	//Preparo buffer para enviar
-	t_buffer* buffer = malloc(sizeof(t_buffer));
 	int size_instruccion_enviar = strlen(instruccion_enviar) + 1;
-	int desplazamiento = 0;
 
+	tipo_tarea cod_tarea;
+	if(string_contains(instruccion_enviar," "))
+		cod_tarea = ENTRADA_SALIDA;
+	else
+		cod_tarea = COMUN;
+
+	//Preparo paquete para enviar
+	t_buffer* buffer = malloc(sizeof(t_buffer));
 	buffer->size = sizeof(uint32_t) + size_instruccion_enviar;
 	buffer->stream = malloc(buffer->size);
+
+	int desplazamiento = 0;
 
 	memcpy(buffer->stream + desplazamiento, &size_instruccion_enviar, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(buffer->stream + desplazamiento, instruccion_enviar, size_instruccion_enviar);
 
+	send(socket_tripulante,&cod_tarea,sizeof(int),0);
 	enviar_buffer(buffer, socket_tripulante);
 
 	free(buffer->stream);

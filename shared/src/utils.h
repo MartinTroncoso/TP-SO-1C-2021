@@ -48,8 +48,14 @@ typedef enum{
 	RESOLUCION_SABOTAJE=11,
 	FINALIZA_FSCK=12,
 	INVOCAR_FSCK=13,
-	ESTADO_ALERTA=14
+	ESTADO_ALERTA=14,
+	CAMBIO_ESTADO=15
 }tipo_mensaje;
+
+typedef enum{
+	ENTRADA_SALIDA=1,
+	COMUN=2
+}tipo_tarea;
 
 typedef struct
 {
@@ -81,6 +87,7 @@ typedef struct{
 	uint32_t parametro;
 	posicion posicion;
 	uint32_t tiempo;
+	bool esDeEntradaSalida;
 }Tarea;
 
 int crearConexionCliente(char*,char*);

@@ -18,9 +18,11 @@ void inicializarVariables(){
 
 	IP_MI_RAM = config_get_string_value(configuracionDiscordiador,"IP_MI_RAM_HQ");
 	IP_I_MONGO_STORE = config_get_string_value(configuracionDiscordiador,"IP_I_MONGO_STORE");
+	IP_DISCORDIADOR = config_get_string_value(configuracionDiscordiador,"IP_DISCORDIADOR");
 	ALGORITMO = config_get_string_value(configuracionDiscordiador,"ALGORITMO");
 	PUERTO_MI_RAM = config_get_string_value(configuracionDiscordiador,"PUERTO_MI_RAM_HQ");
 	PUERTO_I_MONGO_STORE = config_get_string_value(configuracionDiscordiador,"PUERTO_I_MONGO_STORE");
+	PUERTO_DISCORDIADOR = config_get_string_value(configuracionDiscordiador,"PUERTO_DISCORDIADOR");
 	GRADO_MULTITAREA = config_get_int_value(configuracionDiscordiador,"GRADO_MULTITAREA");
 	QUANTUM = config_get_int_value(configuracionDiscordiador,"QUANTUM");
 	DURACION_SABOTAJE = config_get_int_value(configuracionDiscordiador,"DURACION_SABOTAJE");
@@ -37,6 +39,7 @@ void inicializarVariables(){
 	idTripulante = 1;
 	idPatota = 1;
 	planificacionActivada = false;
+	planificacionFueActivadaAlgunaVez = false; //PARA QUE SE SI SE PAUSA Y SE CREA UNA PATOTA, LOS TRIPULANTES QUEDEN EN NEW Y NO EN READY
 
 	pthread_mutex_init(&mutexTripulantes,NULL);
 	pthread_mutex_init(&mutexColaReady,NULL);
@@ -44,6 +47,7 @@ void inicializarVariables(){
 	pthread_mutex_init(&mutexColaExit,NULL);
 	pthread_mutex_init(&mutexColaBlockIO,NULL);
 	pthread_mutex_init(&mutexActivarPlanificacion,NULL);
+	pthread_mutex_init(&mutexEjecutarIO,NULL);
 }
 
 void crearDiccionarioComandos(t_dictionary* diccionario)
@@ -146,7 +150,7 @@ void ingresar_comandos()
 			break;
 		}
 		default:
-			printf("Comando no reconocido\n");
+			log_info(loggerDiscordiador,"Comando no reconocido");
 			break;
 		}
 		free(comando);
@@ -163,6 +167,7 @@ void destruirSemaforos(){
 	pthread_mutex_destroy(&mutexColaExit);
 	pthread_mutex_destroy(&mutexColaBlockIO);
 	pthread_mutex_destroy(&mutexActivarPlanificacion);
+	pthread_mutex_destroy(&mutexEjecutarIO);
 }
 
 void destruirListasYDiccionarios(){
@@ -187,6 +192,8 @@ void terminar_programa()
 int main(void)
 {
 	inicializarVariables();
+
+//	int socket_escucha_MONGO = iniciarServidor(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
 
 	ingresar_comandos();
 
