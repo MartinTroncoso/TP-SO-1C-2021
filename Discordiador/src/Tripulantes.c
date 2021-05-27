@@ -161,6 +161,8 @@ char* obtenerTareasComoCadena(char* path){
 	free(buffer);
 	free(buffer_total);
 
+	printf("TAREAS: %s\n",result_string);
+
 	return result_string;
 }
 
@@ -425,17 +427,24 @@ void ejecutarTarea(t_tripulante* tripulante){
 			sem_post(&(tripulante->semaforoPlanificacion));
 		}
 
-		pthread_mutex_lock(&mutexTripulantes);
 		if(!tripulante->expulsado){
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
-			sem_post(&(tripulante->puedeEjecutar));
-		}
-		pthread_mutex_unlock(&mutexTripulantes);
 
-		pthread_mutex_lock(&mutexTripulantes);
-		tripulante->tareasPendientes--;
-		tripulante->habilitado = false;
-		pthread_mutex_unlock(&mutexTripulantes);
+			tripulante->tareasPendientes--;
+			tripulante->habilitado = false;
+
+			if(tripulante->tareasPendientes > 0)
+				sem_post(&(tripulante->puedeEjecutar));
+			else
+			{
+				pthread_mutex_lock(&mutexColaExec);
+				list_remove_by_condition(colaExec,buscarTripulante);
+				pthread_mutex_unlock(&mutexColaExec);
+
+				habilitarProximoAEjecutar();
+			}
+
+		}
 	}
 }
 
@@ -670,11 +679,12 @@ void expulsarTripulante(int id_tripulante){
 
 	switch(tripulante->estado){
 	case EXIT:
-		log_info(loggerDiscordiador,"EL TRIPULANTE %d YA TERMINÓ",tripulante->tid);
+		log_info(loggerDiscordiador,"EL TRIPULANTE %d YA TERMINÓ O YA FUE EXPULSADO",tripulante->tid);
+		return;
 		break;
 	case NEW:
 		agregarAExit(tripulante);
-		sem_post(&(tripulante->semaforoPlanificacion)); //PARA QUE SALGA DEL WHILE(1)
+		sem_post(&(tripulante->semaforoPlanificacion));
 		break;
 	case READY:
 		pthread_mutex_lock(&mutexColaReady);

@@ -102,6 +102,7 @@ void ingresar_comandos()
 				iniciarPatota(datosPatota);
 
 				list_destroy(datosPatota->coordenadasTripulantes);
+				free(datosPatota->rutaDeTareas);
 				free(datosPatota);
 			}
 			else
