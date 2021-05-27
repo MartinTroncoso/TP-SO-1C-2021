@@ -41,7 +41,7 @@ int main(void) {
 	}
 
 	close(socket_escucha);
-	//terminar_programa();
+	terminar_programa();
 	return EXIT_SUCCESS;
 }
 
@@ -85,6 +85,16 @@ void atenderTripulante(void* _cliente) {
 		case INFORMAR_MOVIMIENTO:
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
 			break;
+		case CAMBIO_ESTADO:{
+			char nuevoEstado;
+			recv(socket_tripulante,&nuevoEstado,sizeof(char),0),
+			log_info(loggerMiRam, "[TRIPULANTE %d] Pasa de estado %c a %c", tripulante->tid, tripulante->estado, nuevoEstado);
+
+			pthread_mutex_lock(&mutexTripulantes);
+			tripulante->estado = nuevoEstado;
+			pthread_mutex_unlock(&mutexTripulantes);
+			break;
+		}
 		case EXPULSAR_TRIPULANTE:
 			log_info(loggerMiRam, "[TRIPULANTE %d] EXPULSADO.",tripulante->tid);
 			close(socket_tripulante);

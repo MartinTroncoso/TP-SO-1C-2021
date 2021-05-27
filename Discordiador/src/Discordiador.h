@@ -124,7 +124,6 @@ int getCantidadTareasPatota(char*);
 bool existeElTripulante(uint32_t);
 bool tieneTareasPendientes(t_tripulante*);
 Tarea* solitarProximaTarea(t_tripulante*);
-void informarMovimiento(int,t_tripulante*);
 void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
 void agregarAReady(t_tripulante*);
@@ -132,9 +131,11 @@ void agregarAExec(t_tripulante*);
 void agregarAExit(t_tripulante*);
 void agregarABlockIO(t_tripulante*);
 void ejecutarTarea(t_tripulante*);
-void informarInicioDeTarea(int,uint32_t, Tarea*);
-void informarFinalizacionDeTarea(int,uint32_t,Tarea*);
-void informarTripulanteAtiendeSabotaje(int,uint32_t);
-void informarTripulanteResuelveSabotaje(int,uint32_t);
+void notificarMovimientoMIRAM(t_tripulante*);
+void notificarMovimientoIMONGO(t_tripulante*,uint32_t,uint32_t);
+void notificarInicioDeTarea(t_tripulante*);
+void notificarFinalizacionDeTarea(t_tripulante*);
+void notificarAtencionSabotaje(t_tripulante*);
+void notificarResolucionSabotaje(t_tripulante*);
 
 #endif /* DISCORDIADOR_H_ */

@@ -16,13 +16,12 @@ int main(void) {
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
 	log_info(loggerMongo,"I-MONGO Listo para recibir a los Tripulantes!");
 
-	while(1)
-	{
-		int socketCliente = esperar_cliente(socket_escucha);
+	while(1){
+		int socket_cliente = esperar_cliente(socket_escucha);
 		log_info(loggerMongo,"Se conectó un Tripulante!");
 
 		pthread_t hilo_receptor;
-		pthread_create(&hilo_receptor , NULL ,(void*) atenderTripulante, (void*) socketCliente);
+		pthread_create(&hilo_receptor , NULL ,(void*) atenderTripulante, (void*) socket_cliente);
 		pthread_detach(hilo_receptor);
 	}
 
@@ -53,7 +52,7 @@ void inicializarVariables(){
 
 void inicializarFileSystem()
 {
-	inicializarSuperBloque();
+//	inicializarSuperBloque();
 	//inicializarBlocks();
 }
 
@@ -154,28 +153,27 @@ void atenderTripulante(void* _cliente)
 	recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
 
 	while(1){
-		log_info(loggerMongo, "[TRIPULANTE %d] Espero proxima operacion del tripulante", idTripulante);
-		int tipo_msg = recibir_operacion(socket_tripulante);
+		int op_code = recibir_operacion(socket_tripulante);
 
-		switch(tipo_msg)
+		switch(op_code)
 		{
 		case INFORMAR_DESPLAZAMIENTO_FS:
-			recibirInformeDeDesplazamiento(socket_tripulante);
+			recibirInformeDeDesplazamiento(socket_tripulante,idTripulante);
 			break;
-		case INICIO_TAREA: // PARAMETRO: "NOMBRETAREA"
-			recibirInicioDeTarea(socket_tripulante);
+		case INICIO_TAREA:
+			recibirInicioDeTarea(socket_tripulante,idTripulante);
 			break;
-		case FINALIZO_TAREA: //PARAMETRO "NOMBRETAREA"
-			recibirFinalizaTarea(socket_tripulante);
+		case FINALIZO_TAREA:
+			recibirFinalizaTarea(socket_tripulante,idTripulante);
 			break;
-		case ATENDER_SABOTAJE: //PARAMETRO INDISTINTO
-			recibirAtenderSabotaje(socket_tripulante);
+		case ATENDER_SABOTAJE:
+			recibirAtenderSabotaje(socket_tripulante,idTripulante);
 			break;
-		case RESOLUCION_SABOTAJE: //PARAMETRO INDISTINTO
-			recibirResolucionSabotaje(socket_tripulante);
+		case RESOLUCION_SABOTAJE:
+			recibirResolucionSabotaje(socket_tripulante,idTripulante);
 			break;
 		case OBTENER_BITACORA:
-			recibirPeticionDeBitacora(socket_tripulante);
+			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
 			break;
 		default:
 			break;
@@ -183,20 +181,18 @@ void atenderTripulante(void* _cliente)
 	}
 }
 
-void recibirInformeDeDesplazamiento(int socketCliente)
+void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulante)
 {
 	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
+	uint32_t sizeBuffer;
 	uint32_t coorXAnterior;
 	uint32_t coorYAnterior;
 	uint32_t coorXNueva;
 	uint32_t coorYNueva;
 	uint32_t desplazamiento = 0;
 
-	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
-	memcpy(&tid, buffer+desplazamiento,sizeof(uint32_t));
-	desplazamiento+=sizeof(uint32_t);
+	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
+
 	memcpy(&coorXAnterior,buffer+desplazamiento,sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(&coorYAnterior,buffer+desplazamiento,sizeof(uint32_t));
@@ -204,88 +200,102 @@ void recibirInformeDeDesplazamiento(int socketCliente)
 	memcpy(&coorXNueva,buffer+desplazamiento,sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(&coorYNueva,buffer+desplazamiento,sizeof(uint32_t));
+
+	//Hasta tener bien definido lo de los archivos solo lo logeo
+	log_info(loggerMongo,"[TRIPULANTE %d] Se mueve de %d|%d a %d|%d",id_tripulante,coorXAnterior,coorYAnterior,coorXNueva,coorYNueva);
+
+//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
+//	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
+//	txt_close_file(bitacoraTripulante);
+	free(buffer);
+}
+
+void recibirInicioDeTarea(int socket_tripulante, uint32_t id_tripulante)
+{
+	void* buffer;
+	uint32_t sizeBuffer;
+	uint32_t sizeTarea;
+
+	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
+
+	int desplazamiento = 0;
+
+	memcpy(&sizeTarea, buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
-	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
+	char* tarea = malloc(sizeTarea);
+	memcpy(tarea, buffer + desplazamiento, sizeTarea);
+
+	//Hasta tener bien definido lo de los archivos solo lo logeo
+	log_info(loggerMongo,"[TRIPULANTE %d] Inicia la tarea %s",id_tripulante,tarea);
+
+//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
+//	txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",tarea));
+//	txt_close_file(bitacoraTripulante);
 	free(buffer);
-	txt_close_file(bitacoraTripulante);
 }
 
-void recibirInicioDeTarea(int socketCliente)
+void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante)
 {
 	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
-	uint32_t desplazamiento = 0;
-	char* tarea;
+	uint32_t sizeBuffer;
+	uint32_t sizeTarea;
 
-	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
-	memcpy(&tid,buffer,sizeof(uint32_t));
-	desplazamiento+=sizeof(uint32_t);
-	memcpy(&tarea,buffer,tamanioBuffer-sizeof(uint32_t));
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
-	txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",tarea));
+	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
+
+	int desplazamiento = 0;
+
+	memcpy(&sizeTarea, buffer + desplazamiento, sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+
+	char* tarea = malloc(sizeTarea);
+	memcpy(tarea, buffer + desplazamiento, sizeTarea);
+
+	//Hasta tener bien definido lo de los archivos solo lo logeo
+	log_info(loggerMongo,"[TRIPULANTE %d] Finaliza la tarea %s",id_tripulante,tarea);
+
+//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
+//	txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",tarea));
+//	txt_close_file(bitacoraTripulante);
+
 	free(buffer);
-	txt_close_file(bitacoraTripulante);
 }
 
-void recibirFinalizaTarea(int socketCliente)
+void recibirPeticionDeBitacora(int socket_tripulante, uint32_t id_tripulante)
 {
 	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
-	uint32_t desplazamiento = 0;
-	char* tarea;
+	uint32_t sizeBuffer;
 
-	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
-	memcpy(&tid,buffer,sizeof(uint32_t));
-	desplazamiento+=sizeof(uint32_t);
-	memcpy(&tarea,buffer,tamanioBuffer-sizeof(uint32_t));
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
-	txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",tarea));
-	free(buffer);
-	txt_close_file(bitacoraTripulante);
-}
-
-void recibirPeticionDeBitacora(int socketCliente)
-{
-	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
-
-	buffer = recibir_buffer(&tamanioBuffer,socketCliente);
-	memcpy(&tid,buffer,sizeof(uint32_t));
-	printf("PETICION DE BITACORA DEL TRIPULANTE: %d\n",tid);
+	buffer = recibir_buffer(&sizeBuffer,socket_tripulante);
+	memcpy(&id_tripulante,buffer,sizeof(uint32_t));
+	log_info(loggerMongo,"[TRIPULANTE %d] SOLICITÓ SU BITÁCORA",id_tripulante);
 	//enviar_respuesta(OK, socketCliente);
 	free(buffer);
 }
 
-void recibirAtenderSabotaje(int socketCliente)
+void recibirAtenderSabotaje(int socket_tripulante, uint32_t id_tripulante)
 {
 	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
+	uint32_t sizeBuffer;
 
-	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
-	memcpy(&tid, buffer,sizeof(uint32_t));
+	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
+	memcpy(&id_tripulante, buffer,sizeof(uint32_t));
 
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 	txt_write_in_file(bitacoraTripulante, string_from_format("Se corre en panico hacia la ubicacion del sabotaje\n"));
 	free(buffer);
 	txt_close_file(bitacoraTripulante);
 }
 
-void recibirResolucionSabotaje(int socketCliente)
+void recibirResolucionSabotaje(int socket_tripulante, uint32_t id_tripulante)
 {
 	void* buffer;
-	uint32_t tamanioBuffer;
-	uint32_t tid;
+	uint32_t sizeBuffer;
 
-	buffer = recibir_buffer(&tamanioBuffer, socketCliente);
-	memcpy(&tid, buffer,sizeof(uint32_t));
+	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
+	memcpy(&id_tripulante, buffer,sizeof(uint32_t));
 
-	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,tid));
+	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 	txt_write_in_file(bitacoraTripulante, string_from_format("Se resuelve el sabotaje\n"));
 	free(buffer);
 	txt_close_file(bitacoraTripulante);

@@ -35,12 +35,12 @@ void inicializarSuperBloque();
 t_bitarray recuperarBitArray();
 void atenderTripulante(void*);
 void guardarBitArray(t_bitarray*);
-void recibirPeticionDeBitacora(int);
 void terminar_programa();
-void recibirInformeDeDesplazamiento(int socket);
-void recibirInicioDeTarea(int socket);
-void recibirFinalizaTarea(int socket);
-void recibirAtenderSabotaje(int socket);
-void recibirResolucionSabotaje(int socket);
+void recibirInformeDeDesplazamiento(int,uint32_t);
+void recibirInicioDeTarea(int,uint32_t);
+void recibirPeticionDeBitacora(int,uint32_t);
+void recibirFinalizaTarea(int,uint32_t);
+void recibirAtenderSabotaje(int,uint32_t);
+void recibirResolucionSabotaje(int,uint32_t);
 
 #endif /* I_MONGO_STORE_H_ */

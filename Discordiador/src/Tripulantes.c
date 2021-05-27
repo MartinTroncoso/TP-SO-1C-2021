@@ -15,16 +15,21 @@ void sumarIdPatota(){
 	idPatota++;
 }
 
+//PARA MANDÁRSELO A MI-RAM
 char getEstadoComoCaracter(estado estado){
 	return estado==NEW?'N':estado==READY?'R':estado==EXEC?'E':estado==EXIT?'F':'B';
 }
 
+//PARA IMPRIMIRLO CON LISTAR_TRIPULANTES
 char* getEstadoComoCadena(estado estado){
 	return estado==NEW?"NEW":estado==READY?"READY":estado==EXEC?"EXEC":estado==EXIT?"EXIT":estado==BLOCK_IO?"BLOCK I/O":"BLOCK SABOTAJE";
 }
 
 void notificarCambioDeEstado(t_tripulante* tripulante){
-
+	tipo_mensaje op_code = CAMBIO_ESTADO;
+	char estadoTripulante = getEstadoComoCaracter(tripulante->estado);
+	send(tripulante->socket_MIRAM,&op_code,sizeof(tipo_mensaje),0);
+	send(tripulante->socket_MIRAM,&estadoTripulante,sizeof(char),0);
 }
 
 void agregarAReady(t_tripulante* tripulante){
@@ -35,6 +40,8 @@ void agregarAReady(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->estado = READY;
 	pthread_mutex_unlock(&mutexTripulantes);
+
+	notificarCambioDeEstado(tripulante);
 }
 
 void agregarAExec(t_tripulante* tripulante){
@@ -45,6 +52,8 @@ void agregarAExec(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->estado = EXEC;
 	pthread_mutex_unlock(&mutexTripulantes);
+
+	notificarCambioDeEstado(tripulante);
 }
 
 void agregarAExit(t_tripulante* tripulante){
@@ -55,6 +64,8 @@ void agregarAExit(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->estado = EXIT;
 	pthread_mutex_unlock(&mutexTripulantes);
+
+	notificarCambioDeEstado(tripulante);
 }
 
 void agregarABlockIO(t_tripulante* tripulante){
@@ -65,9 +76,12 @@ void agregarABlockIO(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->estado = BLOCK_IO;
 	pthread_mutex_unlock(&mutexTripulantes);
+
+	notificarCambioDeEstado(tripulante);
 }
 
 void moverXDelTripulante(t_tripulante* tripulante){
+	uint32_t posXAnterior = tripulante->posicion->posX;
 	if(tripulante->posicion->posX > tripulante->proxTarea->posicion.posX){
 		tripulante->posicion->posX--;
 	}
@@ -77,9 +91,14 @@ void moverXDelTripulante(t_tripulante* tripulante){
 			tripulante->posicion->posX++;
 		}
 	}
+
+	notificarMovimientoMIRAM(tripulante);
+	notificarMovimientoIMONGO(tripulante,posXAnterior,tripulante->posicion->posY);
 }
 
 void moverYDelTripulante(t_tripulante* tripulante){
+	uint32_t posYAnterior = tripulante->posicion->posY;
+
 	if(tripulante->posicion->posY > tripulante->proxTarea->posicion.posY){
 		tripulante->posicion->posY--;
 	}
@@ -89,6 +108,9 @@ void moverYDelTripulante(t_tripulante* tripulante){
 			tripulante->posicion->posY++;
 		}
 	}
+
+	notificarMovimientoMIRAM(tripulante);
+	notificarMovimientoIMONGO(tripulante,tripulante->posicion->posX,posYAnterior);
 }
 
 t_iniciar_patota* obtenerDatosPatota(char** array){
@@ -172,27 +194,6 @@ int getCantidadTareasPatota(char* cadena){
 	}
 
 	return cantidad+1;
-}
-
-void informarMovimiento(int socket_cliente, t_tripulante* tripulante){
-
-	//Preparo paquete para enviar
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-	int desplazamiento = 0;
-
-	paquete->codigo_operacion = INFORMAR_MOVIMIENTO;
-	paquete->buffer->size = 2 * sizeof(uint32_t);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-
-	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posY), sizeof(uint32_t));
-
-	fflush(stdout);
-
-	enviar_paquete(paquete, socket_cliente);
-	eliminar_paquete(paquete);
 }
 
 Tarea* solitarProximaTarea(t_tripulante* tripulante){
@@ -399,6 +400,8 @@ void ejecutarTarea(t_tripulante* tripulante){
 			habilitarProximoAEjecutar();
 
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
+
+			notificarInicioDeTarea(tripulante);
 		}
 
 		pthread_mutex_lock(&mutexEjecutarIO);
@@ -415,6 +418,8 @@ void ejecutarTarea(t_tripulante* tripulante){
 			list_remove_by_condition(colaBlockIO,buscarTripulante);
 			pthread_mutex_unlock(&mutexColaBlockIO);
 
+			notificarFinalizacionDeTarea(tripulante);
+
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->tareasPendientes--;
 			tripulante->habilitado = false;
@@ -430,6 +435,8 @@ void ejecutarTarea(t_tripulante* tripulante){
 	{
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] COMIENZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
+		notificarInicioDeTarea(tripulante);
+
 		for(int i=0; i<tripulante->proxTarea->tiempo && !tripulante->expulsado ;i++){
 			sem_wait(&(tripulante->semaforoPlanificacion));
 			sleep(RETARDO_CICLO_CPU);
@@ -438,6 +445,8 @@ void ejecutarTarea(t_tripulante* tripulante){
 
 		if(!tripulante->expulsado){
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
+
+			notificarFinalizacionDeTarea(tripulante);
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->tareasPendientes--;
@@ -497,7 +506,6 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 			moverXDelTripulante(tripulante);
 			sem_post(&(tripulante->semaforoPlanificacion));
 
-			informarMovimiento(tripulante->socket_MIRAM,tripulante);
 			sleep(RETARDO_CICLO_CPU);
 		}
 
@@ -506,7 +514,6 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 			moverYDelTripulante(tripulante);
 			sem_post(&(tripulante->semaforoPlanificacion));
 
-			informarMovimiento(tripulante->socket_MIRAM,tripulante);
 			sleep(RETARDO_CICLO_CPU);
 		}
 
@@ -567,6 +574,7 @@ void planificarTripulante(t_tripulante* tripulante){
 
 void gestionarTripulante(t_tripulante* tripulante){
 	tripulante->socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+	tripulante->socket_MONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_TRIPULANTE;
@@ -576,13 +584,13 @@ void gestionarTripulante(t_tripulante* tripulante){
 	enviar_paquete(paquete,tripulante->socket_MIRAM);
 	eliminar_paquete(paquete);
 
-	pthread_mutex_lock(&mutexActivarPlanificacion);
+	send(tripulante->socket_MONGO,&(tripulante->tid),sizeof(uint32_t),0);
+
 	if(planificacionFueActivadaAlgunaVez && !planificacionActivada){
 		//SI SE CREA UNA PATOTA DESPUÉS DE HABER PAUSADO LA PLANIFICACIÓN, LOS TRIPULANTES QUEDAN EN NEW ESPERANDO A QUE SE REANUDE
 		sem_wait(&(tripulante->semaforoPlanificacion));
 		sem_post(&(tripulante->semaforoPlanificacion));
 	}
-	pthread_mutex_unlock(&mutexActivarPlanificacion);
 
 	//SI ES EXPULSADO MIENTRAS ESTÁ EN NEW CON LA PLANIFICACIÓN PAUSADA, NO PLANIFICA, PASA DIRECTO A EXIT
 	if(!tripulante->expulsado)
@@ -805,68 +813,90 @@ void obtenerBitacora(uint32_t idTripulante){ //debe devolver un stream o string 
 	//return "Funciona";
 }
 
-void informarInicioDeTarea(int socketIMONGO, uint32_t tid, Tarea* tarea)
-{
+void notificarMovimientoMIRAM(t_tripulante* tripulante){
+	//Preparo paquete para enviar
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+	int desplazamiento = 0;
+
+	paquete->codigo_operacion = INFORMAR_MOVIMIENTO;
+	paquete->buffer->size = 2 * sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posY), sizeof(uint32_t));
+
+	fflush(stdout);
+
+	enviar_paquete(paquete, tripulante->socket_MIRAM);
+	eliminar_paquete(paquete);
+}
+
+void notificarMovimientoIMONGO(t_tripulante* tripulante, uint32_t posXAnterior, uint32_t posYAnterior){
+	//Preparo paquete para enviar
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
+	int desplazamiento = 0;
+
+	paquete->codigo_operacion = INFORMAR_DESPLAZAMIENTO_FS;
+	paquete->buffer->size = 4*sizeof(uint32_t);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+
+	memcpy(paquete->buffer->stream + desplazamiento, &(posXAnterior), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(posYAnterior), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posX), sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->posicion->posY), sizeof(uint32_t));
+
+	fflush(stdout);
+
+	enviar_paquete(paquete, tripulante->socket_MONGO);
+	eliminar_paquete(paquete);
+}
+
+void notificarInicioDeTarea(t_tripulante* tripulante){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 	int desplazamiento = 0;
 
 	paquete->codigo_operacion = INICIO_TAREA;
-	paquete->buffer->size = sizeof(uint32_t) + sizeof(tarea->nombre);
+	paquete->buffer->size = sizeof(uint32_t) + tripulante->proxTarea->longNombre;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &tid,sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->proxTarea->longNombre),sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &tarea->nombre,sizeof(tarea->nombre));
+	memcpy(paquete->buffer->stream + desplazamiento, tripulante->proxTarea->nombre,tripulante->proxTarea->longNombre);
 
-	enviar_paquete(paquete, socketIMONGO);
+	enviar_paquete(paquete, tripulante->socket_MONGO);
 	eliminar_paquete(paquete);
 }
 
-void informarFinalizacionDeTarea(int socketIMONGO, uint32_t tid, Tarea* tarea)
-{
+void notificarFinalizacionDeTarea(t_tripulante* tripulante){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->buffer = malloc(sizeof(t_buffer));
 	int desplazamiento = 0;
 
 	paquete->codigo_operacion = FINALIZO_TAREA;
-	paquete->buffer->size = sizeof(uint32_t) + sizeof(tarea->nombre);
+	paquete->buffer->size = sizeof(uint32_t) + tripulante->proxTarea->longNombre;
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &tid,sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->proxTarea->longNombre),sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(paquete->buffer->stream + desplazamiento, &tarea->nombre,sizeof(tarea->nombre));
+	memcpy(paquete->buffer->stream + desplazamiento, tripulante->proxTarea->nombre,tripulante->proxTarea->longNombre);
 
-	enviar_paquete(paquete, socketIMONGO);
+	enviar_paquete(paquete, tripulante->socket_MONGO);
 	eliminar_paquete(paquete);
 }
 
-void informarTripulanteAtiendeSabotaje(int socketIMONGO, uint32_t tid)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	paquete->codigo_operacion = ATENDER_SABOTAJE;
-	paquete->buffer->size = sizeof(uint32_t);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-
-	memcpy(paquete->buffer->stream,&tid,sizeof(uint32_t));
-
-	enviar_paquete(paquete, socketIMONGO);
-	eliminar_paquete(paquete);
+void notificarAtencionSabotaje(t_tripulante* tripulante){
+	tipo_mensaje op_code = ATENDER_SABOTAJE;
+	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 }
 
-void informarTripulanteResuelveSabotaje(int socketIMONGO, uint32_t tid)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->buffer = malloc(sizeof(t_buffer));
-
-	paquete->codigo_operacion = RESOLUCION_SABOTAJE;
-	paquete->buffer->size = sizeof(uint32_t);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-
-	memcpy(paquete->buffer->stream,&tid,sizeof(uint32_t));
-
-	enviar_paquete(paquete, socketIMONGO);
-	eliminar_paquete(paquete);
+void notificarResolucionSabotaje(t_tripulante* tripulante){
+	tipo_mensaje op_code = RESOLUCION_SABOTAJE;
+	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 }
