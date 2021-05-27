@@ -161,8 +161,6 @@ char* obtenerTareasComoCadena(char* path){
 	free(buffer);
 	free(buffer_total);
 
-	printf("TAREAS: %s\n",result_string);
-
 	return result_string;
 }
 
@@ -221,16 +219,27 @@ Tarea* solitarProximaTarea(t_tripulante* tripulante){
 	switch(op_code){
 	case ENTRADA_SALIDA:
 		//["GENERAR_OXIGENO","12;3;5;2"]
+		//["DESCARTAR_BASURA","3;1;7"] ---> sin parámetro
 		tareaSpliteada = string_split(stringCadena," ");
 		char* parametros = tareaSpliteada[1];
 		char** parametrosSpliteados = string_split(parametros,";");
 
-		tiempo = atoi(parametrosSpliteados[3]); //SI NO LO HAGO ASI, proximaTarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
+		if(parametrosSpliteados[3]==NULL){
+			tiempo = atoi(parametrosSpliteados[2]); //SI NO LO HAGO ASI, proximaTarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
+			proximaTarea->parametro = -1;
+			proximaTarea->posicion.posX = atoi(parametrosSpliteados[0]);
+			proximaTarea->posicion.posY = atoi(parametrosSpliteados[1]);
+		}
+		else
+		{
+			tiempo = atoi(parametrosSpliteados[3]); //SI NO LO HAGO ASI, proximaTarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
+			proximaTarea->parametro = atoi(parametrosSpliteados[0]);
+			proximaTarea->posicion.posX = atoi(parametrosSpliteados[1]);
+			proximaTarea->posicion.posY = atoi(parametrosSpliteados[2]);
+		}
+
 		proximaTarea->nombre = tareaSpliteada[0];
 		proximaTarea->longNombre = strlen(proximaTarea->nombre) + 1;
-		proximaTarea->parametro = atoi(parametrosSpliteados[0]);
-		proximaTarea->posicion.posX = atoi(parametrosSpliteados[1]);
-		proximaTarea->posicion.posY = atoi(parametrosSpliteados[2]);
 		proximaTarea->tiempo = tiempo;
 		proximaTarea->esDeEntradaSalida = true;
 		break;
