@@ -439,8 +439,10 @@ void ejecutarTarea(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
+			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->tareasPendientes--;
 			tripulante->habilitado = false;
+			pthread_mutex_unlock(&mutexTripulantes);
 
 			if(tripulante->tareasPendientes > 0)
 				sem_post(&(tripulante->puedeEjecutar));
