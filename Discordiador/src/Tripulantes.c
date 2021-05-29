@@ -157,9 +157,8 @@ char* obtenerTareasComoCadena(char* path){
 	}
 
 	int MAX_PER_LINE = 50;
-	int MAX_TOTAL = 400;
 	char* buffer = malloc(sizeof(char) * MAX_PER_LINE);
-	char* buffer_total = malloc(sizeof(char) * MAX_TOTAL);
+	char* buffer_total = string_new();
 	char* result_string;
 	int linesize;
 
@@ -168,8 +167,8 @@ char* obtenerTareasComoCadena(char* path){
 		if(linesize>0 && buffer[linesize - 1] == 10)
 			buffer[linesize - 1] = 0;
 
-		strcat(buffer_total, buffer);
-		strcat(buffer_total, "|");
+		string_append(&buffer_total, buffer);
+		string_append(&buffer_total, "|");
 	}
 
 	linesize = strlen(buffer_total);
