@@ -47,6 +47,7 @@ typedef enum{
 typedef struct{
 	uint32_t tid;
 	estado estado;
+	int quantum; //PARA PLANIFICACIÓN RR
 	posicion* posicion;
 	Tarea* proxTarea;
 	uint32_t tareasPendientes;
@@ -111,8 +112,12 @@ void obtenerBitacora(uint32_t);
 
 char getEstadoComoCaracter(estado);
 char* getEstadoComoCadena(estado);
-void notificarCambioDeEstado(t_tripulante*);
 void* serializar_tripulante(t_tripulante*);
+void realizarPeticionIO(int);
+bool llegoALaTarea(t_tripulante*);
+void realizarAccionTareaIO(t_tripulante*);
+void ejecutarTareaFIFO(t_tripulante*);
+void ejecutarTareaRR(t_tripulante*);
 void planificarTripulanteFIFO(t_tripulante*);
 void planificarTripulanteRR(t_tripulante*);
 void planificarTripulante(t_tripulante*);
@@ -123,14 +128,15 @@ t_iniciar_patota* obtenerDatosPatota(char**);
 int getCantidadTareasPatota(char*);
 bool existeElTripulante(uint32_t);
 bool tieneTareasPendientes(t_tripulante*);
-Tarea* solitarProximaTarea(t_tripulante*);
+Tarea* solitarProximaTarea(int);
 void moverXDelTripulante(t_tripulante*);
 void moverYDelTripulante(t_tripulante*);
+void moverTripulante(t_tripulante*);
 void agregarAReady(t_tripulante*);
 void agregarAExec(t_tripulante*);
 void agregarAExit(t_tripulante*);
 void agregarABlockIO(t_tripulante*);
-void ejecutarTarea(t_tripulante*);
+void notificarCambioDeEstado(t_tripulante*);
 void notificarMovimientoMIRAM(t_tripulante*);
 void notificarMovimientoIMONGO(t_tripulante*,uint32_t,uint32_t);
 void notificarInicioDeTarea(t_tripulante*);

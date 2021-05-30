@@ -49,7 +49,8 @@ typedef enum{
 	FINALIZA_FSCK=12,
 	INVOCAR_FSCK=13,
 	ESTADO_ALERTA=14,
-	CAMBIO_ESTADO=15
+	CAMBIO_ESTADO=15,
+	PETICION_ENTRADA_SALIDA=16
 }tipo_mensaje;
 
 typedef enum{
@@ -57,19 +58,17 @@ typedef enum{
 	COMUN=2
 }tipo_tarea;
 
-typedef struct
-{
+typedef struct{
 	int size;
 	void* stream;
 } t_buffer;
 
-typedef struct
-{
+typedef struct{
 	tipo_mensaje codigo_operacion;
 	t_buffer* buffer;
 } t_paquete;
 
-typedef enum {
+typedef enum{
 	OK=0,
 	WARNING=1,
 	ERROR=2
@@ -88,6 +87,8 @@ typedef struct{
 	posicion posicion;
 	uint32_t tiempo;
 	bool esDeEntradaSalida;
+	bool finalizada; //PARA PLANIFICACIÓN RR
+	bool yaInicio; //idem
 }Tarea;
 
 int crearConexionCliente(char*,char*);

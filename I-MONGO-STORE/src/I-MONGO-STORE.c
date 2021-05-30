@@ -44,20 +44,18 @@ void inicializarVariables(){
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
 	inicializarDiccionario();
 	inicializarFileSystem();
-	//socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
-	//log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
-	//socket_discordiador = esperar_cliente(socket_servidor);
-	//printf("SE CONECTÓ EL DISCORDIADOR!\n");
+//	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
+//	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
+//	socket_discordiador = esperar_cliente(socket_servidor);
+//	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
 
-void inicializarFileSystem()
-{
+void inicializarFileSystem(){
 //	inicializarSuperBloque();
-	//inicializarBlocks();
+//	inicializarBlocks();
 }
 
-void inicializarSuperBloque()
-{
+void inicializarSuperBloque(){
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
 	printf("cantidad de bits a reservar: %d\n",(cantidadDeBloques/8));
@@ -98,8 +96,7 @@ void inicializarSuperBloque()
 	}
 }
 
-t_bitarray recuperarBitArray()
-{
+t_bitarray recuperarBitArray(){
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque,"BLOCKS");
 	t_bitarray* bitArrayARecuperar = bitarray_create(malloc(cantidadDeBloques/8),cantidadDeBloques);
@@ -166,6 +163,9 @@ void atenderTripulante(void* _cliente)
 		case FINALIZO_TAREA:
 			recibirFinalizaTarea(socket_tripulante,idTripulante);
 			break;
+		case PETICION_ENTRADA_SALIDA:
+			log_info(loggerMongo,"[TRIPULANTE %d] REALIZA PETICIÓN DE ENTRADA/SALIDA",idTripulante);
+			break;
 		case ATENDER_SABOTAJE:
 			recibirAtenderSabotaje(socket_tripulante,idTripulante);
 			break;
@@ -176,6 +176,9 @@ void atenderTripulante(void* _cliente)
 			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
 			break;
 		default:
+			log_info(loggerMongo , "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",idTripulante);
+			close(socket_tripulante);
+			return;
 			break;
 		}
 	}
@@ -207,6 +210,7 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 //	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 //	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
 //	txt_close_file(bitacoraTripulante);
+
 	free(buffer);
 }
 

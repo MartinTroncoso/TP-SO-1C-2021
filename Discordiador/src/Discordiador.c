@@ -50,8 +50,7 @@ void inicializarVariables(){
 	pthread_mutex_init(&mutexEjecutarIO,NULL);
 }
 
-void crearDiccionarioComandos(t_dictionary* diccionario)
-{
+void crearDiccionarioComandos(t_dictionary* diccionario){
 	dictionary_put(diccionario,"INICIAR_PATOTA",(int*) 1);
 	dictionary_put(diccionario,"LISTAR_TRIPULANTES",(int*) 2);
 	dictionary_put(diccionario,"EXPULSAR_TRIPULANTE",(int*) 3);
@@ -60,8 +59,7 @@ void crearDiccionarioComandos(t_dictionary* diccionario)
 	dictionary_put(diccionario,"OBTENER_BITACORA",(int*) 6);
 }
 
-void crearDiccionarioTareasEntradaSalida(t_dictionary* diccionario)
-{
+void crearDiccionarioTareasEntradaSalida(t_dictionary* diccionario){
 	dictionary_put(diccionario,"GENERAR_OXIGENO",(int*) 1);
 	dictionary_put(diccionario,"CONSUMIR_OXIGENO",(int*) 2);
 	dictionary_put(diccionario,"GENERAR_COMIDA",(int*) 3);
@@ -157,7 +155,6 @@ void ingresar_comandos()
 		free(comando);
 		comando = readline(">");
 	}
-
 	free(comando);
 }
 
@@ -182,16 +179,15 @@ void destruirListasYDiccionarios(){
 	dictionary_destroy(diccionarioTareas);
 }
 
-void terminar_programa()
-{
+void terminar_programa(){
 	log_destroy(loggerDiscordiador);
 	config_destroy(configuracionDiscordiador);
 	destruirListasYDiccionarios();
 	destruirSemaforos();
 }
 
-int main(void)
-{
+
+int main(void){
 	inicializarVariables();
 
 //	int socket_escucha_MONGO = iniciarServidor(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
