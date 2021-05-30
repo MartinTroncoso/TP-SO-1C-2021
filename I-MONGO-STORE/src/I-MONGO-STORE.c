@@ -44,6 +44,7 @@ void inicializarVariables(){
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
 	inicializarDiccionario();
 	inicializarFileSystem();
+	inicializarMapeoBlocks();
 //	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
 //	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
 //	socket_discordiador = esperar_cliente(socket_servidor);
@@ -52,7 +53,7 @@ void inicializarVariables(){
 
 void inicializarFileSystem(){
 //	inicializarSuperBloque();
-//	inicializarBlocks();
+	inicializarBlocks();
 }
 
 void inicializarSuperBloque(){
@@ -114,21 +115,58 @@ void guardarBitArray(t_bitarray* arrayAGuardar)
 
 void inicializarBlocks()
 {
-	char* puntoMontajeBlocks = PUNTO_MONTAJE;
-	strcat(puntoMontajeBlocks,"/Blocks.ims");
-	printf("%s\n",puntoMontajeBlocks);
-	FILE* archivoBlocks = fopen(puntoMontajeBlocks,"r+");
-	fseek(archivoBlocks,0,SEEK_END);
-	if(ftell(archivoBlocks) == 0)
+	t_config* configuracionBlocks = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
+	tamanioBlock = config_get_int_value(configuracionBlocks,"BLOCK_SIZE");
+	cantidadDeBlocks = config_get_int_value(configuracionBlocks,"BLOCKS");
+	config_destroy(configuracionBlocks);
+
+	fdArchivoBlocks = open(string_from_format("%s/Blocks.ims",PUNTO_MONTAJE), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+	struct stat infoBlocks;
+	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
 	{
-		printf("No existe el archivo blocks\n");
-		fclose(archivoBlocks);
-	}else
-	{
-		printf("Existe el archivo blocks\n");
-		fclose(archivoBlocks);
+				log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
-	//mapeado a memoria y realizar copia cada bajada a disco
+	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
+	if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1)
+	{
+		log_info(loggerMongo, "No se pudo crear archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
+	}
+	log_info(loggerMongo, "Se creo el archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
+
+	//struct stat infoBlocks;
+	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
+	{
+			log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
+	}
+	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
+}
+
+void inicializarMapeoBlocks()
+{
+	struct stat infoBlocks;
+	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
+	{
+		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
+		exit(-3);
+	}
+	if(infoBlocks.st_size == cantidadDeBlocks * tamanioBlock)
+	{
+		blocksMap = malloc(cantidadDeBlocks * tamanioBlock);
+		blocksMapOriginal = mmap(NULL, cantidadDeBlocks * tamanioBlock,PROT_READ | PROT_WRITE, MAP_SHARED,fdArchivoBlocks,0);
+		memcpy(blocksMap,blocksMapOriginal,cantidadDeBlocks * tamanioBlock);
+		//memcpy(blocksMap,"B",sizeof(char));
+		//log_info(loggerMongo, "Mapeo original : %s",blocksMapOriginal);
+		//log_info(loggerMongo, "Copia de mapeo : %s",blocksMap);
+	}
+}
+
+void forzarSincronizacionBlocks()
+{
+	memcpy(blocksMapOriginal, blocksMap, cantidadDeBlocks * tamanioBlock);
+	if(msync(blocksMapOriginal,(cantidadDeBlocks*tamanioBlock),MS_SYNC)==0)
+	{
+		log_info(loggerMongo, "BLOCK SINCRONIZADO");
+	}
 }
 
 void inicializarDiccionario()

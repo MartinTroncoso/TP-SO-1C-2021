@@ -9,6 +9,10 @@
 #define I_MONGO_STORE_H_
 
 #include <utils.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;
@@ -26,10 +30,19 @@ t_log* loggerMongo;
 int socket_servidor;
 int socket_discordiador;
 
+char* blocksMapOriginal;
+char* blocksMap;
+int fdArchivoBlocks;
+
+uint32_t tamanioBlock;
+uint32_t  cantidadDeBlocks;
+
 void inicializarVariables();
 void inicializarFileSystem();
 void inicializarSuperBloque();
 void inicializarBlocks();
+void inicializarMapeoBlocks();
+void forzarSincronizacionBlocks();
 void inicializarDiccionario();
 void inicializarSuperBloque();
 t_bitarray recuperarBitArray();
