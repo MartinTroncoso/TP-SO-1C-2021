@@ -42,6 +42,7 @@ void inicializarVariables(){
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
+	inicializarCarpetas();
 	inicializarDiccionario();
 	inicializarFileSystem();
 	inicializarMapeoBlocks();
@@ -52,14 +53,24 @@ void inicializarVariables(){
 }
 
 void inicializarFileSystem(){
-//	inicializarSuperBloque();
+	inicializarSuperBloque();
 	inicializarBlocks();
 }
 
 void inicializarSuperBloque(){
+	struct stat statCarpeta;
+	if(stat(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),&statCarpeta)==-1)
+	{
+		FILE* archivoSuperBloque = fopen(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),"w");
+		txt_write_in_file(archivoSuperBloque, "BLOCK_SIZE=20\nBLOCKS=40\nBITMAP=");
+		log_info(loggerMongo, "Archivo SuperBloque.ims creado");
+	}else
+	{
+		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
+	}
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
-	printf("cantidad de bits a reservar: %d\n",(cantidadDeBloques/8));
+	//printf("cantidad de bytes a reservar: %d\n",(cantidadDeBloques/8));
 	//printf("bool: %d\n",(int) bitsExcedentes(15));
 	if(string_is_empty(config_get_string_value(configuracionSuperBloque,"BITMAP")))
 	{
@@ -80,11 +91,11 @@ void inicializarSuperBloque(){
 			//bitarray_set_bit(bitArraySuperBloque,i);
 		}
 		bitarray_set_bit(bitArraySuperBloque,0);
-		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-		{
-			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
-		}
-		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
+//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+//		{
+//			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
+//		}
+//		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
 
 
 		config_set_value(configuracionSuperBloque,"BITMAP",bitArraySuperBloque->bitarray);
@@ -92,7 +103,7 @@ void inicializarSuperBloque(){
 		config_destroy(configuracionSuperBloque);
 	}else
 	{
-		printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
+		//printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
 		config_destroy(configuracionSuperBloque);
 	}
 }
@@ -346,6 +357,36 @@ void recibirResolucionSabotaje(int socket_tripulante, uint32_t id_tripulante)
 int bitsExcedentes(int cantidadDeBits)
 {
 	return (cantidadDeBits%8)>0;
+}
+
+void inicializarCarpetas()
+{
+	struct stat statCarpeta;
+	if (stat(PUNTO_MONTAJE,&statCarpeta)==-1)
+	{
+		mkdir(PUNTO_MONTAJE,0700);
+		log_info(loggerMongo,"Creada carpeta %s",PUNTO_MONTAJE);
+	}else
+	{
+		log_info(loggerMongo,"Carpeta %s ya existe", PUNTO_MONTAJE);
+	}
+	if(stat(string_from_format("%s/Files",PUNTO_MONTAJE),&statCarpeta)==-1)
+	{
+		mkdir(string_from_format("%s/Files",PUNTO_MONTAJE),0700);
+		log_info(loggerMongo, "Creada carpeta %s/Files",PUNTO_MONTAJE);
+	}else
+	{
+		log_info(loggerMongo, "La carpeta %s/Files ya existe",PUNTO_MONTAJE);
+	}
+	if(stat(string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE),&statCarpeta)==-1)
+	{
+		mkdir(string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE),0700);
+		log_info(loggerMongo, "Creada carpeta %s/Bitacoras",PUNTO_MONTAJE);
+	}
+	else
+	{
+		log_info(loggerMongo, "Carpeta %s/Bitacoras ya existe",PUNTO_MONTAJE);
+	}
 }
 
 void terminar_programa(){

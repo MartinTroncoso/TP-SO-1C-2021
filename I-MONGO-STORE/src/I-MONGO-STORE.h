@@ -55,5 +55,6 @@ void recibirPeticionDeBitacora(int,uint32_t);
 void recibirFinalizaTarea(int,uint32_t);
 void recibirAtenderSabotaje(int,uint32_t);
 void recibirResolucionSabotaje(int,uint32_t);
+void inicializarCarpetas();
 
 #endif /* I_MONGO_STORE_H_ */
