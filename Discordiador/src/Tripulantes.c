@@ -820,8 +820,10 @@ void planificarTripulante(t_tripulante* tripulante){
 }
 
 void gestionarTripulante(t_tripulante* tripulante){
+	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
 	tripulante->socket_MONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
+	pthread_mutex_unlock(&mutexTripulantes);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = INICIAR_TRIPULANTE;
