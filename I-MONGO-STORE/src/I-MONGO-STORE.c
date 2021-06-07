@@ -10,7 +10,10 @@
 
 #include "I-MONGO-STORE.h"
 
-int main(void) {
+int main(void){
+//	signal(SIGUSR1,informar_sabotaje);
+	signal(SIGINT,terminar_programa);
+
 	inicializarVariables();
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -390,7 +393,9 @@ void inicializarCarpetas()
 }
 
 void terminar_programa(){
+	log_info(loggerMongo,"Finaliza I-MONGO...");
 	log_destroy(loggerMongo);
 	config_destroy(configuracionMongo);
 	dictionary_destroy(caracterAsociadoATarea);
+	exit(0);
 }

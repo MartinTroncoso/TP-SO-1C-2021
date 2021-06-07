@@ -36,6 +36,8 @@ void inicializarVariables(){
 	colaBlockIO = list_create();
 	colaExit = list_create();
 
+	socket_escucha_iMongo = iniciarServidor(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
+
 	idTripulante = 1;
 	idPatota = 1;
 	planificacionActivada = false;
@@ -84,11 +86,10 @@ t_algoritmo getAlgoritmoPlanificacion(){
 
 void ingresar_comandos()
 {
-	char** palabras;
 	char* comando = readline(">");
+	char** palabras = string_split(comando, " ");
 
 	while(1){
-		palabras = string_split(comando, " ");
 		switch((int) dictionary_get(diccionarioComandos,palabras[0]))
 		{
 		case 1:{
@@ -100,7 +101,6 @@ void ingresar_comandos()
 				iniciarPatota(datosPatota);
 
 				list_destroy(datosPatota->coordenadasTripulantes);
-				free(datosPatota->rutaDeTareas);
 				free(datosPatota);
 			}
 			else
@@ -152,10 +152,40 @@ void ingresar_comandos()
 			log_info(loggerDiscordiador,"Comando no reconocido");
 			break;
 		}
+		liberarArray(palabras);
 		free(comando);
 		comando = readline(">");
+		palabras = string_split(comando, " ");
 	}
 	free(comando);
+}
+
+void hiloConsola(){
+	pthread_t thread_consola;
+	pthread_create(&thread_consola,NULL,(void*) ingresar_comandos,NULL);
+	pthread_detach(thread_consola);
+}
+
+//void hiloAtenderSabotajes(){
+//	pthread_t thread_sabotajes;
+//	pthread_create(&thread_sabotajes,NULL,(void*) atenderSabotaje,NULL);
+//	pthread_detach(thread_sabotajes);
+//}
+
+void destruirTripulantes(){
+	for(int i=0; i<list_size(tripulantes) ;i++){
+		t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
+
+		free(tripulante->posicion);
+		free(tripulante->proxTarea->nombre);
+		free(tripulante->proxTarea);
+		sem_destroy(&(tripulante->semaforoPlanificacion));
+		sem_destroy(&(tripulante->puedeEjecutar));
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
+	}
+
+	list_destroy(tripulantes);
 }
 
 void destruirSemaforos(){
@@ -173,28 +203,28 @@ void destruirListasYDiccionarios(){
 	list_destroy_and_destroy_elements(colaExec,free);
 	list_destroy_and_destroy_elements(colaBlockIO,free);
 	list_destroy_and_destroy_elements(colaExit,free);
-	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
 	dictionary_destroy(diccionarioComandos);
 	dictionary_destroy(diccionarioTareas);
 }
 
 void terminar_programa(){
+	log_info(loggerDiscordiador,"Finaliza el Discordiador...");
 	log_destroy(loggerDiscordiador);
 	config_destroy(configuracionDiscordiador);
+	destruirTripulantes();
 	destruirListasYDiccionarios();
 	destruirSemaforos();
+	close(socket_escucha_iMongo);
+	exit(0);
 }
 
-
 int main(void){
+	signal(SIGINT,terminar_programa); //ctrl + C
+
 	inicializarVariables();
 
-//	int socket_escucha_MONGO = iniciarServidor(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
-
 	ingresar_comandos();
-
-	terminar_programa();
 
 	return EXIT_SUCCESS;
 }

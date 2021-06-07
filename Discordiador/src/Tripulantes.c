@@ -73,6 +73,16 @@ void agregarABlockIO(t_tripulante* tripulante){
 	notificarCambioDeEstado(tripulante);
 }
 
+void sacarDe(t_list* cola, t_tripulante* tripulante, pthread_mutex_t mutexCola){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	pthread_mutex_lock(&mutexCola);
+	list_remove_by_condition(cola,buscarTripulante);
+	pthread_mutex_unlock(&mutexCola);
+}
+
 bool llegoALaTarea(t_tripulante* tripulante){
 	pthread_mutex_lock(&mutexTripulantes);
 	bool retorno = (tripulante->posicion->posX == tripulante->proxTarea->posicion.posX) && (tripulante->posicion->posY == tripulante->proxTarea->posicion.posY);
@@ -268,7 +278,7 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 	return proximaTarea;
 }
 
-//SOLO METO EN EL BUFFER EL ID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
+//SOLO METO EN EL BUFFER EL PID, TID, EL ESTADO Y LA POSICION, QUE ES LO QUE NECESITA MI-RAM
 void* serializar_tripulante(t_tripulante* tripulante){
 	int bytes = 2*sizeof(uint32_t) + sizeof(char) + sizeof(posicion);
 	void* magic = malloc(bytes);
@@ -390,10 +400,6 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 }
 
 void ejecutarTareaFIFO(t_tripulante* tripulante){
-	bool buscarTripulante(void* elemento){
-		return ((t_tripulante*) elemento)->tid == tripulante->tid;
-	}
-
 	if(tripulante->proxTarea->esDeEntradaSalida){
 		//LO HACE EN EXEC, DESPUÉS PASA A BLOCK
 		realizarPeticionIO(tripulante->socket_MONGO);
@@ -402,9 +408,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			realizarAccionTareaIO(tripulante);
 
-			pthread_mutex_lock(&mutexColaExec);
-			list_remove_by_condition(colaExec,buscarTripulante);
-			pthread_mutex_unlock(&mutexColaExec);
+			sacarDe(colaExec,tripulante,mutexColaExec);
 
 			agregarABlockIO(tripulante);
 
@@ -429,9 +433,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 
 		//SI ES EXPULSADO MIENTRAS EJECUTA LA ENTRADA/SALIDA, NO ENTRA ACÁ
 		if(!tripulante->expulsado){
-			pthread_mutex_lock(&mutexColaBlockIO);
-			list_remove_by_condition(colaBlockIO,buscarTripulante);
-			pthread_mutex_unlock(&mutexColaBlockIO);
+			sacarDe(colaBlockIO,tripulante,mutexColaBlockIO);
 
 			notificarFinalizacionDeTarea(tripulante);
 
@@ -475,9 +477,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 				sem_post(&(tripulante->puedeEjecutar));
 			else
 			{
-				pthread_mutex_lock(&mutexColaExec);
-				list_remove_by_condition(colaExec,buscarTripulante);
-				pthread_mutex_unlock(&mutexColaExec);
+				sacarDe(colaExec,tripulante,mutexColaExec);
 
 				habilitarProximoAEjecutar();
 			}
@@ -486,10 +486,6 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 }
 
 void ejecutarTareaRR(t_tripulante* tripulante){
-	bool buscarTripulante(void* elemento){
-		return ((t_tripulante*) elemento)->tid == tripulante->tid;
-	}
-
 	if(tripulante->proxTarea->esDeEntradaSalida){
 		//LO HACE EN EXEC, DESPUÉS PASA A BLOCK
 		realizarPeticionIO(tripulante->socket_MONGO);
@@ -503,9 +499,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			realizarAccionTareaIO(tripulante);
 
-			pthread_mutex_lock(&mutexColaExec);
-			list_remove_by_condition(colaExec,buscarTripulante);
-			pthread_mutex_unlock(&mutexColaExec);
+			sacarDe(colaExec,tripulante,mutexColaExec);
 
 			agregarABlockIO(tripulante);
 
@@ -530,9 +524,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 		//SI ES EXPULSADO MIENTRAS EJECUTA LA ENTRADA/SALIDA, NO ENTRA ACÁ
 		if(!tripulante->expulsado){
-			pthread_mutex_lock(&mutexColaBlockIO);
-			list_remove_by_condition(colaBlockIO,buscarTripulante);
-			pthread_mutex_unlock(&mutexColaBlockIO);
+			sacarDe(colaBlockIO,tripulante,mutexColaBlockIO);
 
 			notificarFinalizacionDeTarea(tripulante);
 
@@ -584,9 +576,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 				if(tripulante->tareasPendientes > 0){
 					if(tripulante->quantum == QUANTUM){
-						pthread_mutex_lock(&mutexColaExec);
-						list_remove_by_condition(colaExec,buscarTripulante);
-						pthread_mutex_unlock(&mutexColaExec);
+						sacarDe(colaExec,tripulante,mutexColaExec);
 
 						agregarAReady(tripulante);
 
@@ -602,18 +592,14 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 				}
 				else
 				{
-					pthread_mutex_lock(&mutexColaExec);
-					list_remove_by_condition(colaExec,buscarTripulante);
-					pthread_mutex_unlock(&mutexColaExec);
+					sacarDe(colaExec,tripulante,mutexColaExec);
 
 					habilitarProximoAEjecutar();
 				}
 			}
 			else
 			{
-				pthread_mutex_lock(&mutexColaExec);
-				list_remove_by_condition(colaExec,buscarTripulante);
-				pthread_mutex_unlock(&mutexColaExec);
+				sacarDe(colaExec,tripulante,mutexColaExec);
 
 				agregarAReady(tripulante);
 
@@ -629,10 +615,6 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante){
-	bool buscarTripulante(void* elemento){
-		return ((t_tripulante*) elemento)->tid == tripulante->tid;
-	}
-
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->proxTarea =  solitarProximaTarea(tripulante->socket_MIRAM);
 	pthread_mutex_unlock(&mutexTripulantes);
@@ -653,9 +635,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
 
 		if(tripulante->estado == READY){
-			pthread_mutex_lock(&mutexColaReady);
-			list_remove_by_condition(colaReady,buscarTripulante);
-			pthread_mutex_unlock(&mutexColaReady);
+			sacarDe(colaReady,tripulante,mutexColaReady);
 
 			agregarAExec(tripulante);
 		}
@@ -703,10 +683,6 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 }
 
 void planificarTripulanteRR(t_tripulante* tripulante){
-	bool buscarTripulante(void* elemento){
-		return ((t_tripulante*) elemento)->tid == tripulante->tid;
-	}
-
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
 	pthread_mutex_unlock(&mutexTripulantes);
@@ -731,9 +707,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 			sem_wait(&(tripulante->puedeEjecutar));
 
 			if(tripulante->estado == READY){
-				pthread_mutex_lock(&mutexColaReady);
-				list_remove_by_condition(colaReady,buscarTripulante);
-				pthread_mutex_unlock(&mutexColaReady);
+				sacarDe(colaReady,tripulante,mutexColaReady);
 
 				agregarAExec(tripulante);
 			}
@@ -755,9 +729,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 				//SI EL QUANTUM DEL TRIPULANTE ES IGUAL AL MAXIMO, QUIERE DECIR QUE NO PUEDE EMPEZAR A EJECUTAR LA TAREA. VUELVE A READY
 				if(tripulante->quantum == QUANTUM)
 				{
-					pthread_mutex_lock(&mutexColaExec);
-					list_remove_by_condition(colaExec,buscarTripulante);
-					pthread_mutex_unlock(&mutexColaExec);
+					sacarDe(colaExec,tripulante,mutexColaExec);
 
 					agregarAReady(tripulante);
 
@@ -787,6 +759,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
+		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
 		if(list_size(colaExit)==list_size(tripulantes)){
 			log_info(loggerDiscordiador,"NO HAY MÁS TRIPULANTES PARA PLANIFICAR. SE CIERRA LA PLANIFICACIÓN");
@@ -795,9 +768,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 			pthread_mutex_unlock(&mutexActivarPlanificacion);
 		}
 		pthread_mutex_unlock(&mutexColaExit);
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
+		pthread_mutex_unlock(&mutexTripulantes);
 	}
 }
 
@@ -955,21 +926,13 @@ void expulsarTripulante(int id_tripulante){
 	case NEW:
 		agregarAExit(tripulante);
 		sem_post(&(tripulante->semaforoPlanificacion));
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		break;
 	case READY:
-		pthread_mutex_lock(&mutexColaReady);
-		list_remove_by_condition(colaReady,buscarTripulante);
-		pthread_mutex_unlock(&mutexColaReady);
+		sacarDe(colaReady,tripulante,mutexColaReady);
 
 		sem_post(&(tripulante->puedeEjecutar));
 
 		agregarAExit(tripulante);
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		break;
 	case EXEC:
 		pthread_mutex_lock(&mutexColaExec);
@@ -978,28 +941,20 @@ void expulsarTripulante(int id_tripulante){
 			planificacionActivada = false;
 			pthread_mutex_unlock(&mutexActivarPlanificacion);
 		}
-
-		list_remove_by_condition(colaExec,buscarTripulante);
 		pthread_mutex_unlock(&mutexColaExec);
 
+		sacarDe(colaExec,tripulante,mutexColaExec);
+
 		sem_post(&(tripulante->puedeEjecutar));
 
 		agregarAExit(tripulante);
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		break;
 	case BLOCK_IO:
-		pthread_mutex_lock(&mutexColaBlockIO);
-		list_remove_by_condition(colaBlockIO,buscarTripulante);
-		pthread_mutex_unlock(&mutexColaBlockIO);
+		sacarDe(colaBlockIO,tripulante,mutexColaBlockIO);
 
 		sem_post(&(tripulante->puedeEjecutar));
 
 		agregarAExit(tripulante);
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		break;
 	case BLOCK_SABOTAJE:
 		//se lo saca de la cola de bloqueados por sabotaje
@@ -1007,9 +962,6 @@ void expulsarTripulante(int id_tripulante){
 		sem_post(&(tripulante->puedeEjecutar));
 
 		agregarAExit(tripulante);
-
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		break;
 	default:
 		log_warning(loggerDiscordiador,"Hubo un error con el estado del Tripulante");

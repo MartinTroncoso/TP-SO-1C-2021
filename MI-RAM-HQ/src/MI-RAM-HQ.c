@@ -11,6 +11,9 @@
 #include "MI-RAM-HQ.h"
 
 int main(void) {
+//	signal(SIGUSR1,dumpMemoria);
+	signal(SIGINT,terminar_programa);
+
 	inicializarVariables();
 
 	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
@@ -289,10 +292,11 @@ PCB* buscar_patota(uint32_t pid) {
 }
 
 void terminar_programa() {
-
+	log_info(loggerMiRam,"Finaliza MI-RAM...");
 	config_destroy(configuracionMiRam);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
 	log_info(loggerMiRam, "Se termina el programa...");
 	log_destroy(loggerMiRam);
+	exit(0);
 }
