@@ -25,6 +25,11 @@
 ### :point_right: PARA CORRER CON VALGRIND
         valgrind --tool=helgrind ./'Proceso'
 
+### :point_right: LAS SEÑALES LAS MANDAMOS NOSOTROS
+* En el main especificamos la señal que tiene que recibir el proceso para ejecutar una determinada operación
+* Ponemos en una consola aparte el comando 'ps u' para saber el id del proceso al que le vamos a mandar la señal
+* Después escribimos el comando 'kill -SIGINT idProceso' ---> (SIGINT es una señal de varias, es por poner un ejemplo)
+
 ### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
 
 ### :point_right: Diagrama de flujo: https://lucid.app/lucidchart/08070e2d-21af-4143-b078-d4927ef03d9b/edit?shared=true&page=0_0#
