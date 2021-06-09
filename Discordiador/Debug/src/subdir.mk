@@ -4,14 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/Comunicacion.c \
 ../src/Discordiador.c \
 ../src/Tripulantes.c 
 
 OBJS += \
+./src/Comunicacion.o \
 ./src/Discordiador.o \
 ./src/Tripulantes.o 
 
 C_DEPS += \
+./src/Comunicacion.d \
 ./src/Discordiador.d \
 ./src/Tripulantes.d 
 

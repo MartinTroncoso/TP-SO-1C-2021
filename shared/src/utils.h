@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <math.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
@@ -50,13 +51,24 @@ typedef enum{
 	INVOCAR_FSCK=13,
 	ESTADO_ALERTA=14,
 	CAMBIO_ESTADO=15,
-	PETICION_ENTRADA_SALIDA=16
+	PETICION_ENTRADA_SALIDA=16,
+	EXISTE_EL_ARCHIVO=17,
+	NO_EXISTE_EL_ARCHIVO=18
 }tipo_mensaje;
 
 typedef enum{
 	ENTRADA_SALIDA=1,
 	COMUN=2
 }tipo_tarea;
+
+typedef enum{
+	GENERAR_OXIGENO=1,
+	CONSUMIR_OXIGENO=2,
+	GENERAR_COMIDA=3,
+	CONSUMIR_COMIDA=4,
+	GENERAR_BASURA=5,
+	DESCARTAR_BASURA=6
+}TAREA_IO;
 
 typedef struct{
 	int size;
@@ -114,5 +126,6 @@ int recibir_operacion(int);
 tipo_respuesta recibir_respuesta(int);
 char* getNombreTarea(char*);
 void liberarArray(char**);
+int getTamanioArray(char**);
 
 #endif /* UTILS_H_ */

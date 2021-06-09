@@ -34,7 +34,11 @@ void inicializarVariables(){
 	colaReady = list_create();
 	colaExec = list_create();
 	colaBlockIO = list_create();
+	colaBlockEmergencia = list_create();
 	colaExit = list_create();
+	colaEmergenciaExecYReady = list_create();
+	tripulanteResolviendoSabotaje = malloc(sizeof(t_tripulante));
+	posicionSabotajeActual = malloc(sizeof(posicion));
 
 	socket_escucha_iMongo = iniciarServidor(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
 
@@ -42,13 +46,17 @@ void inicializarVariables(){
 	idPatota = 1;
 	planificacionActivada = false;
 	planificacionFueActivadaAlgunaVez = false; //PARA QUE SE SI SE PAUSA Y SE CREA UNA PATOTA, LOS TRIPULANTES QUEDEN EN NEW Y NO EN READY
+	haySituacionDeEmergencia = false;
+	sabotajeActualResuelto = false;
 
 	pthread_mutex_init(&mutexTripulantes,NULL);
 	pthread_mutex_init(&mutexColaReady,NULL);
 	pthread_mutex_init(&mutexColaExec,NULL);
 	pthread_mutex_init(&mutexColaExit,NULL);
 	pthread_mutex_init(&mutexColaBlockIO,NULL);
+	pthread_mutex_init(&mutexColaBlockSabotaje,NULL);
 	pthread_mutex_init(&mutexActivarPlanificacion,NULL);
+	pthread_mutex_init(&mutexSabotaje,NULL);
 	pthread_mutex_init(&mutexEjecutarIO,NULL);
 }
 
@@ -84,7 +92,7 @@ t_algoritmo getAlgoritmoPlanificacion(){
 	return FIFO;
 }
 
-void ingresar_comandos()
+void ingresarComandos()
 {
 	char* comando = readline(">");
 	char** palabras = string_split(comando, " ");
@@ -127,7 +135,11 @@ void ingresar_comandos()
 			//INICIAR_PLANIFICACION
 			if(!planificacionActivada){
 				if(list_size(tripulantes)!=list_size(colaExit))
-					iniciarPlanificacion();
+					if(!haySituacionDeEmergencia)
+						iniciarPlanificacion();
+					else
+						log_info(loggerDiscordiador,"NO SE PUEDE PLANIFICAR MIENTRAS SE RESUELVE UN SABOTAJE");
+
 				else
 					log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
 			}
@@ -160,17 +172,32 @@ void ingresar_comandos()
 	free(comando);
 }
 
-void hiloConsola(){
-	pthread_t thread_consola;
-	pthread_create(&thread_consola,NULL,(void*) ingresar_comandos,NULL);
-	pthread_detach(thread_consola);
+void atenderSabotajes(){
+	while(1){
+		int socket_cliente_mongo = esperar_cliente(socket_escucha_iMongo);
+
+		uint32_t posSabotajeX, posSabotajeY;
+		recv(socket_cliente_mongo,&posSabotajeX,sizeof(uint32_t),0);
+		recv(socket_cliente_mongo,&posSabotajeY,sizeof(uint32_t),0);
+
+		if(!list_is_empty(colaExec) || !list_is_empty(colaReady)){
+			posicionSabotajeActual->posX = posSabotajeX;
+			posicionSabotajeActual->posY = posSabotajeY;
+
+			gestionarSabotaje();
+		}
+		else
+			log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA RESOLVER EL SABOTAJE");
+
+		close(socket_cliente_mongo);
+	}
 }
 
-//void hiloAtenderSabotajes(){
-//	pthread_t thread_sabotajes;
-//	pthread_create(&thread_sabotajes,NULL,(void*) atenderSabotaje,NULL);
-//	pthread_detach(thread_sabotajes);
-//}
+void esperarSabotajes(){
+	pthread_t thread_sabotajes;
+	pthread_create(&thread_sabotajes,NULL,(void*) atenderSabotajes,NULL);
+	pthread_detach(thread_sabotajes);
+}
 
 void destruirTripulantes(){
 	for(int i=0; i<list_size(tripulantes) ;i++){
@@ -194,7 +221,9 @@ void destruirSemaforos(){
 	pthread_mutex_destroy(&mutexColaExec);
 	pthread_mutex_destroy(&mutexColaExit);
 	pthread_mutex_destroy(&mutexColaBlockIO);
+	pthread_mutex_destroy(&mutexColaBlockSabotaje);
 	pthread_mutex_destroy(&mutexActivarPlanificacion);
+	pthread_mutex_destroy(&mutexSabotaje);
 	pthread_mutex_destroy(&mutexEjecutarIO);
 }
 
@@ -202,29 +231,45 @@ void destruirListasYDiccionarios(){
 	list_destroy_and_destroy_elements(colaReady,free);
 	list_destroy_and_destroy_elements(colaExec,free);
 	list_destroy_and_destroy_elements(colaBlockIO,free);
+	list_destroy_and_destroy_elements(colaBlockEmergencia,free);
 	list_destroy_and_destroy_elements(colaExit,free);
+	list_destroy_and_destroy_elements(colaEmergenciaExecYReady,free);
 	list_destroy_and_destroy_elements(patotas,free);
 	dictionary_destroy(diccionarioComandos);
 	dictionary_destroy(diccionarioTareas);
 }
 
-void terminar_programa(){
-	log_info(loggerDiscordiador,"Finaliza el Discordiador...");
-	log_destroy(loggerDiscordiador);
+void destruirConfig(){
+	free(IP_MI_RAM);
+	free(IP_I_MONGO_STORE);
+	free(IP_DISCORDIADOR);
+	free(ALGORITMO);
+	free(PUERTO_MI_RAM);
+	free(PUERTO_I_MONGO_STORE);
+	free(PUERTO_DISCORDIADOR);
 	config_destroy(configuracionDiscordiador);
+}
+
+void terminarPrograma(){
+	log_info(loggerDiscordiador,"Finaliza el Discordiador...");
 	destruirTripulantes();
 	destruirListasYDiccionarios();
 	destruirSemaforos();
+	destruirConfig();
+	log_destroy(loggerDiscordiador);
+	free(posicionSabotajeActual);
 	close(socket_escucha_iMongo);
 	exit(0);
 }
 
 int main(void){
-	signal(SIGINT,terminar_programa); //ctrl + C
+	signal(SIGINT,terminarPrograma); //ctrl + C
 
 	inicializarVariables();
 
-	ingresar_comandos();
+	esperarSabotajes();
+
+	ingresarComandos();
 
 	return EXIT_SUCCESS;
 }

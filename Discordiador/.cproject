@@ -38,6 +38,7 @@
 									<listOptionValue builtIn="false" value="readline"/>
 									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="shared"/>
+									<listOptionValue builtIn="false" value="m"/>
 								</option>
 								<option id="gnu.c.link.option.paths.1424237963" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug"/>

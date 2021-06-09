@@ -17,11 +17,10 @@
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;
 char* PUERTO_I_MONGO;
+char* IP_DISCORDIADOR;
+char* PUERTO_DISCORDIADOR;
+char** POSICIONES_SABOTAJE;
 int TIEMPO_SINCRONIZACION;
-
-typedef struct{
-	uint32_t tid;
-}t_tripulante;
 
 t_dictionary* caracterAsociadoATarea;
 t_config* configuracionMongo;
@@ -29,6 +28,9 @@ t_log* loggerMongo;
 
 int socket_servidor;
 int socket_discordiador;
+
+char** posicionSabotajeActual;
+int sabotajesResueltos;
 
 char* blocksMapOriginal;
 char* blocksMap;
@@ -47,8 +49,8 @@ void inicializarDiccionario();
 void inicializarSuperBloque();
 t_bitarray recuperarBitArray();
 void atenderTripulante(void*);
+void realizarTareaIO(int,uint32_t);
 void guardarBitArray(t_bitarray*);
-void terminar_programa();
 void recibirInformeDeDesplazamiento(int,uint32_t);
 void recibirInicioDeTarea(int,uint32_t);
 void recibirPeticionDeBitacora(int,uint32_t);
@@ -56,5 +58,8 @@ void recibirFinalizaTarea(int,uint32_t);
 void recibirAtenderSabotaje(int,uint32_t);
 void recibirResolucionSabotaje(int,uint32_t);
 void inicializarCarpetas();
+void informarSabotaje();
+void destruirConfig();
+void terminar_programa();
 
 #endif /* I_MONGO_STORE_H_ */

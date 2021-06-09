@@ -40,7 +40,7 @@ typedef enum{
 	READY,
 	EXEC,
 	BLOCK_IO,
-	BLOCK_SABOTAJE,
+	BLOCK_EMERGENCIA,
 	EXIT
 }estado;
 
@@ -72,38 +72,63 @@ t_dictionary* diccionarioTareas;
 
 int socket_escucha_iMongo;
 
+t_tripulante* tripulanteResolviendoSabotaje;
+posicion* posicionSabotajeActual;
+
 uint32_t idTripulante;
 uint32_t idPatota;
 
 bool planificacionActivada;
 bool planificacionFueActivadaAlgunaVez;
+bool haySituacionDeEmergencia;
+bool sabotajeActualResuelto;
 
 t_list* patotas;
 t_list* tripulantes;
 
 t_list* colaReady;
 t_list* colaBlockIO;
+t_list* colaBlockEmergencia;
 t_list* colaExec;
 t_list* colaExit;
+t_list* colaEmergenciaExecYReady;
 
 pthread_mutex_t mutexTripulantes;
 pthread_mutex_t mutexColaReady;
 pthread_mutex_t mutexColaExec;
 pthread_mutex_t mutexColaBlockIO;
+pthread_mutex_t mutexColaBlockSabotaje;
 pthread_mutex_t mutexColaExit;
 pthread_mutex_t mutexActivarPlanificacion;
+pthread_mutex_t mutexSabotaje;
 pthread_mutex_t mutexEjecutarIO;
 
 void inicializarVariables();
 void crearDiccionarioComandos(t_dictionary*);
 void crearDiccionarioTareasEntradaSalida(t_dictionary*);
 t_algoritmo getAlgoritmoPlanificacion();
-void ingresar_comandos();
-void hiloConsola();
+void atenderSabotajes();
+void ingresarComandos();
+void esperarSabotajes();
 void destruirSemaforos();
 void destruirListasYDiccionarios();
-void terminar_programa();
+void terminarPrograma();
 
+void* serializar_tripulante(t_tripulante*);
+void realizarPeticionIO(t_tripulante*);
+void realizarAccionTareaIO(t_tripulante*);
+void ejecutarTareaFIFO(t_tripulante*);
+void ejecutarTareaRR(t_tripulante*);
+void planificarTripulanteFIFO(t_tripulante*);
+void planificarTripulanteRR(t_tripulante*);
+void planificarTripulante(t_tripulante*);
+void gestionarTripulante(t_tripulante*);
+void habilitarProximoAEjecutar();
+bool existeElTripulante(uint32_t);
+bool tieneTareasPendientes(t_tripulante*);
+void moverXDelTripulante(t_tripulante*,posicion*);
+void moverYDelTripulante(t_tripulante*,posicion*);
+void moverTripulante(t_tripulante*,posicion*);
 void iniciarPatota(t_iniciar_patota*);
 void listarTripulantes();
 void expulsarTripulante(int);
@@ -113,32 +138,17 @@ void obtenerBitacora(uint32_t);
 
 char getEstadoComoCaracter(estado);
 char* getEstadoComoCadena(estado);
-void* serializar_tripulante(t_tripulante*);
-void realizarPeticionIO(int);
-bool llegoALaTarea(t_tripulante*);
-void realizarAccionTareaIO(t_tripulante*);
-void ejecutarTareaFIFO(t_tripulante*);
-void ejecutarTareaRR(t_tripulante*);
-void planificarTripulanteFIFO(t_tripulante*);
-void planificarTripulanteRR(t_tripulante*);
-void planificarTripulante(t_tripulante*);
-void gestionarTripulante(t_tripulante*);
-void habilitarProximoAEjecutar();
-void atenderSabotaje();
-char* obtenerTareasComoCadena(char*);
-t_iniciar_patota* obtenerDatosPatota(char**);
-int getCantidadTareasPatota(char*);
-bool existeElTripulante(uint32_t);
-bool tieneTareasPendientes(t_tripulante*);
-Tarea* solitarProximaTarea(int);
-void moverXDelTripulante(t_tripulante*);
-void moverYDelTripulante(t_tripulante*);
-void moverTripulante(t_tripulante*);
 void agregarAReady(t_tripulante*);
 void agregarAExec(t_tripulante*);
 void agregarAExit(t_tripulante*);
 void agregarABlockIO(t_tripulante*);
+void agregarABlockSabotaje(t_tripulante*);
 void sacarDe(t_list*,t_tripulante*,pthread_mutex_t);
+bool llegoALaPosicion(t_tripulante*,posicion*);
+t_iniciar_patota* obtenerDatosPatota(char**);
+char* obtenerTareasComoCadena(char*);
+int getCantidadTareasPatota(char*);
+Tarea* solitarProximaTarea(int);
 void notificarCambioDeEstado(t_tripulante*);
 void notificarMovimientoMIRAM(t_tripulante*);
 void notificarMovimientoIMONGO(t_tripulante*,uint32_t,uint32_t);
@@ -146,5 +156,8 @@ void notificarInicioDeTarea(t_tripulante*);
 void notificarFinalizacionDeTarea(t_tripulante*);
 void notificarAtencionSabotaje(t_tripulante*);
 void notificarResolucionSabotaje(t_tripulante*);
+float distancia(posicion*,posicion*);
+t_tripulante* tripulanteMasCercano(posicion*);
+void gestionarSabotaje();
 
 #endif /* DISCORDIADOR_H_ */

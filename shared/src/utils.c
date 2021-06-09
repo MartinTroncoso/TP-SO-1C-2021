@@ -238,6 +238,13 @@ void liberarArray(char** array){
 	free(array);
 }
 
+int getTamanioArray(char** array){
+	int i;
+	for(i=0; array[i]!=NULL ;i++);
+
+	return i;
+}
+
 //podemos usar la lista de valores para poder hablar del for y de como recorrer la lista
 t_list* recibir_paquete(int socket_cliente)
 {

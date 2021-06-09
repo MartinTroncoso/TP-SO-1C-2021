@@ -11,13 +11,14 @@
 #include "I-MONGO-STORE.h"
 
 int main(void){
-//	signal(SIGUSR1,informar_sabotaje);
+	signal(SIGUSR1,informarSabotaje);
 	signal(SIGINT,terminar_programa);
 
 	inicializarVariables();
+	log_info(loggerMongo,"PID I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
-	log_info(loggerMongo,"I-MONGO Listo para recibir a los Tripulantes!");
+	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
 
 	while(1){
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -41,6 +42,11 @@ void inicializarVariables(){
 	PUNTO_MONTAJE = config_get_string_value(configuracionMongo,"PUNTO_MONTAJE");
 	IP_I_MONGO = config_get_string_value(configuracionMongo,"IP_I_MONGO");
 	PUERTO_I_MONGO = config_get_string_value(configuracionMongo,"PUERTO_I_MONGO");
+	IP_DISCORDIADOR = config_get_string_value(configuracionMongo,"IP_DISCORDIADOR");
+	PUERTO_DISCORDIADOR = config_get_string_value(configuracionMongo,"PUERTO_DISCORDIADOR");
+	POSICIONES_SABOTAJE = config_get_array_value(configuracionMongo,"POSICIONES_SABOTAJE");
+	posicionSabotajeActual = string_split(POSICIONES_SABOTAJE[0],"|");
+	sabotajesResueltos = 0;
 
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
@@ -217,6 +223,7 @@ void atenderTripulante(void* _cliente)
 			break;
 		case PETICION_ENTRADA_SALIDA:
 			log_info(loggerMongo,"[TRIPULANTE %d] REALIZA PETICIÓN DE ENTRADA/SALIDA",idTripulante);
+			realizarTareaIO(socket_tripulante,idTripulante);
 			break;
 		case ATENDER_SABOTAJE:
 			recibirAtenderSabotaje(socket_tripulante,idTripulante);
@@ -233,6 +240,55 @@ void atenderTripulante(void* _cliente)
 			return;
 			break;
 		}
+	}
+}
+
+void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
+	int tipoTarea = recibir_operacion(socket_tripulante);
+
+	switch(tipoTarea){
+	case GENERAR_OXIGENO:{
+		uint32_t caracteresAGenerar;
+		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Oxigeno.ims: %d\n",id_tripulante,caracteresAGenerar);
+		break;
+	}
+	case CONSUMIR_OXIGENO:{
+		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		uint32_t caracteresABorrar;
+		recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
+		printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d\n",id_tripulante,caracteresABorrar);
+		break;
+	}
+	case GENERAR_COMIDA:{
+		uint32_t caracteresAGenerar;
+		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Comida.ims: %d\n",id_tripulante,caracteresAGenerar);
+		break;
+	}
+	case CONSUMIR_COMIDA:{
+		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		uint32_t caracteresABorrar;
+		recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
+		printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Comidas.ims: %d\n",id_tripulante,caracteresABorrar);
+		break;
+	}
+	case GENERAR_BASURA:{
+		uint32_t caracteresAGenerar;
+		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Basura.ims: %d\n",id_tripulante,caracteresAGenerar);
+		break;
+	}
+	case DESCARTAR_BASURA:{
+		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
+		break;
+	}
+	default:
+		break;
 	}
 }
 
@@ -357,32 +413,30 @@ void recibirResolucionSabotaje(int socket_tripulante, uint32_t id_tripulante)
 	txt_close_file(bitacoraTripulante);
 }
 
-int bitsExcedentes(int cantidadDeBits)
-{
+int bitsExcedentes(int cantidadDeBits){
 	return (cantidadDeBits%8)>0;
 }
 
 void inicializarCarpetas()
 {
 	struct stat statCarpeta;
-	if (stat(PUNTO_MONTAJE,&statCarpeta)==-1)
-	{
+	if (stat(PUNTO_MONTAJE,&statCarpeta)==-1){
 		mkdir(PUNTO_MONTAJE,0700);
 		log_info(loggerMongo,"Creada carpeta %s",PUNTO_MONTAJE);
-	}else
+	}
+	else
 	{
 		log_info(loggerMongo,"Carpeta %s ya existe", PUNTO_MONTAJE);
 	}
-	if(stat(string_from_format("%s/Files",PUNTO_MONTAJE),&statCarpeta)==-1)
-	{
+	if(stat(string_from_format("%s/Files",PUNTO_MONTAJE),&statCarpeta)==-1){
 		mkdir(string_from_format("%s/Files",PUNTO_MONTAJE),0700);
 		log_info(loggerMongo, "Creada carpeta %s/Files",PUNTO_MONTAJE);
-	}else
+	}
+	else
 	{
 		log_info(loggerMongo, "La carpeta %s/Files ya existe",PUNTO_MONTAJE);
 	}
-	if(stat(string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE),&statCarpeta)==-1)
-	{
+	if(stat(string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE),&statCarpeta)==-1){
 		mkdir(string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE),0700);
 		log_info(loggerMongo, "Creada carpeta %s/Bitacoras",PUNTO_MONTAJE);
 	}
@@ -392,10 +446,45 @@ void inicializarCarpetas()
 	}
 }
 
+char** getSiguientePosicionSabotaje(){
+	if(POSICIONES_SABOTAJE[sabotajesResueltos+1] != NULL){
+		sabotajesResueltos++;
+		return string_split(POSICIONES_SABOTAJE[sabotajesResueltos],"|");
+	}
+	else
+		log_info(loggerMongo,"YA SE RESOLVIERON TODOS LOS SABOTAJES!");
+
+	return posicionSabotajeActual;
+}
+
+void informarSabotaje(){
+	int socket_cliente_discordiador = crearConexionCliente(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
+
+	log_info(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE!!");
+
+	uint32_t posSabotajeX = atoi(posicionSabotajeActual[0]);
+	uint32_t posSabotajeY = atoi(posicionSabotajeActual[1]);
+
+	send(socket_cliente_discordiador,&posSabotajeX,sizeof(uint32_t),0);
+	send(socket_cliente_discordiador,&posSabotajeY,sizeof(uint32_t),0);
+
+	close(socket_cliente_discordiador);
+}
+
+void destruirConfig(){
+	free(PUNTO_MONTAJE);
+	free(IP_I_MONGO);
+	free(PUERTO_I_MONGO);
+	free(IP_DISCORDIADOR);
+	free(PUERTO_DISCORDIADOR);
+	liberarArray(POSICIONES_SABOTAJE);
+	config_destroy(configuracionMongo);
+}
+
 void terminar_programa(){
 	log_info(loggerMongo,"Finaliza I-MONGO...");
-	log_destroy(loggerMongo);
-	config_destroy(configuracionMongo);
 	dictionary_destroy(caracterAsociadoATarea);
+	destruirConfig();
+//	log_destroy(loggerMongo);
 	exit(0);
 }

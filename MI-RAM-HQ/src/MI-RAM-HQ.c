@@ -15,9 +15,10 @@ int main(void) {
 	signal(SIGINT,terminar_programa);
 
 	inicializarVariables();
+	log_info(loggerMiRam,"PID MI-RAM HQ: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
-	log_info(loggerMiRam, "MI-RAM-HQ Listo para recibir a los Tripulantes!");
+	log_info(loggerMiRam, "MI-RAM-HQ Listo para atender a los Tripulantes!");
 
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -44,7 +45,6 @@ int main(void) {
 	}
 
 	close(socket_escucha);
-	terminar_programa();
 	return EXIT_SUCCESS;
 }
 
@@ -280,7 +280,7 @@ void avanzar_proxima_instruccion(TCB* tripulante) {
 	}
 }
 
-PCB* buscar_patota(uint32_t pid) {
+PCB* buscar_patota(uint32_t pid){
 	bool patota_tiene_el_pid(void* pcb) {
 		return ((PCB*) pcb)->pid == pid;
 	}
@@ -291,12 +291,11 @@ PCB* buscar_patota(uint32_t pid) {
 	return patota;
 }
 
-void terminar_programa() {
+void terminar_programa(){
 	log_info(loggerMiRam,"Finaliza MI-RAM...");
 	config_destroy(configuracionMiRam);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
-	log_info(loggerMiRam, "Se termina el programa...");
 	log_destroy(loggerMiRam);
 	exit(0);
 }
