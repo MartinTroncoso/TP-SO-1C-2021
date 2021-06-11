@@ -150,7 +150,10 @@ void ingresarComandos()
 		case 5:{
 			//PAUSAR_PLANIFICACION
 			if(planificacionActivada)
-				pausarPlanificacion();
+				if(!haySituacionDeEmergencia)
+					pausarPlanificacion();
+				else
+					log_info(loggerDiscordiador,"SE ESTÁ RESOLVIENDO UN SABOTAJE!");
 			else
 				log_info(loggerDiscordiador,"LA PLANIFICACIÓN NO EMPEZÓ O YA ESTÁ PAUSADA");
 			break;
@@ -180,14 +183,25 @@ void atenderSabotajes(){
 		recv(socket_cliente_mongo,&posSabotajeX,sizeof(uint32_t),0);
 		recv(socket_cliente_mongo,&posSabotajeY,sizeof(uint32_t),0);
 
+		pthread_mutex_lock(&mutexColaExec);
+		pthread_mutex_lock(&mutexColaReady);
 		if(!list_is_empty(colaExec) || !list_is_empty(colaReady)){
+			pthread_mutex_unlock(&mutexColaExec);
+			pthread_mutex_unlock(&mutexColaReady);
 			posicionSabotajeActual->posX = posSabotajeX;
 			posicionSabotajeActual->posY = posSabotajeY;
+
+			log_info(loggerDiscordiador,"¡¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!!",posicionSabotajeActual->posX,posicionSabotajeActual->posY);
 
 			gestionarSabotaje();
 		}
 		else
+		{
+			pthread_mutex_unlock(&mutexColaExec);
+			pthread_mutex_unlock(&mutexColaReady);
 			log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA RESOLVER EL SABOTAJE");
+		}
+
 
 		close(socket_cliente_mongo);
 	}
@@ -202,7 +216,6 @@ void esperarSabotajes(){
 void destruirTripulantes(){
 	for(int i=0; i<list_size(tripulantes) ;i++){
 		t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
-
 		free(tripulante->posicion);
 		free(tripulante->proxTarea->nombre);
 		free(tripulante->proxTarea);
@@ -213,6 +226,16 @@ void destruirTripulantes(){
 	}
 
 	list_destroy(tripulantes);
+}
+
+void destruirPatotas(){
+	for(int i=0; i<list_size(patotas) ;i++){
+		t_patota* patota = (t_patota*) list_get(patotas,i);
+		list_destroy(patota->tripulantes);
+		free(patota);
+	}
+
+	list_destroy(patotas);
 }
 
 void destruirSemaforos(){
@@ -233,8 +256,7 @@ void destruirListasYDiccionarios(){
 	list_destroy_and_destroy_elements(colaBlockIO,free);
 	list_destroy_and_destroy_elements(colaBlockEmergencia,free);
 	list_destroy_and_destroy_elements(colaExit,free);
-	list_destroy_and_destroy_elements(colaEmergenciaExecYReady,free);
-	list_destroy_and_destroy_elements(patotas,free);
+	list_destroy(colaEmergenciaExecYReady);
 	dictionary_destroy(diccionarioComandos);
 	dictionary_destroy(diccionarioTareas);
 }
@@ -247,17 +269,19 @@ void destruirConfig(){
 	free(PUERTO_MI_RAM);
 	free(PUERTO_I_MONGO_STORE);
 	free(PUERTO_DISCORDIADOR);
-	config_destroy(configuracionDiscordiador);
+//	config_destroy(configuracionDiscordiador);
 }
 
 void terminarPrograma(){
 	log_info(loggerDiscordiador,"Finaliza el Discordiador...");
 	destruirTripulantes();
+	destruirPatotas();
 	destruirListasYDiccionarios();
 	destruirSemaforos();
 	destruirConfig();
 	log_destroy(loggerDiscordiador);
 	free(posicionSabotajeActual);
+	free(tripulanteResolviendoSabotaje);
 	close(socket_escucha_iMongo);
 	exit(0);
 }

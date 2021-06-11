@@ -110,6 +110,8 @@ t_algoritmo getAlgoritmoPlanificacion();
 void atenderSabotajes();
 void ingresarComandos();
 void esperarSabotajes();
+void destruirTripulantes();
+void destruirPatotas();
 void destruirSemaforos();
 void destruirListasYDiccionarios();
 void terminarPrograma();
@@ -156,8 +158,10 @@ void notificarInicioDeTarea(t_tripulante*);
 void notificarFinalizacionDeTarea(t_tripulante*);
 void notificarAtencionSabotaje(t_tripulante*);
 void notificarResolucionSabotaje(t_tripulante*);
+void detenerTripulantesEnExec();
 float distancia(posicion*,posicion*);
 t_tripulante* tripulanteMasCercano(posicion*);
 void gestionarSabotaje();
+void invocarFSCK();
 
 #endif /* DISCORDIADOR_H_ */

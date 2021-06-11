@@ -59,6 +59,8 @@ void recibirAtenderSabotaje(int,uint32_t);
 void recibirResolucionSabotaje(int,uint32_t);
 void inicializarCarpetas();
 void informarSabotaje();
+void ejecutarFSCK();
+char** getSiguientePosicionSabotaje();
 void destruirConfig();
 void terminar_programa();
 

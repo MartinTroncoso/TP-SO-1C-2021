@@ -14,7 +14,7 @@ char getEstadoComoCaracter(estado estado){
 
 //PARA IMPRIMIRLO CON LISTAR_TRIPULANTES
 char* getEstadoComoCadena(estado estado){
-	return estado==NEW?"NEW":estado==READY?"READY":estado==EXEC?"EXEC":estado==EXIT?"EXIT":estado==BLOCK_IO?"BLOCK I/O":"BLOCK SABOTAJE";
+	return estado==NEW?"NEW":estado==READY?"READY":estado==EXEC?"EXEC":estado==EXIT?"EXIT":estado==BLOCK_IO?"BLOCK I/O":"BLOCK EMERGENCIA";
 }
 
 void agregarAReady(t_tripulante* tripulante){
@@ -71,10 +71,13 @@ void agregarABlockSabotaje(t_tripulante* tripulante){
 	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
 	pthread_mutex_lock(&mutexTripulantes);
+	bool estabaBloqueado = tripulante->estado == BLOCK_IO;
 	tripulante->estado = BLOCK_EMERGENCIA;
 	pthread_mutex_unlock(&mutexTripulantes);
 
-	notificarCambioDeEstado(tripulante);
+	//SI EL TRIPULANTE YA ESTABA BLOQUEADO POR I/O, NO SE NOTIFICA EL CAMBIO A BLOQUEADO POR EMERGENCIA
+	if(!estabaBloqueado)
+		notificarCambioDeEstado(tripulante);
 }
 
 void sacarDe(t_list* cola, t_tripulante* tripulante, pthread_mutex_t mutexCola){
@@ -113,6 +116,8 @@ t_iniciar_patota* obtenerDatosPatota(char** array){
 				posicionTripulante->posY = atoi(coordenadas[1]);
 				list_add(parametrosPatota->coordenadasTripulantes,posicionTripulante);
 				flag++;
+
+				liberarArray(coordenadas);
 			}
 
 			if(parametrosPatota->cantidadTripulantes - list_size(parametrosPatota->coordenadasTripulantes)!=0)
@@ -214,6 +219,8 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 		proximaTarea->longNombre = strlen(proximaTarea->nombre) + 1;
 		proximaTarea->tiempo = tiempo;
 		proximaTarea->esDeEntradaSalida = true;
+
+		liberarArray(parametrosSpliteados);
 		break;
 	case COMUN:
 		//["ABURRIRSE","1","3","4"]
@@ -236,7 +243,9 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 	proximaTarea->finalizada = false;
 	proximaTarea->yaInicio = false;
 
+	free(tareaSpliteada);
 	free(buffer);
+	free(stringCadena);
 
 	return proximaTarea;
 }
@@ -340,20 +349,21 @@ void notificarResolucionSabotaje(t_tripulante* tripulante){
 	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 }
 
-void detenerTripulantesEnExecYReady(){
+void detenerTripulantesEnExec(){
 	void deshabilitarSemaforo(void* elemento){
 		t_tripulante* tripulante = (t_tripulante*) elemento;
 		sem_wait(&tripulante->semaforoPlanificacion);
 	}
 
-	list_map(colaExec,(void*) deshabilitarSemaforo);
-	list_map(colaReady,(void*) deshabilitarSemaforo);
+	if(planificacionActivada){
+		list_map(colaExec,(void*) deshabilitarSemaforo);
 
-	pthread_mutex_lock(&mutexActivarPlanificacion);
-	planificacionActivada = false;
-	pthread_mutex_unlock(&mutexActivarPlanificacion);
+		pthread_mutex_lock(&mutexActivarPlanificacion);
+		planificacionActivada = false;
+		pthread_mutex_unlock(&mutexActivarPlanificacion);
 
-	log_info(loggerDiscordiador,"SE DETIENEN LOS TRIPULANTES EN EXEC Y READY");
+		log_info(loggerDiscordiador,"SE DETIENEN LOS TRIPULANTES EN EXEC");
+	}
 }
 
 float distancia(posicion* unaPosicion, posicion* otraPosicion){
@@ -375,8 +385,10 @@ t_tripulante* tripulanteMasCercano(posicion* posicion){
 		return distancia(tripulante1->posicion,posicion) <= distancia(tripulante2->posicion,posicion);
 	}
 
-	if(list_is_empty(colaEmergenciaExecYReady))
+	if(list_is_empty(colaEmergenciaExecYReady)){
+		log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA RESOLVER EL SABOTAJE!");
 		return NULL;
+	}
 	else
 	{
 		list_sort(colaEmergenciaExecYReady,posicionMasCercana);
@@ -395,52 +407,74 @@ void gestionarSabotaje(){
 		pthread_mutex_unlock(&mutexTripulantes);
 	}
 
-	log_info(loggerDiscordiador,"¡¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!!",posicionSabotajeActual->posX,posicionSabotajeActual->posY);
-
 	pthread_mutex_lock(&mutexSabotaje);
 	haySituacionDeEmergencia = true; //PARA QUE LOS QUE TERMINAN I/O NO SIGAN EJECUTANDO, Y SE AGREGUEN AL FINAL DE LA COLA
 	pthread_mutex_unlock(&mutexSabotaje);
 
 	//SE PAUSA LA PLANIFICACIÓN PARA LOS TRIPULANTES QUE ESTÁN EN EXEC Y READY
-	detenerTripulantesEnExecYReady();
+	detenerTripulantesEnExec();
 
 	//SE ORDENAN LAS COLAS DE EXEC Y READY POR ID DE TRIPULANTE ASCENDENTE (1-2-3...)
+	pthread_mutex_lock(&mutexColaExec);
 	list_sort(colaExec,ordenarPorId);
+	pthread_mutex_unlock(&mutexColaExec);
+
+	pthread_mutex_lock(&mutexColaReady);
 	list_sort(colaReady,ordenarPorId);
+	pthread_mutex_unlock(&mutexColaReady);
 
 	pthread_mutex_lock(&mutexColaBlockSabotaje);
 	list_add_all(colaBlockEmergencia,colaExec);
 	list_add_all(colaBlockEmergencia,colaReady);
-	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
-	//ESTA COLA LA HAGO PARA QUE NO HAYA PROBLEMA CON LOS QUE TERMINAN LOS BLOQUEOS POR I/O
+	//PARA ELEGIR AL QUE VA A RESOLVER EL SABOTAJE
 	list_add_all(colaEmergenciaExecYReady,colaExec);
 	list_add_all(colaEmergenciaExecYReady,colaReady);
+	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
+	pthread_mutex_lock(&mutexColaExec);
 	list_clean(colaExec);
-	list_clean(colaReady);
+	pthread_mutex_unlock(&mutexColaExec);
 
-	list_map(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
+	pthread_mutex_lock(&mutexColaReady);
+	list_clean(colaReady);
+	pthread_mutex_unlock(&mutexColaReady);
+
+	t_list* listaMapeada = list_map(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
 
 	pthread_mutex_lock(&mutexTripulantes);
 	tripulanteResolviendoSabotaje = tripulanteMasCercano(posicionSabotajeActual);
 	pthread_mutex_unlock(&mutexTripulantes);
 
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteResolviendoSabotaje->tid);
+
 	//SI EL TRIPULANTE ES EXPULSADO MIENTRAS RESUELVE EL SABOTAJE, HAY QUE EMPEZAR DE NUEVO CON EL SIGUIENTE MÁS CERCANO
 	while(!sabotajeActualResuelto && tripulanteResolviendoSabotaje!=NULL){
+		//HAY QUE LLEVARLO AL FINAL DE LA COLA
+		sacarDe(colaBlockEmergencia,tripulanteResolviendoSabotaje,mutexColaBlockSabotaje);
+		list_add(colaBlockEmergencia,tripulanteResolviendoSabotaje);
+
 		while(!llegoALaPosicion(tripulanteResolviendoSabotaje,posicionSabotajeActual) && !tripulanteResolviendoSabotaje->expulsado){
 			moverTripulante(tripulanteResolviendoSabotaje,posicionSabotajeActual);
 			sleep(RETARDO_CICLO_CPU);
 		}
 
+		log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIENDO SABOTAJE...",tripulanteResolviendoSabotaje->tid);
 		int tiempoResolviendoSabotaje;
 		for(tiempoResolviendoSabotaje = 0; tiempoResolviendoSabotaje<DURACION_SABOTAJE && !tripulanteResolviendoSabotaje->expulsado ;tiempoResolviendoSabotaje++)
 			sleep(RETARDO_CICLO_CPU);
 
-		//SI JUSTO ES EXPULSADO EN LA EJECUCIÓN DEL ÚLTIMO CICLO DEL SABOTAJE, TIENE QUE EJECUTAR OTRO DE NUEVO
+		//SI JUSTO ES EXPULSADO EN LA EJECUCIÓN DEL ÚLTIMO CICLO DEL SABOTAJE, TIENE QUE EJECUTAR OTRO TRIPULANTE DE NUEVO
 		if(tiempoResolviendoSabotaje == DURACION_SABOTAJE && !tripulanteResolviendoSabotaje->expulsado){
 			sabotajeActualResuelto = true;
-//			invocarFSCK();
+			invocarFSCK();
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",tripulanteResolviendoSabotaje->tid);
 		}
 	}
+
+	list_destroy(listaMapeada);
+}
+
+void invocarFSCK(){
+	//???
 }

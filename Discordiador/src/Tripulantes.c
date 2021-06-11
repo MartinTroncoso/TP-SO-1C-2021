@@ -108,8 +108,11 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 	}
 
 	pthread_mutex_lock(&mutexColaReady);
+	t_list* tripulantesParaEjecutar = list_take(colaReady,GRADO_MULTITAREA);
+	pthread_mutex_unlock(&mutexColaReady);
+
 	pthread_mutex_lock(&mutexColaExec);
-	if(list_any_satisfy(list_take(colaReady,GRADO_MULTITAREA),buscarTripulante) && list_size(colaExec)<GRADO_MULTITAREA && !tripulante->habilitado){
+	if(list_any_satisfy(tripulantesParaEjecutar,buscarTripulante) && list_size(colaExec)<GRADO_MULTITAREA && !tripulante->habilitado){
 		pthread_mutex_lock(&mutexTripulantes);
 		tripulante->habilitado = true;
 		pthread_mutex_unlock(&mutexTripulantes);
@@ -117,7 +120,8 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 		sem_post(&(tripulante->puedeEjecutar));
 	}
 	pthread_mutex_unlock(&mutexColaExec);
-	pthread_mutex_unlock(&mutexColaReady);
+
+	list_destroy(tripulantesParaEjecutar);
 }
 
 bool existeElTripulante(uint32_t idTripulante){
@@ -486,6 +490,8 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 
 		if(!tripulante->expulsado && tripulante->tareasPendientes > 0){
 			pthread_mutex_lock(&mutexTripulantes);
+			free(tripulante->proxTarea->nombre);
+			free(tripulante->proxTarea);
 			tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
 			pthread_mutex_unlock(&mutexTripulantes);
 
@@ -576,6 +582,8 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 
 		if(!tripulante->expulsado && tripulante->tareasPendientes > 0){
 			pthread_mutex_lock(&mutexTripulantes);
+			free(tripulante->proxTarea->nombre);
+			free(tripulante->proxTarea);
 			tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
 			pthread_mutex_unlock(&mutexTripulantes);
 
@@ -725,8 +733,9 @@ void listarTripulantes(){
 	}
 	else
 	{
+		char* fecha = temporal_get_string_time("%d/%m/%y %H:%M:%S");
 		printf("--------------------------------------------\n");
-		printf("Estado de la Nave: %s\n",temporal_get_string_time("%d/%m/%y %H:%M:%S"));
+		printf("Estado de la Nave: %s\n",fecha);
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = list_get(tripulantes,i);
 			pthread_mutex_lock(&mutexTripulantes);
@@ -734,6 +743,8 @@ void listarTripulantes(){
 			pthread_mutex_unlock(&mutexTripulantes);
 		}
 		printf("--------------------------------------------\n");
+
+		free(fecha);
 	}
 }
 
@@ -790,13 +801,17 @@ void expulsarTripulante(int id_tripulante){
 		sacarDe(colaEmergenciaExecYReady,tripulante,mutexColaBlockSabotaje);
 
 		sem_post(&(tripulante->puedeEjecutar));
+		sem_post(&(tripulante->semaforoPlanificacion));
 
 		agregarAExit(tripulante);
 
+		//SI SE EXPULSA AL QUE ESTÁ RESOLVIENDO EL SABOTAJE, SE ELIGE UNO NUEVO
 		if(tripulante->tid == tripulanteResolviendoSabotaje->tid){
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulanteResolviendoSabotaje = tripulanteMasCercano(posicionSabotajeActual);
 			pthread_mutex_unlock(&mutexTripulantes);
+
+			log_info(loggerDiscordiador,"SE EXPULSÓ AL TRIPULANTE QUE RESOLVÍA EL SABOTAJE. AHORA LE TOCA AL TRIPULANTE %d",tripulanteResolviendoSabotaje->tid);;
 		}
 		break;
 	default:
@@ -816,12 +831,14 @@ void iniciarPlanificacion(){
 		sem_post(&tripulante->semaforoPlanificacion);
 	}
 
-	list_map(tripulantes,(void*) habilitarSemaforo);
+	t_list* listaMapeada = list_map(tripulantes,(void*) habilitarSemaforo);
 
 	pthread_mutex_lock(&mutexActivarPlanificacion);
 	planificacionActivada = true;
 	planificacionFueActivadaAlgunaVez = true;
 	pthread_mutex_unlock(&mutexActivarPlanificacion);
+
+	list_destroy(listaMapeada);
 
 	log_info(loggerDiscordiador,"SE INICIA LA PLANIFICACIÓN");
 }
@@ -832,11 +849,13 @@ void pausarPlanificacion(){
 		sem_wait(&tripulante->semaforoPlanificacion);
 	}
 
-	list_map(tripulantes,(void*) deshabilitarSemaforo);
+	t_list* listaMapeada = list_map(tripulantes,(void*) deshabilitarSemaforo);
 
 	pthread_mutex_lock(&mutexActivarPlanificacion);
 	planificacionActivada = false;
 	pthread_mutex_unlock(&mutexActivarPlanificacion);
+
+	list_destroy(listaMapeada);
 
 	log_info(loggerDiscordiador,"SE PAUSA LA PLANIFICACIÓN");
 }

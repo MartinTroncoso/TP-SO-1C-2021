@@ -61,6 +61,16 @@ void inicializarVariables(){
 //	printf("SE CONECTÓ EL DISCORDIADOR!\n");
 }
 
+void inicializarDiccionario(){
+	caracterAsociadoATarea = dictionary_create();
+	dictionary_put(caracterAsociadoATarea, "GENERAR_OXIGENO",(char*) "O");
+	dictionary_put(caracterAsociadoATarea, "CONSUMIR_OXIGENO",(char*) "O");
+	dictionary_put(caracterAsociadoATarea, "GENERAR_COMIDA",(char*) "C");
+	dictionary_put(caracterAsociadoATarea, "CONSUMIR_COMIDA",(char*) "C");
+	dictionary_put(caracterAsociadoATarea, "GENERAR_BASURA",(char*) "B");
+	dictionary_put(caracterAsociadoATarea, "DESCARTAR_BASURA",(char*) "B");
+}
+
 void inicializarFileSystem(){
 	inicializarSuperBloque();
 	inicializarBlocks();
@@ -144,7 +154,7 @@ void inicializarBlocks()
 	struct stat infoBlocks;
 	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
 	{
-				log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
+		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
 	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
 	if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1)
@@ -161,16 +171,15 @@ void inicializarBlocks()
 	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
 }
 
-void inicializarMapeoBlocks()
-{
+void inicializarMapeoBlocks(){
 	struct stat infoBlocks;
-	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
-	{
+
+	if(fstat(fdArchivoBlocks,&infoBlocks)== -1){
 		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 		exit(-3);
 	}
-	if(infoBlocks.st_size == cantidadDeBlocks * tamanioBlock)
-	{
+
+	if(infoBlocks.st_size == cantidadDeBlocks * tamanioBlock){
 		blocksMap = malloc(cantidadDeBlocks * tamanioBlock);
 		blocksMapOriginal = mmap(NULL, cantidadDeBlocks * tamanioBlock,PROT_READ | PROT_WRITE, MAP_SHARED,fdArchivoBlocks,0);
 		memcpy(blocksMap,blocksMapOriginal,cantidadDeBlocks * tamanioBlock);
@@ -180,24 +189,10 @@ void inicializarMapeoBlocks()
 	}
 }
 
-void forzarSincronizacionBlocks()
-{
+void forzarSincronizacionBlocks(){
 	memcpy(blocksMapOriginal, blocksMap, cantidadDeBlocks * tamanioBlock);
 	if(msync(blocksMapOriginal,(cantidadDeBlocks*tamanioBlock),MS_SYNC)==0)
-	{
 		log_info(loggerMongo, "BLOCK SINCRONIZADO");
-	}
-}
-
-void inicializarDiccionario()
-{
-	caracterAsociadoATarea = dictionary_create();
-	dictionary_put(caracterAsociadoATarea, "GENERAR_OXIGENO",(char*) "O");
-	dictionary_put(caracterAsociadoATarea, "CONSUMIR_OXIGENO",(char*) "O");
-	dictionary_put(caracterAsociadoATarea, "GENERAR_COMIDA",(char*) "C");
-	dictionary_put(caracterAsociadoATarea, "CONSUMIR_COMIDA",(char*) "C");
-	dictionary_put(caracterAsociadoATarea, "GENERAR_BASURA",(char*) "B");
-	dictionary_put(caracterAsociadoATarea, "DESCARTAR_BASURA",(char*) "B");
 }
 
 void atenderTripulante(void* _cliente)
@@ -230,6 +225,11 @@ void atenderTripulante(void* _cliente)
 			break;
 		case RESOLUCION_SABOTAJE:
 			recibirResolucionSabotaje(socket_tripulante,idTripulante);
+			posicionSabotajeActual = getSiguientePosicionSabotaje();
+			break;
+		case INVOCAR_FSCK:
+			log_info(loggerMongo,"Se ejecuta el FSCK. Por ahora no hace nada :D");
+			ejecutarFSCK();
 			break;
 		case OBTENER_BITACORA:
 			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
@@ -460,15 +460,20 @@ char** getSiguientePosicionSabotaje(){
 void informarSabotaje(){
 	int socket_cliente_discordiador = crearConexionCliente(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
 
-	log_info(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE!!");
-
 	uint32_t posSabotajeX = atoi(posicionSabotajeActual[0]);
 	uint32_t posSabotajeY = atoi(posicionSabotajeActual[1]);
+
+	log_info(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!",posSabotajeX,posSabotajeY);
 
 	send(socket_cliente_discordiador,&posSabotajeX,sizeof(uint32_t),0);
 	send(socket_cliente_discordiador,&posSabotajeY,sizeof(uint32_t),0);
 
 	close(socket_cliente_discordiador);
+}
+
+void ejecutarFSCK(){
+	//???
+	//???
 }
 
 void destruirConfig(){
