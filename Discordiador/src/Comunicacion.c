@@ -288,9 +288,11 @@ void notificarMovimientoIMONGO(t_tripulante* tripulante, uint32_t posXAnterior, 
 	int desplazamiento = 0;
 
 	paquete->codigo_operacion = INFORMAR_DESPLAZAMIENTO_FS;
-	paquete->buffer->size = 4*sizeof(uint32_t);
+	paquete->buffer->size = 5*sizeof(uint32_t);
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
+	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->tid),sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
 	memcpy(paquete->buffer->stream + desplazamiento, &(posXAnterior), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(paquete->buffer->stream + desplazamiento, &(posYAnterior), sizeof(uint32_t));

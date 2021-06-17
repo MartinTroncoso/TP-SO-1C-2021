@@ -201,38 +201,58 @@ void atenderTripulante(void* _cliente)
 
 	uint32_t idTripulante;
 	recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
+//	uint32_t tamanioBuffer;
+//	void* buffer = recibir_buffer(&tamanioBuffer,socket_tripulante);
+//	memcpy(&idTripulante,buffer,sizeof(uint32_t));
+	log_info(loggerMongo, "Se conecto el tripulante %d",idTripulante);
+	//recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
 
 	while(1){
+		//recv(socket_tripulante,&idTripulante,sizeof(uint32_t),MSG_WAITALL);
 		int op_code = recibir_operacion(socket_tripulante);
+
 
 		switch(op_code)
 		{
 		case INFORMAR_DESPLAZAMIENTO_FS:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA INFORME DE DESPLAZAMIENTO",idTripulante);
 			recibirInformeDeDesplazamiento(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA INFORME DE DESPLAZAMIENTO",idTripulante);
 			break;
 		case INICIO_TAREA:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA INICIO_TAREA",idTripulante);
 			recibirInicioDeTarea(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA INICIO_TAREA",idTripulante);
 			break;
 		case FINALIZO_TAREA:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA FINALIZO_TAREA",idTripulante);
 			recibirFinalizaTarea(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA FINALIZO_TAREA",idTripulante);
 			break;
 		case PETICION_ENTRADA_SALIDA:
 			log_info(loggerMongo,"[TRIPULANTE %d] REALIZA PETICIÓN DE ENTRADA/SALIDA",idTripulante);
 			realizarTareaIO(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA PETICION_ENTRADA_SALIDA",idTripulante);
 			break;
 		case ATENDER_SABOTAJE:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA ATENDER_SABOTAJE",idTripulante);
 			recibirAtenderSabotaje(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA ATENDER_SABOTAJE",idTripulante);
 			break;
 		case RESOLUCION_SABOTAJE:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA RESOLUCION_SABOTAJE",idTripulante);
 			recibirResolucionSabotaje(socket_tripulante,idTripulante);
 			posicionSabotajeActual = getSiguientePosicionSabotaje();
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA RESOLUCION_SABOTAJE",idTripulante);
 			break;
 		case INVOCAR_FSCK:
 			log_info(loggerMongo,"Se ejecuta el FSCK. Por ahora no hace nada :D");
 			ejecutarFSCK();
 			break;
 		case OBTENER_BITACORA:
+			log_info(loggerMongo,"[TRIPULANTE %d] INICIA OBTENER_BITACORA",idTripulante);
 			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
+			log_info(loggerMongo,"[TRIPULANTE %d] FINALIZA OBTENER_BITACORA",idTripulante);
 			break;
 		default:
 			log_info(loggerMongo , "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",idTripulante);
@@ -240,6 +260,7 @@ void atenderTripulante(void* _cliente)
 			return;
 			break;
 		}
+
 	}
 }
 
@@ -300,7 +321,7 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	uint32_t coorYAnterior;
 	uint32_t coorXNueva;
 	uint32_t coorYNueva;
-	uint32_t desplazamiento = 0;
+	uint32_t desplazamiento = sizeof(uint32_t);
 
 	buffer = recibir_buffer(&sizeBuffer, socket_tripulante);
 
