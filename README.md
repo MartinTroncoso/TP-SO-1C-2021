@@ -30,6 +30,11 @@
 * Ponemos en una consola aparte el comando 'ps u' para saber el id del proceso al que le vamos a mandar la señal
 * Después escribimos el comando 'kill -SIGINT idProceso' ---> (SIGINT es una señal de varias, es por poner un ejemplo)
 
+### :point_right: MAPA
+* Las líneas del código que tienen que ver con el mapa en MI-RAM-HQ.c son la función inicializarMapa(), y en atenderTripulante() las funciones personaje_crear(), 
+  nivel_gui_dibujar(), item_mover() y item_borrar(). Si queremos probar sin el mapa, comentar esas líneas
+* No agrandar/achicar la consola que tenga el mapa porque rompe
+
 ### :point_right: La función send() manda todo el bloque completo. La función recv() agarra el buffer que llegó y agarra los primeros 'n' bytes que se le definan, entonces puede haber varios recv() para un solo send()
 
 ### :point_right: Diagrama de flujo: https://lucid.app/lucidchart/08070e2d-21af-4143-b078-d4927ef03d9b/edit?shared=true&page=0_0#
