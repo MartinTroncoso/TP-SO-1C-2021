@@ -21,11 +21,8 @@
 * export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/workspace/tp-2021-1c-No-C-Aprueba-/shared/Debug
 
         Y despúes levantar el proceso solo haciendo ./'Proceso'
-      
+        
 ### :point_right: PARA CORRER CON VALGRIND
-
-        valgrind --leak-check=full ./'Proceso'
-### :point_right: PARA CORRER CON HELGRIND
         valgrind --tool=helgrind ./'Proceso'
 
 ### :point_right: LAS SEÑALES LAS MANDAMOS NOSOTROS

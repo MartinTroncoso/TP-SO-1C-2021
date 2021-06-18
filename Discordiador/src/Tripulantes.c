@@ -49,12 +49,16 @@ void moverYDelTripulante(t_tripulante* tripulante, posicion* posicion){
 	uint32_t posYAnterior = tripulante->posicion->posY;
 
 	if(tripulante->posicion->posY > posicion->posY){
+		pthread_mutex_lock(&mutexTripulantes);
 		tripulante->posicion->posY--;
+		pthread_mutex_unlock(&mutexTripulantes);
 	}
 	else
 	{
 		if(tripulante->posicion->posY < posicion->posY){
+			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->posicion->posY++;
+			pthread_mutex_unlock(&mutexTripulantes);
 		}
 	}
 
