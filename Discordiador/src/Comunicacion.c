@@ -65,29 +65,44 @@ void agregarABlockIO(t_tripulante* tripulante){
 	notificarCambioDeEstado(tripulante);
 }
 
-void agregarABlockSabotaje(t_tripulante* tripulante){
-	pthread_mutex_lock(&mutexColaBlockSabotaje);
-	list_add(colaBlockEmergencia,tripulante);
-	pthread_mutex_unlock(&mutexColaBlockSabotaje);
-
-	pthread_mutex_lock(&mutexTripulantes);
-	bool estabaBloqueado = tripulante->estado == BLOCK_IO;
-	tripulante->estado = BLOCK_EMERGENCIA;
-	pthread_mutex_unlock(&mutexTripulantes);
-
-	//SI EL TRIPULANTE YA ESTABA BLOQUEADO POR I/O, NO SE NOTIFICA EL CAMBIO A BLOQUEADO POR EMERGENCIA
-	if(!estabaBloqueado)
-		notificarCambioDeEstado(tripulante);
-}
-
-void sacarDe(t_list* cola, t_tripulante* tripulante, pthread_mutex_t mutexCola){
+void sacarDeReady(t_tripulante* tripulante){
 	bool buscarTripulante(void* elemento){
 		return ((t_tripulante*) elemento)->tid == tripulante->tid;
 	}
 
-	pthread_mutex_lock(&mutexCola);
-	list_remove_by_condition(cola,buscarTripulante);
-	pthread_mutex_unlock(&mutexCola);
+	pthread_mutex_lock(&mutexColaReady);
+	list_remove_by_condition(colaReady,buscarTripulante);
+	pthread_mutex_unlock(&mutexColaReady);
+}
+
+void sacarDeExec(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	pthread_mutex_lock(&mutexColaExec);
+	list_remove_by_condition(colaExec,buscarTripulante);
+	pthread_mutex_unlock(&mutexColaExec);
+}
+
+void sacarDeBlockIO(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	pthread_mutex_lock(&mutexColaBlockIO);
+	list_remove_by_condition(colaBlockIO,buscarTripulante);
+	pthread_mutex_unlock(&mutexColaBlockIO);
+}
+
+void sacarDeBlockEmergencia(t_tripulante* tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == tripulante->tid;
+	}
+
+	pthread_mutex_lock(&mutexColaBlockSabotaje);
+	list_remove_by_condition(colaBlockEmergencia,buscarTripulante);
+	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 }
 
 bool llegoALaPosicion(t_tripulante* tripulante, posicion* posicion){
@@ -288,11 +303,9 @@ void notificarMovimientoIMONGO(t_tripulante* tripulante, uint32_t posXAnterior, 
 	int desplazamiento = 0;
 
 	paquete->codigo_operacion = INFORMAR_DESPLAZAMIENTO_FS;
-	paquete->buffer->size = 5*sizeof(uint32_t);
+	paquete->buffer->size = 4*sizeof(uint32_t);
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 
-	memcpy(paquete->buffer->stream + desplazamiento, &(tripulante->tid),sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
 	memcpy(paquete->buffer->stream + desplazamiento, &(posXAnterior), sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 	memcpy(paquete->buffer->stream + desplazamiento, &(posYAnterior), sizeof(uint32_t));
@@ -351,21 +364,9 @@ void notificarResolucionSabotaje(t_tripulante* tripulante){
 	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 }
 
-void detenerTripulantesEnExec(){
-	void deshabilitarSemaforo(void* elemento){
-		t_tripulante* tripulante = (t_tripulante*) elemento;
-		sem_wait(&tripulante->semaforoPlanificacion);
-	}
-
-	if(planificacionActivada){
-		list_map(colaExec,(void*) deshabilitarSemaforo);
-
-		pthread_mutex_lock(&mutexActivarPlanificacion);
-		planificacionActivada = false;
-		pthread_mutex_unlock(&mutexActivarPlanificacion);
-
-		log_info(loggerDiscordiador,"SE DETIENEN LOS TRIPULANTES EN EXEC");
-	}
+void invocarFSCK(t_tripulante* tripulante){
+	tipo_mensaje op_code = INVOCAR_FSCK;
+	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 }
 
 float distancia(posicion* unaPosicion, posicion* otraPosicion){
@@ -387,34 +388,65 @@ t_tripulante* tripulanteMasCercano(posicion* posicion){
 		return distancia(tripulante1->posicion,posicion) <= distancia(tripulante2->posicion,posicion);
 	}
 
-	if(list_is_empty(colaEmergenciaExecYReady)){
-		log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA RESOLVER EL SABOTAJE!");
-		return NULL;
-	}
-	else
-	{
-		list_sort(colaEmergenciaExecYReady,posicionMasCercana);
-		return ((t_tripulante*) list_get(colaEmergenciaExecYReady,0));
-	}
+	t_list* ordenadosPorPosicion = list_sorted(colaBlockEmergencia,posicionMasCercana);
+
+	t_tripulante* tripulante = (t_tripulante*) list_get(ordenadosPorPosicion,0);
+
+	list_destroy(ordenadosPorPosicion);
+	return tripulante;
 }
 
 void gestionarSabotaje(){
+	pthread_mutex_lock(&mutexSituacionEmergencia);
+	haySituacionDeEmergencia = true;
+	pthread_mutex_unlock(&mutexSituacionEmergencia);
+
+	//SI ESTÁ ACTIVADA, SE PAUSA LA PLANIFICACIÓN
+	pthread_mutex_lock(&mutexActivarPlanificacion);
+	if(planificacionActivada){
+		pthread_mutex_unlock(&mutexActivarPlanificacion);
+		pausarPlanificacion();
+	}
+	else
+		pthread_mutex_unlock(&mutexActivarPlanificacion);
+
 	bool ordenarPorId(void* unTripulante, void* otroTripulante){
 		return ((t_tripulante*) unTripulante)->tid < ((t_tripulante*) otroTripulante)->tid;
 	}
 
-	void pasarABlockPorEmergencia(void* tripulante){
+	void pasarABlockPorEmergencia(void* elemento){
+		t_tripulante* tripulante = (t_tripulante*) elemento;
+
 		pthread_mutex_lock(&mutexTripulantes);
-		((t_tripulante*) tripulante)->estado = BLOCK_EMERGENCIA;
+		bool noEstabaBloqueado = tripulante->estado != BLOCK_IO;
+		tripulante->estado = BLOCK_EMERGENCIA;
 		pthread_mutex_unlock(&mutexTripulantes);
+
+		if(noEstabaBloqueado)
+			notificarCambioDeEstado(tripulante);
 	}
 
-	pthread_mutex_lock(&mutexSabotaje);
-	haySituacionDeEmergencia = true; //PARA QUE LOS QUE TERMINAN I/O NO SIGAN EJECUTANDO, Y SE AGREGUEN AL FINAL DE LA COLA
-	pthread_mutex_unlock(&mutexSabotaje);
+	void pasarAReady(void* elemento){
+		pthread_mutex_lock(&mutexTripulantes);
+		((t_tripulante*) elemento)->estado = READY;
+		pthread_mutex_unlock(&mutexTripulantes);
 
-	//SE PAUSA LA PLANIFICACIÓN PARA LOS TRIPULANTES QUE ESTÁN EN EXEC Y READY
-	detenerTripulantesEnExec();
+		notificarCambioDeEstado((t_tripulante*) elemento);
+	}
+
+	void pasarAExec(void* elemento){
+		pthread_mutex_lock(&mutexTripulantes);
+		((t_tripulante*) elemento)->estado = EXEC;
+		pthread_mutex_unlock(&mutexTripulantes);
+
+		notificarCambioDeEstado((t_tripulante*) elemento);
+	}
+
+	void pasarABlockIO(void* elemento){
+		pthread_mutex_lock(&mutexTripulantes);
+		((t_tripulante*) elemento)->estado = BLOCK_IO;
+		pthread_mutex_unlock(&mutexTripulantes);
+	}
 
 	//SE ORDENAN LAS COLAS DE EXEC Y READY POR ID DE TRIPULANTE ASCENDENTE (1-2-3...)
 	pthread_mutex_lock(&mutexColaExec);
@@ -428,10 +460,6 @@ void gestionarSabotaje(){
 	pthread_mutex_lock(&mutexColaBlockSabotaje);
 	list_add_all(colaBlockEmergencia,colaExec);
 	list_add_all(colaBlockEmergencia,colaReady);
-
-	//PARA ELEGIR AL QUE VA A RESOLVER EL SABOTAJE
-	list_add_all(colaEmergenciaExecYReady,colaExec);
-	list_add_all(colaEmergenciaExecYReady,colaReady);
 	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
 	pthread_mutex_lock(&mutexColaExec);
@@ -442,41 +470,95 @@ void gestionarSabotaje(){
 	list_clean(colaReady);
 	pthread_mutex_unlock(&mutexColaReady);
 
-	t_list* listaMapeada = list_map(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
-
 	pthread_mutex_lock(&mutexTripulantes);
-	tripulanteResolviendoSabotaje = tripulanteMasCercano(posicionSabotajeActual);
+	t_tripulante* tripulanteParaElSabotaje = tripulanteMasCercano(posicionSabotajeActual);
+	bool estabaEnExec = tripulanteParaElSabotaje->estado == EXEC;
 	pthread_mutex_unlock(&mutexTripulantes);
 
-	log_info(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteResolviendoSabotaje->tid);
-
-	//SI EL TRIPULANTE ES EXPULSADO MIENTRAS RESUELVE EL SABOTAJE, HAY QUE EMPEZAR DE NUEVO CON EL SIGUIENTE MÁS CERCANO
-	while(!sabotajeActualResuelto && tripulanteResolviendoSabotaje!=NULL){
-		//HAY QUE LLEVARLO AL FINAL DE LA COLA
-		sacarDe(colaBlockEmergencia,tripulanteResolviendoSabotaje,mutexColaBlockSabotaje);
-		list_add(colaBlockEmergencia,tripulanteResolviendoSabotaje);
-
-		while(!llegoALaPosicion(tripulanteResolviendoSabotaje,posicionSabotajeActual) && !tripulanteResolviendoSabotaje->expulsado){
-			moverTripulante(tripulanteResolviendoSabotaje,posicionSabotajeActual);
-			sleep(RETARDO_CICLO_CPU);
-		}
-
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIENDO SABOTAJE...",tripulanteResolviendoSabotaje->tid);
-		int tiempoResolviendoSabotaje;
-		for(tiempoResolviendoSabotaje = 0; tiempoResolviendoSabotaje<DURACION_SABOTAJE && !tripulanteResolviendoSabotaje->expulsado ;tiempoResolviendoSabotaje++)
-			sleep(RETARDO_CICLO_CPU);
-
-		//SI JUSTO ES EXPULSADO EN LA EJECUCIÓN DEL ÚLTIMO CICLO DEL SABOTAJE, TIENE QUE EJECUTAR OTRO TRIPULANTE DE NUEVO
-		if(tiempoResolviendoSabotaje == DURACION_SABOTAJE && !tripulanteResolviendoSabotaje->expulsado){
-			sabotajeActualResuelto = true;
-			invocarFSCK();
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",tripulanteResolviendoSabotaje->tid);
-		}
+	//SI EL QUE LO RESUELVE ESTABA EN READY, LA VARIABLE GLOBAL QUEDA EN 0
+	if(estabaEnExec){
+		pthread_mutex_lock(&mutexIdTripulanteSabotaje);
+		idTripulanteResolviendoSabotaje = tripulanteParaElSabotaje->tid;
+		pthread_mutex_unlock(&mutexIdTripulanteSabotaje);
 	}
 
-	list_destroy(listaMapeada);
-}
+	t_list* execYReadyPasadosAEmergencia = list_map(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
+	t_list* blockIOPasadosAEmergencia = list_map(colaBlockIO,(void*) pasarABlockPorEmergencia); //NO LOS SACO DE LA DE I/O PORQUE NO CAMBIA EN NADA
 
-void invocarFSCK(){
-	//???
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteParaElSabotaje->tid);
+
+	notificarAtencionSabotaje(tripulanteParaElSabotaje);
+
+	//SE MUEVE A LA POSICION DEL SABOTAJE
+	while(!llegoALaPosicion(tripulanteParaElSabotaje,posicionSabotajeActual)){
+		moverTripulante(tripulanteParaElSabotaje,posicionSabotajeActual);
+		sleep(RETARDO_CICLO_CPU);
+	}
+
+	//SE LO LLEVA AL FINAL DE LA COLA DE BLOQUEADOS
+	sacarDeBlockEmergencia(tripulanteParaElSabotaje);
+
+	pthread_mutex_lock(&mutexColaBlockSabotaje);
+	list_add(colaBlockEmergencia,tripulanteParaElSabotaje);
+	pthread_mutex_unlock(&mutexColaBlockSabotaje);
+
+	invocarFSCK(tripulanteParaElSabotaje);
+
+	//EMPIEZA A RESOLVERLO
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIENDO SABOTAJE...",tripulanteParaElSabotaje->tid);
+	for(int i = 0; i<DURACION_SABOTAJE ;i++)
+		sleep(RETARDO_CICLO_CPU);
+
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",tripulanteParaElSabotaje->tid);
+
+	notificarResolucionSabotaje(tripulanteParaElSabotaje);
+
+	if(planificacionFueActivadaAlgunaVez){
+		t_list* tripulantesEnExec;
+		t_list* listaPasadosAExec;
+
+		if(estabaEnExec)
+			tripulantesEnExec = list_take_and_remove(colaBlockEmergencia,GRADO_MULTITAREA - 1);
+		else
+			tripulantesEnExec = list_take_and_remove(colaBlockEmergencia,GRADO_MULTITAREA);
+
+		pthread_mutex_lock(&mutexColaExec);
+		list_add_all(colaExec,tripulantesEnExec);
+		pthread_mutex_unlock(&mutexColaExec);
+
+		listaPasadosAExec = list_map(colaExec,(void*) pasarAExec);
+
+		list_destroy(tripulantesEnExec);
+		list_destroy(listaPasadosAExec);
+	}
+
+	pthread_mutex_lock(&mutexColaReady);
+	list_add_all(colaReady,colaBlockEmergencia);
+	pthread_mutex_unlock(&mutexColaReady);
+
+	pthread_mutex_lock(&mutexColaBlockSabotaje);
+	list_clean(colaBlockEmergencia);
+	pthread_mutex_unlock(&mutexColaBlockSabotaje);
+
+	t_list* listaPasadosAReady = list_map(colaReady,(void*) pasarAReady);
+	t_list* listaPasadosABlockIO = list_map(colaBlockIO,(void*) pasarABlockIO);
+
+	list_destroy(execYReadyPasadosAEmergencia);
+	list_destroy(blockIOPasadosAEmergencia);
+	list_destroy(listaPasadosAReady);
+	list_destroy(listaPasadosABlockIO);
+
+	pthread_mutex_lock(&mutexSituacionEmergencia);
+	haySituacionDeEmergencia = false;
+	pthread_mutex_unlock(&mutexSituacionEmergencia);
+
+	//SI NO SE HABIA INICIADO NUNCA LA PLANIFICACION, ESPERAN A QUE SE INICIE POR CONSOLA (VER ESTO)
+	if(planificacionFueActivadaAlgunaVez){
+		pthread_mutex_lock(&mutexTripulantes);
+		tripulanteParaElSabotaje->habilitado = false;
+		pthread_mutex_unlock(&mutexTripulantes);
+
+		iniciarPlanificacion();
+		habilitarProximoAEjecutar();//SI EL QUE RESOLVIO EL SABOTAJE ESTABA EN EXEC, SE HABILITA AL PRIMERO QUE ESTABA EN READY (DESPUÉS DE HABER ORDENADO POR ID)
+	}
 }
