@@ -10,15 +10,23 @@
 
 #include "MI-RAM-HQ.h"
 
+#define ASSERT_CREATE(nivel, id, err)                                                   \
+	if(err) {                                                                           \
+		nivel_destruir(nivel);                                                          \
+		nivel_gui_terminar();                                                           \
+		fprintf(stderr, "Error al crear '%c': %s\n", id, nivel_gui_string_error(err));  \
+		return EXIT_FAILURE;                                                            \
+	}
+
 int main(void) {
 //	signal(SIGUSR1,dumpMemoria);
 	signal(SIGINT,terminar_programa);
 
 	inicializarVariables();
-	log_info(loggerMiRam,"PID MI-RAM HQ: %d",getpid());
+	log_info(loggerSecundario,"PID MI-RAM HQ: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
-	log_info(loggerMiRam, "MI-RAM-HQ Listo para atender a los Tripulantes!");
+	log_info(loggerSecundario, "MI-RAM-HQ Listo para atender a los Tripulantes!");
 
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -37,7 +45,7 @@ int main(void) {
 			pthread_detach(hilo_receptor);
 			break;
 		default:
-			log_warning(loggerMiRam, "Tipo de mensaje desconocido!!!. Cierro conexion con dicho cliente");
+			log_warning(loggerPrincipal, "Tipo de mensaje desconocido!!!. Cierro conexion con dicho cliente");
 			close(socket_escucha);
 			return -1;
 			break;
@@ -51,7 +59,8 @@ int main(void) {
 void inicializarVariables(){
 
 	configuracionMiRam = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.config");
-	loggerMiRam = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.log", "MIRA-RAM-HQ", 1, LOG_LEVEL_INFO);
+	loggerPrincipal = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramPrincipal.log", "MIRA-RAM-HQ", 1, LOG_LEVEL_INFO);
+	loggerSecundario = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramSecundario.log", "MIRA-RAM-HQ", 0, LOG_LEVEL_INFO);
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
@@ -64,17 +73,24 @@ void inicializarVariables(){
 	patotas = list_create();
 	pthread_mutex_init(&mutexTripulantes,NULL);
 	pthread_mutex_init(&mutexPatotas,NULL);
+
+	inicializarMapa();
 }
 
 void atenderTripulante(void* _cliente) {
-	log_info(loggerMiRam, "Se conectó un Tripulante!");
-	log_info(loggerMiRam, "Primero recibo sus datos y armo TCB");
+	log_info(loggerSecundario, "Se conectó un Tripulante!");
+	log_info(loggerSecundario, "Primero recibo sus datos y armo TCB");
 
 	int socket_tripulante = (int) _cliente;
 
 	TCB* tripulante = recibir_datos_tripulante(socket_tripulante);
 
-	log_info(loggerMiRam, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
+	char identificadorEnElMapa = tripulante->tid + 64;
+	personaje_crear(nivel, identificadorEnElMapa, tripulante->posX, tripulante->posY);
+
+	log_info(loggerSecundario, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
+
+	nivel_gui_dibujar(nivel);
 
 	while(1){
 		int tipo_msg = recibir_operacion(socket_tripulante);
@@ -83,15 +99,17 @@ void atenderTripulante(void* _cliente) {
 		case PROXIMA_TAREA:
 			enviar_proxima_tarea(tripulante, socket_tripulante);
 			avanzar_proxima_instruccion(tripulante);
-			log_info(loggerMiRam, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tripulante->tid);
+			log_info(loggerSecundario, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tripulante->tid);
 			break;
 		case INFORMAR_MOVIMIENTO:
 			recibir_movimiento_tripulante(tripulante, socket_tripulante);
+			item_mover(nivel,identificadorEnElMapa,tripulante->posX, tripulante->posY);
+			nivel_gui_dibujar(nivel);
 			break;
 		case CAMBIO_ESTADO:{
 			char nuevoEstado;
 			recv(socket_tripulante,&nuevoEstado,sizeof(char),0),
-			log_info(loggerMiRam, "[TRIPULANTE %d] Pasa de estado %c a %c", tripulante->tid, tripulante->estado, nuevoEstado);
+			log_info(loggerSecundario, "[TRIPULANTE %d] Pasa de estado %c a %c", tripulante->tid, tripulante->estado, nuevoEstado);
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->estado = nuevoEstado;
@@ -99,13 +117,15 @@ void atenderTripulante(void* _cliente) {
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
-			log_info(loggerMiRam, "[TRIPULANTE %d] EXPULSADO.",tripulante->tid);
+			log_info(loggerSecundario, "[TRIPULANTE %d] EXPULSADO.",tripulante->tid);
+			item_borrar(nivel,identificadorEnElMapa);
+			nivel_gui_dibujar(nivel);
 			close(socket_tripulante);
 			return;
 			break;
 		default:
 			//ACÁ HABRÍA QUE BORRAR AL TRIPULANTE DE LA MEMORIA
-			log_info(loggerMiRam, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",tripulante->tid);
+			log_info(loggerPrincipal, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",tripulante->tid);
 			close(socket_tripulante);
 			return;
 			break;
@@ -125,7 +145,7 @@ void recibir_datos_patota(void* _cliente) {
 
 	PCB* nuevo_pcb = malloc(sizeof(PCB));
 
-	log_info(loggerMiRam,"Me llegan los datos de una patota");
+	log_info(loggerSecundario,"Me llegan los datos de una patota");
 
 	buffer = recibir_buffer(&buffer_size, socket_cliente);
 
@@ -152,7 +172,7 @@ void recibir_datos_patota(void* _cliente) {
 	//Envio el OK
 	enviar_respuesta(OK, socket_cliente);
 
-	log_info(loggerMiRam, "Se ha creado el PCB: %d\nSus instrucciones son: %s", nuevo_pcb->pid, nuevo_pcb->tareas);
+	log_info(loggerSecundario, "Se ha creado el PCB: %d\nSus instrucciones son: %s", nuevo_pcb->pid, nuevo_pcb->tareas);
 
 	close(socket_cliente);
 	free(buffer);
@@ -256,7 +276,7 @@ void recibir_movimiento_tripulante(TCB* tripulante, int socket_tripulante) {
 	memcpy(&(tripulante->posY), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	log_info(loggerMiRam, "[TRIPULANTE %d] Se movió a %d|%d", tripulante->tid, tripulante->posX, tripulante->posY);
+//	log_info(loggerMiRam, "[TRIPULANTE %d] Se movió a %d|%d", tripulante->tid, tripulante->posX, tripulante->posY);
 
 	free(buffer);
 }
@@ -291,11 +311,23 @@ PCB* buscar_patota(uint32_t pid){
 	return patota;
 }
 
+void inicializarMapa(){
+	nivel = nivel_crear("AMONGASOO");
+	int filas, columnas;
+
+	nivel_gui_inicializar();
+
+	nivel_gui_get_area_nivel(&columnas,&filas);
+}
+
 void terminar_programa(){
-	log_info(loggerMiRam,"Finaliza MI-RAM...");
 	config_destroy(configuracionMiRam);
 	list_destroy_and_destroy_elements(tripulantes,free);
 	list_destroy_and_destroy_elements(patotas,free);
-	log_destroy(loggerMiRam);
+	nivel_destruir(nivel);
+	nivel_gui_terminar();
+	log_info(loggerPrincipal,"Finaliza MI-RAM...");
+	log_destroy(loggerSecundario);
+	log_destroy(loggerPrincipal);
 	exit(0);
 }

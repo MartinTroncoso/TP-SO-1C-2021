@@ -228,7 +228,8 @@ void destruirTripulantes(){
 		pthread_mutex_lock(&mutexTripulantes);
 		t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
 		free(tripulante->posicion);
-		free(tripulante->proxTarea->nombre);
+		if(tripulante->proxTarea->nombre != NULL)
+			free(tripulante->proxTarea->nombre);
 		free(tripulante->proxTarea);
 		sem_destroy(&(tripulante->semaforoPlanificacion));
 		sem_destroy(&(tripulante->puedeEjecutar));

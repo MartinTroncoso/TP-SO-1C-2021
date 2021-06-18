@@ -9,6 +9,7 @@
 #define MI_RAM_HQ_H_
 
 #include <utils.h>
+#include "Mapa.h"
 
 int TAMANIO_MEMORIA;
 char* ESQUEMA_MEMORIA;
@@ -35,15 +36,19 @@ typedef struct{
 }TCB;
 
 t_config* configuracionMiRam;
-t_log* loggerMiRam;
+t_log* loggerPrincipal;
+t_log* loggerSecundario;
 
 t_list* tripulantes; //capaz esta lista sea al pedo cuando guardemos todo en memoria
 t_list* patotas; //idem
+
+NIVEL* nivel;
 
 pthread_mutex_t mutexTripulantes;
 pthread_mutex_t mutexPatotas;
 
 void inicializarVariables();
+void inicializarMapa();
 
 void atenderTripulante(void*);
 void recibir_datos_patota(void*);
