@@ -51,6 +51,7 @@ t_bitarray* recuperarBitArray();
 void atenderTripulante(void*);
 void realizarTareaIO(int,uint32_t);
 void guardarBitArray(t_bitarray*);
+int posicionBlockLibre(t_bitarray*);
 void recibirInformeDeDesplazamiento(int,uint32_t);
 void recibirInicioDeTarea(int,uint32_t);
 void recibirPeticionDeBitacora(int,uint32_t);

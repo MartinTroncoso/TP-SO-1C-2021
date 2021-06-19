@@ -83,8 +83,15 @@ void inicializarSuperBloque(){
 	if(stat(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),&statCarpeta)==-1)
 	{
 		log_info(loggerMongo,"No existe SupreBloque");
-		t_bitarray* bitArray = bitarray_create_with_mode(calloc(cantidadDeBlocks/8+cantidadDeBlocks%8,1), cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
+		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
+		for(int i = 0; i<bitarray_get_max_bit(bitArray);i++)
+		{
+			bitarray_clean_bit(bitArray,i);
+		}
 		bitarray_set_bit(bitArray,0);
+//		bitarray_set_bit(bitArray,11);
+//		bitarray_set_bit(bitArray,20);
+		bitarray_set_bit(bitArray,50);
 		int archivo = open(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 		struct stat caracteristicasArchivo;
 		if(fstat(archivo,&caracteristicasArchivo)== -1)
@@ -110,7 +117,13 @@ void inicializarSuperBloque(){
 	{
 		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
 		t_bitarray* recuperado = recuperarBitArray();
+		log_info(loggerMongo,"Posicion del blocks libre: %d", posicionBlockLibre(recuperado));
+		bitarray_set_bit(recuperado,10);
+		bitarray_set_bit(recuperado,11);
+		bitarray_set_bit(recuperado,12);
+		guardarBitArray(recuperado);
 	}
+
 }
 
 t_bitarray* recuperarBitArray(){
@@ -135,8 +148,12 @@ t_bitarray* recuperarBitArray(){
 	//	{
 	//		printf("%c",archivoEnMemoria[marcador]);
 	//	}
-	t_bitarray* nuevoBitArray = bitarray_create_with_mode(calloc(cantidadDeBlocks/8+cantidadDeBlocks%8,1), cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
+	t_bitarray* nuevoBitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
 	//char* charArray = malloc(caracteristicasArchivo2.st_size - marcador);
+	for(int i = 0; i<bitarray_get_max_bit(nuevoBitArray);i++)
+	{
+		bitarray_clean_bit(nuevoBitArray,i);
+	}
 	if(caracteristicasArchivo.st_size == marcador)
 	{
 		log_info(loggerMongo,"BITARRAY VACIO");
@@ -145,11 +162,12 @@ t_bitarray* recuperarBitArray(){
 		memcpy((nuevoBitArray->bitarray),archivoEnMemoria+marcador,caracteristicasArchivo.st_size - marcador);
 	}
 
-//	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
-//	{
-//		//bitarray_set_bit(bitArray,i);
-//		printf("%d",bitarray_test_bit(nuevoBitArray,i));
-//	}
+	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
+	{
+		//bitarray_set_bit(bitArray,i);
+		printf("%d",bitarray_test_bit(nuevoBitArray,i));
+	}
+
 	return nuevoBitArray;
 }
 
@@ -157,6 +175,59 @@ void guardarBitArray(t_bitarray* arrayAGuardar)
 {
 	//Buscar puntero siguiente al tercer '='
 	//si uso config_set_value y config_save cambia de posicion los valores dentro del archivo
+	int archivo = open(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE), O_RDWR, S_IRUSR | S_IWUSR);
+	struct stat caracteristicasArchivo;
+	if(fstat(archivo,&caracteristicasArchivo)== -1)
+	{
+		log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
+	}
+	char* archivoEnMemoria = mmap(NULL, caracteristicasArchivo.st_size, PROT_READ | PROT_WRITE, MAP_SHARED,archivo,0);
+	int contador=0;
+	int marcador = 0;
+	while(contador <3)
+	{
+		if(archivoEnMemoria[marcador]=='=')
+		{
+			contador++;
+		}
+			marcador++;
+	}
+	if(caracteristicasArchivo.st_size == marcador)
+	{
+		log_info(loggerMongo,"BITARRAY VACIO en guardar");
+	}else
+	{
+		memcpy(archivoEnMemoria+marcador,arrayAGuardar->bitarray,caracteristicasArchivo.st_size - marcador);
+	}
+
+	if(msync(archivoEnMemoria,caracteristicasArchivo.st_size,MS_INVALIDATE)==0)
+	{
+		printf("\nSe actualizo el archivo\n");
+	}
+	close(archivo);
+}
+
+int posicionBlockLibre(t_bitarray* bitMap)
+{
+	int posicion = 0;
+	log_info(loggerMongo,"Tamanio bitmap: %d",bitarray_get_max_bit(bitMap));
+	while(posicion < bitarray_get_max_bit(bitMap) )
+	{
+		if(!bitarray_test_bit(bitMap,posicion))
+		{
+			return posicion;
+		}
+		else
+		{
+			posicion++;
+		}
+	}
+	if(posicion == bitarray_get_max_bit(bitMap))
+	{
+		log_info(loggerMongo,"ARCHIVO BLOCKS LLENO, TERMINANDO PROGRAMA");
+		exit(-6);
+	}
+	return posicion;
 }
 
 void inicializarBlocks()
@@ -222,7 +293,7 @@ void atenderTripulante(void* _cliente)
 	if(stat(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),&statCarpeta)==-1)
 	{
 		FILE* archivoBitacora = fopen(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),"w");
-		txt_write_in_file(archivoBitacora, "SIZE=0\nBLOCKS=\nBITACORA="); //por ahora va a tener un campo BITACORA para simular lo q se guarda en el BLOCKS
+		txt_write_in_file(archivoBitacora, "SIZE=0\nBLOCKS=[]");
 		log_info(loggerMongo, "Archivo Tripulante%d.ims creado",idTripulante);
 	}
 
@@ -344,6 +415,28 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	int tamanioString = string_length(string);
 	tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
 	config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioString));
+	if(config_get_array_value(configuracionTripulante,"BLOCKS")[0]==NULL)
+	{
+		//si no tiene ningun bloque entonces:
+		int cantidadDeBytes = string_length(string);
+		if(cantidadDeBytes < tamanioBlock)
+		{
+			//semaforo para modificar bitmap y blocks
+			t_bitarray* bitMap = recuperarBitArray();
+			int posicion = posicionBlockLibre(bitMap);
+			log_info(loggerMongo, "posicion: %d",posicion);
+			bitarray_set_bit(bitMap,posicion);
+			memcpy(blocksMap+(posicion*tamanioBlock),string,cantidadDeBytes);
+			guardarBitArray(bitMap);
+			forzarSincronizacionBlocks();
+			//fin de semaforo
+			bitarray_destroy(bitMap);
+		}
+		else
+		{
+			int cantidadDeBloquesASolicitar = cantidadDeBytes/tamanioBlock + cantidadDeBytes%tamanioBlock;
+		}
+	}
 //	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 //	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
 //	txt_close_file(bitacoraTripulante);
