@@ -36,6 +36,7 @@ void recibir_datos_patota(void*);
 void recibir_datos_tripulante(int, uint32_t*, uint32_t*);
 void recibir_movimiento_tripulante(uint32_t, int);
 void enviar_proxima_tarea(uint32_t, int);
+void finalizar_tripulante(uint32_t, int);
 
 void terminar_programa();
 

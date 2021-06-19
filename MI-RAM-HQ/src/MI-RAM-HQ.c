@@ -63,8 +63,8 @@ int main(void) {
 void inicializarVariables(){
 
 	configuracionMiRam = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.config");
-	loggerPrincipal = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramPrincipal.log", "MIRA-RAM-HQ", 1, LOG_LEVEL_INFO);
-	loggerSecundario = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramSecundario.log", "MIRA-RAM-HQ", 0, LOG_LEVEL_INFO);
+	loggerPrincipal = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramPrincipal.log", "MI-RAM-HQ", 1, LOG_LEVEL_INFO);
+	loggerSecundario = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miramSecundario.log", "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
@@ -121,21 +121,21 @@ void atenderTripulante(void* _cliente) {
 			log_info(loggerSecundario, "[TRIPULANTE %d] Pasa de estado %c a %c", tid, tripulante->estado, nuevoEstado);
 			actualizar_estado_tripulante(tid, nuevoEstado);
 			liberar_datos_tripulante(tripulante);
+
+			if(nuevoEstado == 'F') {
+				finalizar_tripulante(tid, socket_tripulante);
+				return;
+			}
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
 			log_info(loggerSecundario, "[TRIPULANTE %d] EXPULSADO.",tid);
-			item_borrar(nivel, calcular_identificador(tid));
-			nivel_gui_dibujar(nivel);
-			liberar_tripulante(tid);
-			close(socket_tripulante);
+			finalizar_tripulante(tid, socket_tripulante);
 			return;
 			break;
 		default:
-			//ACÁ HABRÍA QUE BORRAR AL TRIPULANTE DE LA MEMORIA
 			log_info(loggerPrincipal, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!", tid);
-			liberar_tripulante(tid);
-			close(socket_tripulante);
+			finalizar_tripulante(tid, socket_tripulante);
 			return;
 			break;
 		}
@@ -278,6 +278,15 @@ void recibir_movimiento_tripulante(uint32_t tid, int socket_tripulante) {
 
 	free(buffer);
 }
+
+void finalizar_tripulante(uint32_t tid, int socket_tripulante) {
+	item_borrar(nivel, calcular_identificador(tid));
+	nivel_gui_dibujar(nivel);
+	liberar_tripulante(tid);
+	log_info(loggerSecundario, "[TRIPULANTE %d] Se lo libera de memoria y elimina del mapa",tid);
+	close(socket_tripulante);
+}
+
 
 static char calcular_identificador(uint32_t tid) {
 	return tid + 64;
