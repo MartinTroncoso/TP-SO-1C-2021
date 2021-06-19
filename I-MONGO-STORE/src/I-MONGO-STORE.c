@@ -111,62 +111,6 @@ void inicializarSuperBloque(){
 		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
 		t_bitarray* recuperado = recuperarBitArray();
 	}
-//	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
-//	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
-//	//printf("cantidad de bytes a reservar: %d\n",(cantidadDeBloques/8));
-//	//printf("bool: %d\n",(int) bitsExcedentes(15));
-//	if(string_is_empty(config_get_string_value(configuracionSuperBloque,"BITMAP")))
-//	{
-//		printf("BITMAP ESTA VACIO \n");
-//		t_bitarray* bitArraySuperBloque = bitarray_create_with_mode(calloc(cantidadDeBloques/8+cantidadDeBloques%8,1), cantidadDeBloques/8+cantidadDeBloques%8,LSB_FIRST);
-//		printf("cantidad de bits en el bitarray %d\n",bitarray_get_max_bit(bitArraySuperBloque));
-//
-//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-//		{
-//			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
-//		}
-//		printf("\n\n");
-//
-//		log_info(loggerMongo,"bitarray nuevo: %s",bitArraySuperBloque->bitarray);
-//
-//		//clean deja el bit en 0, set lo deja en 1
-//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-//		{
-//			bitarray_clean_bit(bitArraySuperBloque,i);
-//			//bitarray_set_bit(bitArraySuperBloque,i);
-//		}
-//
-//		bitarray_set_bit(bitArraySuperBloque,0);
-//		//log_info(loggerMongo,"%s",bitArraySuperBloque->bitarray);
-//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-//			{
-//				printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
-//			}
-//		printf("\n\n");
-//		log_info(loggerMongo,"bitarray nuevo en 0: %s",bitArraySuperBloque->bitarray);
-////		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-////		{
-////			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
-////		}
-////		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
-//
-//		log_info(loggerMongo,"Tamaño str: %d",string_length(bitArraySuperBloque->bitarray));
-//		config_set_value(configuracionSuperBloque,"BITMAP",(char*) bitArraySuperBloque);
-//		config_save(configuracionSuperBloque);
-//		//config_destroy(configuracionSuperBloque);
-//		bitarray_destroy(bitArraySuperBloque);
-//	}else
-//	{
-//		//printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
-//		t_bitarray* bitArrayRecuperado = recuperarBitArray();
-//
-//		for(int i=0;i<bitarray_get_max_bit(bitArrayRecuperado);i++)
-//		{
-//			printf("%d",bitarray_test_bit(bitArrayRecuperado,i));
-//		}
-//			printf("\n\n");
-//	}
-//	config_destroy(configuracionSuperBloque);
 }
 
 t_bitarray* recuperarBitArray(){
