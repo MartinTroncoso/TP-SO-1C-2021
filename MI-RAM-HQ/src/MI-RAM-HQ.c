@@ -10,6 +10,10 @@
 
 #include "MI-RAM-HQ.h"
 
+static char calcular_identificador(uint32_t);
+
+
+
 #define ASSERT_CREATE(nivel, id, err)                                                   \
 	if(err) {                                                                           \
 		nivel_destruir(nivel);                                                          \
@@ -69,12 +73,20 @@ void inicializarVariables(){
 	ESQUEMA_MEMORIA = config_get_string_value(configuracionMiRam,"ESQUEMA_MEMORIA");
 	PATH_SWAP = config_get_string_value(configuracionMiRam,"PATH_SWAP");
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
-	tripulantes = list_create();
-	patotas = list_create();
-	pthread_mutex_init(&mutexTripulantes,NULL);
-	pthread_mutex_init(&mutexPatotas,NULL);
-
 	inicializarMapa();
+
+	//Por el momento todx con lo basicooo
+	inicializar_administrador(
+			0,
+			bas_inicializacion,
+			bas_guardar_nueva_patota,
+			bas_guardar_nuevo_tripulante,
+			bas_obtener_patota,
+			bas_obtener_tripulante,
+			bas_actualizar_estado_tripulante,
+			bas_actualizar_posicion_tripulante,
+			bas_actualizar_instruccion_tripulante,
+			bas_liberar_tripulante);
 }
 
 void atenderTripulante(void* _cliente) {
@@ -83,49 +95,46 @@ void atenderTripulante(void* _cliente) {
 
 	int socket_tripulante = (int) _cliente;
 
-	TCB* tripulante = recibir_datos_tripulante(socket_tripulante);
+	uint32_t tid;
+	uint32_t pid;
+	recibir_datos_tripulante(socket_tripulante, &tid, &pid);
 
-	char identificadorEnElMapa = tripulante->tid + 64;
-	personaje_crear(nivel, identificadorEnElMapa, tripulante->posX, tripulante->posY);
 
-	log_info(loggerSecundario, "[TRIPULANTE %d] Se ha creado TCB . Pertenece a la patota %d. Posicion: %d|%d", tripulante->tid, tripulante->direccionPCB->pid, tripulante->posX, tripulante->posY);
-
-	nivel_gui_dibujar(nivel);
+	log_info(loggerSecundario, "[TRIPULANTE %d] Se ha creado TCB. Pertenece a la patota %d.", tid, pid);
 
 	while(1){
 		int tipo_msg = recibir_operacion(socket_tripulante);
 
 		switch(tipo_msg){
 		case PROXIMA_TAREA:
-			enviar_proxima_tarea(tripulante, socket_tripulante);
-			avanzar_proxima_instruccion(tripulante);
-			log_info(loggerSecundario, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tripulante->tid);
+			enviar_proxima_tarea(tid, socket_tripulante);
+			actualizar_instruccion_tripulante(tid);
+			log_info(loggerSecundario, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante", tid);
 			break;
 		case INFORMAR_MOVIMIENTO:
-			recibir_movimiento_tripulante(tripulante, socket_tripulante);
-			item_mover(nivel,identificadorEnElMapa,tripulante->posX, tripulante->posY);
-			nivel_gui_dibujar(nivel);
+			recibir_movimiento_tripulante(tid, socket_tripulante);
 			break;
 		case CAMBIO_ESTADO:{
+			datos_tripulante* tripulante = obtener_tripulante(tid);
 			char nuevoEstado;
-			recv(socket_tripulante,&nuevoEstado,sizeof(char),0),
-			log_info(loggerSecundario, "[TRIPULANTE %d] Pasa de estado %c a %c", tripulante->tid, tripulante->estado, nuevoEstado);
-
-			pthread_mutex_lock(&mutexTripulantes);
-			tripulante->estado = nuevoEstado;
-			pthread_mutex_unlock(&mutexTripulantes);
+			recv(socket_tripulante,&nuevoEstado, sizeof(char), 0);
+			log_info(loggerSecundario, "[TRIPULANTE %d] Pasa de estado %c a %c", tid, tripulante->estado, nuevoEstado);
+			actualizar_estado_tripulante(tid, nuevoEstado);
+			liberar_datos_tripulante(tripulante);
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
-			log_info(loggerSecundario, "[TRIPULANTE %d] EXPULSADO.",tripulante->tid);
-			item_borrar(nivel,identificadorEnElMapa);
+			log_info(loggerSecundario, "[TRIPULANTE %d] EXPULSADO.",tid);
+			item_borrar(nivel, calcular_identificador(tid));
 			nivel_gui_dibujar(nivel);
+			liberar_tripulante(tid);
 			close(socket_tripulante);
 			return;
 			break;
 		default:
 			//ACÁ HABRÍA QUE BORRAR AL TRIPULANTE DE LA MEMORIA
-			log_info(loggerPrincipal, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",tripulante->tid);
+			log_info(loggerPrincipal, "[TRIPULANTE %d] Tipo de mensaje desconocido!!!", tid);
+			liberar_tripulante(tid);
 			close(socket_tripulante);
 			return;
 			break;
@@ -136,25 +145,25 @@ void atenderTripulante(void* _cliente) {
 }
 
 void recibir_datos_patota(void* _cliente) {
+
 	int socket_cliente = (int) _cliente;
 	void* buffer;
 	uint32_t buffer_size;
 	uint32_t desplazamiento = 0;
 	uint32_t inst_len;
-	uint32_t cantidadTripulantes;
 
-	PCB* nuevo_pcb = malloc(sizeof(PCB));
+	datos_patota* datos_patota_nuevo = malloc(sizeof(datos_patota));
 
 	log_info(loggerSecundario,"Me llegan los datos de una patota");
 
 	buffer = recibir_buffer(&buffer_size, socket_cliente);
 
 	//leo PID
-	memcpy(&(nuevo_pcb->pid), buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&(datos_patota_nuevo->pid), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
 	//leo cant_tripulantes
-	memcpy(&cantidadTripulantes, buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&(datos_patota_nuevo->tripulantes), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
 	//leo longitud de instrucciones
@@ -162,153 +171,116 @@ void recibir_datos_patota(void* _cliente) {
 	desplazamiento += sizeof(uint32_t);
 
 	//leo instrucciones, va sin &, porque tareas es un puntero
-	nuevo_pcb->tareas = malloc(inst_len);
-	memcpy(nuevo_pcb->tareas, buffer + desplazamiento, inst_len);
+	datos_patota_nuevo->tareas = malloc(inst_len);
+	memcpy(datos_patota_nuevo->tareas, buffer + desplazamiento, inst_len);
 
-	pthread_mutex_lock(&mutexPatotas);
-	list_add(patotas, nuevo_pcb);
-	pthread_mutex_unlock(&mutexPatotas);
+	//GUARDO LA PATOTA
+	guardar_nueva_patota(datos_patota_nuevo);
 
-	//Envio el OK
 	enviar_respuesta(OK, socket_cliente);
-
-	log_info(loggerSecundario, "Se ha creado el PCB: %d\nSus instrucciones son: %s", nuevo_pcb->pid, nuevo_pcb->tareas);
+	log_info(loggerSecundario, "Se ha creado el PCB: %d\nSus instrucciones son: %s", datos_patota_nuevo->pid, datos_patota_nuevo->tareas);
 
 	close(socket_cliente);
+	liberar_datos_patota(datos_patota_nuevo);
 	free(buffer);
 }
 
-TCB* recibir_datos_tripulante(int socket_tripulante) {
+void recibir_datos_tripulante(int socket_tripulante, uint32_t* tid, uint32_t* pid) {
+
 	void* buffer;
 	uint32_t buffer_size;
 	uint32_t desplazamiento = 0;
-	uint32_t posible_pid;
-	PCB* patota;
-
-	TCB* nuevo_tcb = malloc(sizeof(TCB));
+	datos_tripulante* datos_trip_nuevo = malloc(sizeof(datos_tripulante));
 
 	buffer = recibir_buffer(&buffer_size, socket_tripulante);
 
-	memcpy(&posible_pid, buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&(datos_trip_nuevo->pid), buffer + desplazamiento, sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	datos_trip_nuevo->proxInstruccion = NULL;
+
+	memcpy(&(datos_trip_nuevo->tid), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	patota = buscar_patota(posible_pid);
-	nuevo_tcb->direccionPCB = patota;
-	nuevo_tcb->proxInstruccion = patota->tareas;
-
-	memcpy(&(nuevo_tcb->tid), buffer + desplazamiento, sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
-
-	memcpy(&(nuevo_tcb->estado), buffer + desplazamiento, sizeof(char));
+	memcpy(&(datos_trip_nuevo->estado), buffer + desplazamiento, sizeof(char));
 	desplazamiento += sizeof(char);
 
-	memcpy(&(nuevo_tcb->posX), buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&(datos_trip_nuevo->posX), buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	memcpy(&(nuevo_tcb->posY), buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&(datos_trip_nuevo->posY), buffer + desplazamiento, sizeof(uint32_t));
 
-	pthread_mutex_lock(&mutexTripulantes);
-	list_add(tripulantes,nuevo_tcb);
-	pthread_mutex_unlock(&mutexTripulantes);
+	//GUARDO EL TRIPULANTE
+	guardar_nuevo_tripulante(datos_trip_nuevo);
 
+	personaje_crear(nivel, calcular_identificador(datos_trip_nuevo->tid), datos_trip_nuevo->posX, datos_trip_nuevo->posY);
+	nivel_gui_dibujar(nivel);
+
+	*tid = datos_trip_nuevo->tid;
+	*pid = datos_trip_nuevo->pid;
+	liberar_datos_tripulante(datos_trip_nuevo);
 	free(buffer);
-
-	return nuevo_tcb;
 }
 
-void enviar_proxima_tarea(TCB* tripulante, int socket_tripulante) {
+void enviar_proxima_tarea(uint32_t tid, int socket_tripulante) {
 
-	char* instrucciones_proximas;
-	char* pos_delimitador;
-	char* instruccion_enviar;
+	datos_tripulante* d_tripulante = obtener_tripulante(tid);
 
-	instrucciones_proximas = tripulante->proxInstruccion;
-
-	//No puedo en enviar toda la cadena, sino hasta encontrar un delimitador
-	pos_delimitador = strchr(instrucciones_proximas, '|');
-
-	if(pos_delimitador != NULL) {
-		int size = pos_delimitador - instrucciones_proximas;
-		instruccion_enviar = string_substring(instrucciones_proximas, 0, size);
-	}
-	else {
-		instruccion_enviar = string_duplicate(instrucciones_proximas);
-	}
-
-	int size_instruccion_enviar = strlen(instruccion_enviar) + 1;
+	int size_instruccion = strlen(d_tripulante->proxInstruccion) + 1;
 
 	tipo_tarea cod_tarea;
-	if(string_contains(instruccion_enviar," "))
+	if(string_contains(d_tripulante->proxInstruccion," "))
 		cod_tarea = ENTRADA_SALIDA;
 	else
 		cod_tarea = COMUN;
 
 	//Preparo paquete para enviar
 	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(uint32_t) + size_instruccion_enviar;
+	buffer->size = sizeof(uint32_t) + size_instruccion;
 	buffer->stream = malloc(buffer->size);
 
 	int desplazamiento = 0;
 
-	memcpy(buffer->stream + desplazamiento, &size_instruccion_enviar, sizeof(uint32_t));
+	memcpy(buffer->stream + desplazamiento, &size_instruccion, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(buffer->stream + desplazamiento, instruccion_enviar, size_instruccion_enviar);
+	memcpy(buffer->stream + desplazamiento, d_tripulante->proxInstruccion, size_instruccion);
 
 	send(socket_tripulante,&cod_tarea,sizeof(int),0);
 	enviar_buffer(buffer, socket_tripulante);
 
+	liberar_datos_tripulante(d_tripulante);
 	free(buffer->stream);
 	free(buffer);
-	free(instruccion_enviar);
 }
 
-void recibir_movimiento_tripulante(TCB* tripulante, int socket_tripulante) {
+void recibir_movimiento_tripulante(uint32_t tid, int socket_tripulante) {
 
 	void* buffer;
 	uint32_t buffer_size;
 	uint32_t desplazamiento = 0;
+	uint32_t posX;
+	uint32_t posY;
 
 	buffer = recibir_buffer(&buffer_size, socket_tripulante);
 
-	memcpy(&(tripulante->posX), buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&posX, buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-	memcpy(&(tripulante->posY), buffer + desplazamiento, sizeof(uint32_t));
+	memcpy(&posY, buffer + desplazamiento, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
 
-//	log_info(loggerMiRam, "[TRIPULANTE %d] Se movió a %d|%d", tripulante->tid, tripulante->posX, tripulante->posY);
+	//ACTUALIZO POS TRIPULANTE
+	actualizar_posicion_tripulante(tid, posX, posY);
+
+	item_mover(nivel,calcular_identificador(tid),posX, posY);
+	nivel_gui_dibujar(nivel);
+	
+//	log_info(loggerMiRam, "[TRIPULANTE %d] Se movió a %d|%d", tid, posX, posY);
 
 	free(buffer);
 }
 
-void avanzar_proxima_instruccion(TCB* tripulante) {
-
-	char* instruccion_actual = tripulante->proxInstruccion;
-	char* pos_delimitador = strchr(instruccion_actual, '|');
-
-	if(&(tripulante->proxInstruccion) == 0) {
-		printf("OJOOOO\n");
-		return;
-	}
-
-	if(pos_delimitador != NULL) {
-		tripulante->proxInstruccion = pos_delimitador + 1;
-	}
-	else {
-		// Voy al final de la cadena
-		tripulante->proxInstruccion = instruccion_actual + strlen(instruccion_actual);
-	}
-}
-
-PCB* buscar_patota(uint32_t pid){
-	bool patota_tiene_el_pid(void* pcb) {
-		return ((PCB*) pcb)->pid == pid;
-	}
-	pthread_mutex_lock(&mutexPatotas);
-	PCB* patota = list_find(patotas, patota_tiene_el_pid);
-	pthread_mutex_unlock(&mutexPatotas);
-
-	return patota;
+static char calcular_identificador(uint32_t tid) {
+	return tid + 64;
 }
 
 void inicializarMapa(){
@@ -322,8 +294,6 @@ void inicializarMapa(){
 
 void terminar_programa(){
 	config_destroy(configuracionMiRam);
-	list_destroy_and_destroy_elements(tripulantes,free);
-	list_destroy_and_destroy_elements(patotas,free);
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 	log_info(loggerPrincipal,"Finaliza MI-RAM...");
