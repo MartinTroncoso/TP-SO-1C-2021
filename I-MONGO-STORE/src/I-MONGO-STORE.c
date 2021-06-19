@@ -77,64 +77,136 @@ void inicializarFileSystem(){
 }
 
 void inicializarSuperBloque(){
+	cantidadDeBlocks=1024;
+	//calloc(cantidadDeBloques/8+cantidadDeBloques%8,1);
 	struct stat statCarpeta;
 	if(stat(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),&statCarpeta)==-1)
 	{
-		FILE* archivoSuperBloque = fopen(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),"w");
-		txt_write_in_file(archivoSuperBloque, "BLOCK_SIZE=20\nBLOCKS=40\nBITMAP=");
-		log_info(loggerMongo, "Archivo SuperBloque.ims creado");
+		log_info(loggerMongo,"No existe SupreBloque");
+		t_bitarray* bitArray = bitarray_create_with_mode(calloc(cantidadDeBlocks/8+cantidadDeBlocks%8,1), cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
+		bitarray_set_bit(bitArray,0);
+		int archivo = open(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+		struct stat caracteristicasArchivo;
+		if(fstat(archivo,&caracteristicasArchivo)== -1)
+		{
+			log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
+			exit(-4);
+		}
+		log_info(loggerMongo, "SuperBloque.ims creado");
+
+		char* stringArchivo = string_from_format("BLOCK_SIZE=64\nBLOCKS=1024\nBITMAP=%s",bitArray->bitarray);
+//		for(int i=0;i<bitarray_get_max_bit(bitArray);i++)
+//		{
+//			//bitarray_set_bit(bitArray,i);
+//			printf("%d",bitarray_test_bit(bitArray,i));
+//		}
+	//	memcpy(paraArchivo,&stringArchivo,strlen(stringArchivo));
+	//	acumulador +=  strlen(stringArchivo);
+	//	memcpy(&paraArchivo+acumulador,bitArray,sizeof(t_bitarray));
+		write(archivo,stringArchivo,strlen(stringArchivo));
+		close(archivo);
+		bitarray_destroy(bitArray);
 	}else
 	{
 		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
+		t_bitarray* recuperado = recuperarBitArray();
 	}
-	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
-	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
-	//printf("cantidad de bytes a reservar: %d\n",(cantidadDeBloques/8));
-	//printf("bool: %d\n",(int) bitsExcedentes(15));
-	if(string_is_empty(config_get_string_value(configuracionSuperBloque,"BITMAP")))
-	{
-		printf("BITMAP ESTA VACIO \n");
-		t_bitarray* bitArraySuperBloque = bitarray_create(malloc(cantidadDeBloques/8+cantidadDeBloques%8), cantidadDeBloques/8+cantidadDeBloques%8);
-		printf("cantidad de bits en el bitarray %d\n",bitarray_get_max_bit(bitArraySuperBloque));
-
-		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-		{
-			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
-		}
-		printf("\n\n");
-
-		//clean deja el bit en 0, set lo deja en 1
-		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
-		{
-			bitarray_clean_bit(bitArraySuperBloque,i);
-			//bitarray_set_bit(bitArraySuperBloque,i);
-		}
-		bitarray_set_bit(bitArraySuperBloque,0);
+//	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
+//	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque, "BLOCKS");
+//	//printf("cantidad de bytes a reservar: %d\n",(cantidadDeBloques/8));
+//	//printf("bool: %d\n",(int) bitsExcedentes(15));
+//	if(string_is_empty(config_get_string_value(configuracionSuperBloque,"BITMAP")))
+//	{
+//		printf("BITMAP ESTA VACIO \n");
+//		t_bitarray* bitArraySuperBloque = bitarray_create_with_mode(calloc(cantidadDeBloques/8+cantidadDeBloques%8,1), cantidadDeBloques/8+cantidadDeBloques%8,LSB_FIRST);
+//		printf("cantidad de bits en el bitarray %d\n",bitarray_get_max_bit(bitArraySuperBloque));
+//
 //		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
 //		{
 //			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
 //		}
-//		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
-
-
-		config_set_value(configuracionSuperBloque,"BITMAP",bitArraySuperBloque->bitarray);
-		config_save(configuracionSuperBloque);
-		config_destroy(configuracionSuperBloque);
-	}else
-	{
-		//printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
-		config_destroy(configuracionSuperBloque);
-	}
+//		printf("\n\n");
+//
+//		log_info(loggerMongo,"bitarray nuevo: %s",bitArraySuperBloque->bitarray);
+//
+//		//clean deja el bit en 0, set lo deja en 1
+//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+//		{
+//			bitarray_clean_bit(bitArraySuperBloque,i);
+//			//bitarray_set_bit(bitArraySuperBloque,i);
+//		}
+//
+//		bitarray_set_bit(bitArraySuperBloque,0);
+//		//log_info(loggerMongo,"%s",bitArraySuperBloque->bitarray);
+//		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+//			{
+//				printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
+//			}
+//		printf("\n\n");
+//		log_info(loggerMongo,"bitarray nuevo en 0: %s",bitArraySuperBloque->bitarray);
+////		for(int i=0;i<bitarray_get_max_bit(bitArraySuperBloque);i++)
+////		{
+////			printf("%d",bitarray_test_bit(bitArraySuperBloque,i));
+////		}
+////		printf("\n\nvalor del array:%s\n",bitArraySuperBloque->bitarray);
+//
+//		log_info(loggerMongo,"Tamaño str: %d",string_length(bitArraySuperBloque->bitarray));
+//		config_set_value(configuracionSuperBloque,"BITMAP",(char*) bitArraySuperBloque);
+//		config_save(configuracionSuperBloque);
+//		//config_destroy(configuracionSuperBloque);
+//		bitarray_destroy(bitArraySuperBloque);
+//	}else
+//	{
+//		//printf("BITMAP TIENE UN VALOR %s\n",config_get_string_value(configuracionSuperBloque,"BITMAP"));
+//		t_bitarray* bitArrayRecuperado = recuperarBitArray();
+//
+//		for(int i=0;i<bitarray_get_max_bit(bitArrayRecuperado);i++)
+//		{
+//			printf("%d",bitarray_test_bit(bitArrayRecuperado,i));
+//		}
+//			printf("\n\n");
+//	}
+//	config_destroy(configuracionSuperBloque);
 }
 
-t_bitarray recuperarBitArray(){
-	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
-	uint32_t cantidadDeBloques = config_get_int_value(configuracionSuperBloque,"BLOCKS");
-	t_bitarray* bitArrayARecuperar = bitarray_create(malloc(cantidadDeBloques/8),cantidadDeBloques);
-	bitArrayARecuperar->bitarray = config_get_string_value(configuracionSuperBloque,"BITMAP");
-	config_destroy(configuracionSuperBloque);
+t_bitarray* recuperarBitArray(){
+	int archivo = open(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE), O_RDWR, S_IRUSR | S_IWUSR);
+	struct stat caracteristicasArchivo;
+	if(fstat(archivo,&caracteristicasArchivo)== -1)
+	{
+		log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
+	}
+	char* archivoEnMemoria = mmap(NULL, caracteristicasArchivo.st_size, PROT_READ | PROT_WRITE, MAP_SHARED,archivo,0);
+	int contador=0;
+	int marcador = 0;
+	while(contador <3)
+	{
+		if(archivoEnMemoria[marcador]=='=')
+		{
+			contador++;
+		}
+			marcador++;
+	}
+	//	for(marcador; marcador<caracteristicasArchivo2.st_size;marcador++)
+	//	{
+	//		printf("%c",archivoEnMemoria[marcador]);
+	//	}
+	t_bitarray* nuevoBitArray = bitarray_create_with_mode(calloc(cantidadDeBlocks/8+cantidadDeBlocks%8,1), cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
+	//char* charArray = malloc(caracteristicasArchivo2.st_size - marcador);
+	if(caracteristicasArchivo.st_size == marcador)
+	{
+		log_info(loggerMongo,"BITARRAY VACIO");
+	}else
+	{
+		memcpy((nuevoBitArray->bitarray),archivoEnMemoria+marcador,caracteristicasArchivo.st_size - marcador);
+	}
 
-	return *bitArrayARecuperar;
+//	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
+//	{
+//		//bitarray_set_bit(bitArray,i);
+//		printf("%d",bitarray_test_bit(nuevoBitArray,i));
+//	}
+	return nuevoBitArray;
 }
 
 void guardarBitArray(t_bitarray* arrayAGuardar)
@@ -201,6 +273,14 @@ void atenderTripulante(void* _cliente)
 
 	uint32_t idTripulante;
 	recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
+
+	struct stat statCarpeta;
+	if(stat(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),&statCarpeta)==-1)
+	{
+		FILE* archivoBitacora = fopen(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),"w");
+		txt_write_in_file(archivoBitacora, "SIZE=0\nBLOCKS=\nBITACORA="); //por ahora va a tener un campo BITACORA para simular lo q se guarda en el BLOCKS
+		log_info(loggerMongo, "Archivo Tripulante%d.ims creado",idTripulante);
+	}
 
 	while(1){
 		int op_code = recibir_operacion(socket_tripulante);
@@ -315,6 +395,11 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	//Hasta tener bien definido lo de los archivos solo lo logeo
 	log_info(loggerMongo,"[TRIPULANTE %d] Se mueve de %d|%d a %d|%d",id_tripulante,coorXAnterior,coorYAnterior,coorXNueva,coorYNueva);
 
+	t_config* configuracionTripulante = config_create(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
+	char* string = string_from_format("Se mueve de %d|%d a %d|%d;",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva);
+	int tamanioString = string_length(string);
+	tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
+	config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioString));
 //	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 //	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
 //	txt_close_file(bitacoraTripulante);

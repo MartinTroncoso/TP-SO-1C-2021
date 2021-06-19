@@ -47,7 +47,7 @@ void inicializarMapeoBlocks();
 void forzarSincronizacionBlocks();
 void inicializarDiccionario();
 void inicializarSuperBloque();
-t_bitarray recuperarBitArray();
+t_bitarray* recuperarBitArray();
 void atenderTripulante(void*);
 void realizarTareaIO(int,uint32_t);
 void guardarBitArray(t_bitarray*);
