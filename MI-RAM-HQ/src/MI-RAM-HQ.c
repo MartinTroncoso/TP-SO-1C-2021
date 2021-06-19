@@ -129,7 +129,6 @@ void atenderTripulante(void* _cliente) {
 			break;
 		}
 		case EXPULSAR_TRIPULANTE:
-			log_info(loggerSecundario, "[TRIPULANTE %d] EXPULSADO.",tid);
 			finalizar_tripulante(tid, socket_tripulante);
 			return;
 			break;

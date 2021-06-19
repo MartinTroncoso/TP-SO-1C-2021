@@ -224,7 +224,11 @@ void esperarSabotajes(){
 }
 
 void destruirTripulantes(){
-	for(int i=0; i<list_size(tripulantes) ;i++){
+	pthread_mutex_lock(&mutexTripulantes);
+	int size_lista_tripulantes = list_size(tripulantes);
+	pthread_mutex_unlock(&mutexTripulantes);
+
+	for(int i=0; i < size_lista_tripulantes ;i++){
 		pthread_mutex_lock(&mutexTripulantes);
 		t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
 		free(tripulante->posicion);
@@ -233,8 +237,6 @@ void destruirTripulantes(){
 		free(tripulante->proxTarea);
 		sem_destroy(&(tripulante->semaforoPlanificacion));
 		sem_destroy(&(tripulante->puedeEjecutar));
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
 		pthread_mutex_unlock(&mutexTripulantes);
 	}
 

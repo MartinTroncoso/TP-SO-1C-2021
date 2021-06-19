@@ -329,6 +329,10 @@ void atenderTripulante(void* _cliente)
 		case OBTENER_BITACORA:
 			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
 			break;
+		case EXPULSAR_TRIPULANTE:
+			close(socket_tripulante);
+			return;
+			break;
 		default:
 			log_info(loggerMongo , "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",idTripulante);
 			close(socket_tripulante);

@@ -29,10 +29,6 @@
 #include <commons/bitarray.h>
 #include <commons/temporal.h>
 
-//void holiwis();
-//void comoAndas();
-//void bien();
-
 t_log* logger;
 
 typedef enum{

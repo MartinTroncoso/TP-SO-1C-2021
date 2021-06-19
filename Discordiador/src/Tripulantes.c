@@ -457,6 +457,8 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 				if(tripulante->tareasPendientes > 0){
 					if(tripulante->quantum == QUANTUM){
+						log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM. VUELVO A READY",tripulante->tid);
+
 						sacarDeExec(tripulante);
 
 						agregarAReady(tripulante);
@@ -484,6 +486,8 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 					sem_wait(&(tripulante->semaforoPlanificacion));
 					sem_post(&(tripulante->semaforoPlanificacion));
 				}
+
+				log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM. VUELVO A READY",tripulante->tid);
 
 				sacarDeExec(tripulante);
 
@@ -562,6 +566,9 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
+		tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0);
+
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
 		if(list_size(colaExit)==list_size(tripulantes)){
@@ -572,6 +579,9 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		}
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
+
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
 	}
 }
 
@@ -633,6 +643,8 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 						sem_post(&(tripulante->semaforoPlanificacion));
 					}
 
+					log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM. VUELVO A READY",tripulante->tid);
+
 					sacarDeExec(tripulante);
 
 					agregarAReady(tripulante);
@@ -665,6 +677,9 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
+		tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0);
+
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
 		if(list_size(colaExit)==list_size(tripulantes)){
@@ -675,6 +690,9 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		}
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
+
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
 	}
 }
 
@@ -768,6 +786,7 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	close(socket_cliente_MIRAM);
 
 	for(int i=0; i<estructura->cantidadTripulantes; i++){
+		pthread_mutex_lock(&mutexTripulantes);
 		t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 		tripulante->idPatota = patota->pid;
 		tripulante->tid = idTripulante;
@@ -779,8 +798,6 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		tripulante->expulsado = false;
 		sem_init(&(tripulante->semaforoPlanificacion),0,0);
 		sem_init(&(tripulante->puedeEjecutar),0,0);
-
-		pthread_mutex_lock(&mutexTripulantes);
 		list_add(patota->tripulantes,tripulante);
 		list_add(tripulantes,tripulante);
 		sumarIdTripulante();
@@ -880,6 +897,10 @@ void expulsarTripulante(int id_tripulante){
 
 	tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
 	send(tripulante->socket_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
+	send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0);
+
+	close(tripulante->socket_MIRAM);
+	close(tripulante->socket_MONGO);
 
 	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
 }
