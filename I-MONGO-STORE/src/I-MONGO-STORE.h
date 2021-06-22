@@ -14,6 +14,9 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+pthread_mutex_t mutexSincro;
+pthread_mutex_t mutexBitMap;
+
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;
 char* PUERTO_I_MONGO;

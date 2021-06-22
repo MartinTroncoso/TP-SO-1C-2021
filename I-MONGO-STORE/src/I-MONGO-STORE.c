@@ -48,6 +48,8 @@ void inicializarVariables(){
 	posicionSabotajeActual = string_split(POSICIONES_SABOTAJE[0],"|");
 	sabotajesResueltos = 0;
 
+	pthread_mutex_init(&mutexBitMap, NULL);
+	pthread_mutex_init(&mutexSincro,NULL);
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
@@ -84,15 +86,21 @@ void inicializarSuperBloque(){
 	{
 		log_info(loggerMongo,"No existe SupreBloque");
 		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
+		log_info(loggerMongo,"Tamanio struct: %d", sizeof(bitArray));
+		log_info(loggerMongo,"Tamanio bitarray antes de poner en 1: %d",string_length(bitArray->bitarray));
 		for(int i = 0; i<bitarray_get_max_bit(bitArray);i++)
 		{
 			bitarray_clean_bit(bitArray,i);
 		}
-		bitarray_set_bit(bitArray,0);
+//		bitarray_set_bit(bitArray,0);
 //		bitarray_set_bit(bitArray,11);
 //		bitarray_set_bit(bitArray,20);
-		bitarray_set_bit(bitArray,50);
+//		bitarray_set_bit(bitArray,50);
+		log_info(loggerMongo,"Tamanio struct post set: %d", sizeof(bitArray));
+		log_info(loggerMongo,"Tamanio bitarray: %d",string_length(bitArray->bitarray));
+		char* stringArchivo = string_from_format("BLOCK_SIZE=64\nBLOCKS=1024\nBITMAP=");
 		int archivo = open(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+		ftruncate(archivo,string_length(stringArchivo)+bitArray->size);
 		struct stat caracteristicasArchivo;
 		if(fstat(archivo,&caracteristicasArchivo)== -1)
 		{
@@ -101,7 +109,7 @@ void inicializarSuperBloque(){
 		}
 		log_info(loggerMongo, "SuperBloque.ims creado");
 
-		char* stringArchivo = string_from_format("BLOCK_SIZE=64\nBLOCKS=1024\nBITMAP=%s",bitArray->bitarray);
+
 //		for(int i=0;i<bitarray_get_max_bit(bitArray);i++)
 //		{
 //			//bitarray_set_bit(bitArray,i);
@@ -110,7 +118,11 @@ void inicializarSuperBloque(){
 	//	memcpy(paraArchivo,&stringArchivo,strlen(stringArchivo));
 	//	acumulador +=  strlen(stringArchivo);
 	//	memcpy(&paraArchivo+acumulador,bitArray,sizeof(t_bitarray));
-		write(archivo,stringArchivo,strlen(stringArchivo));
+		char* mapeoArchivo = mmap(NULL,string_length(stringArchivo)+bitArray->size,PROT_READ | PROT_WRITE, MAP_SHARED, archivo,0);
+		memcpy(mapeoArchivo,stringArchivo,string_length(stringArchivo));
+		memcpy(mapeoArchivo+string_length(stringArchivo),bitArray->bitarray,bitArray->size);
+		msync(mapeoArchivo,string_length(stringArchivo)+bitArray->size,MS_INVALIDATE);
+		munmap(mapeoArchivo,string_length(stringArchivo)+bitArray->size);
 		close(archivo);
 		bitarray_destroy(bitArray);
 	}else
@@ -118,9 +130,6 @@ void inicializarSuperBloque(){
 		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
 		t_bitarray* recuperado = recuperarBitArray();
 		log_info(loggerMongo,"Posicion del blocks libre: %d", posicionBlockLibre(recuperado));
-		bitarray_set_bit(recuperado,10);
-		bitarray_set_bit(recuperado,11);
-		bitarray_set_bit(recuperado,12);
 		guardarBitArray(recuperado);
 	}
 
@@ -425,6 +434,7 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 		int cantidadDeBytes = string_length(string);
 		if(cantidadDeBytes < tamanioBlock)
 		{
+			pthread_mutex_lock(&mutexBitMap);
 			//semaforo para modificar bitmap y blocks
 			t_bitarray* bitMap = recuperarBitArray();
 			int posicion = posicionBlockLibre(bitMap);
@@ -434,6 +444,7 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 			guardarBitArray(bitMap);
 			forzarSincronizacionBlocks();
 			//fin de semaforo
+			pthread_mutex_unlock(&mutexBitMap);
 			bitarray_destroy(bitMap);
 		}
 		else
