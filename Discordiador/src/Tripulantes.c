@@ -306,6 +306,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 	else
 	{
 		notificarInicioDeTarea(tripulante);
+		log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 		for(int i=0; i<tripulante->proxTarea->tiempo && !tripulante->expulsado ;i++){
 			sem_wait(&(tripulante->semaforoPlanificacion));
@@ -418,6 +419,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 			}
 
 			notificarInicioDeTarea(tripulante);
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->proxTarea->yaInicio = true;
@@ -505,18 +507,15 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante){
+	pthread_mutex_lock(&mutexTripulantes);
+	tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	pthread_mutex_unlock(&mutexTripulantes);
+
+	agregarAReady(tripulante);
+
 	sem_wait(&(tripulante->semaforoPlanificacion));
-
-	//SI LO EXPULSAN ESTANDO EN NEW, NO ENTRA ACÁ
-	if(!tripulante->expulsado){
-		pthread_mutex_lock(&mutexTripulantes);
-		tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
-		pthread_mutex_unlock(&mutexTripulantes);
-
-		agregarAReady(tripulante);
-		habilitarSiCorresponde(tripulante);
-		sem_post(&(tripulante->semaforoPlanificacion));
-	}
+	habilitarSiCorresponde(tripulante);
+	sem_post(&(tripulante->semaforoPlanificacion));
 
 	while(tieneTareasPendientes(tripulante) && !tripulante->expulsado){
 		sem_wait(&(tripulante->puedeEjecutar));
@@ -531,6 +530,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 			sacarDeReady(tripulante);
 
 			agregarAExec(tripulante);
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 		}
 
 		while(!llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
@@ -575,6 +575,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 			log_info(loggerDiscordiador,"NO HAY MÁS TRIPULANTES PARA PLANIFICAR. SE CIERRA LA PLANIFICACIÓN");
 			pthread_mutex_lock(&mutexActivarPlanificacion);
 			planificacionActivada = false;
+			planificacionFueActivadaAlgunaVez = false; //PARA QUE SI SE CREA UNA PATOTA, PASEN A READY Y NO QUEDEN EN NEW
 			pthread_mutex_unlock(&mutexActivarPlanificacion);
 		}
 		pthread_mutex_unlock(&mutexColaExit);
@@ -586,18 +587,15 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 }
 
 void planificarTripulanteRR(t_tripulante* tripulante){
+	pthread_mutex_lock(&mutexTripulantes);
+	tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	pthread_mutex_unlock(&mutexTripulantes);
+
+	agregarAReady(tripulante);
+
 	sem_wait(&(tripulante->semaforoPlanificacion));
-
-	//SI LO EXPULSAN ESTANDO EN NEW, NO ENTRA ACÁ
-	if(!tripulante->expulsado){
-		pthread_mutex_lock(&mutexTripulantes);
-		tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
-		pthread_mutex_unlock(&mutexTripulantes);
-
-		agregarAReady(tripulante);
-		habilitarSiCorresponde(tripulante);
-		sem_post(&(tripulante->semaforoPlanificacion));
-	}
+	habilitarSiCorresponde(tripulante);
+	sem_post(&(tripulante->semaforoPlanificacion));
 
 	while(tieneTareasPendientes(tripulante) && !tripulante->expulsado){
 		sem_wait(&(tripulante->puedeEjecutar));
@@ -616,6 +614,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 				sacarDeReady(tripulante);
 
 				agregarAExec(tripulante);
+				log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 			}
 
 			while(tripulante->quantum < QUANTUM && !llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
@@ -686,6 +685,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 			log_info(loggerDiscordiador,"NO HAY MÁS TRIPULANTES PARA PLANIFICAR. SE CIERRA LA PLANIFICACIÓN");
 			pthread_mutex_lock(&mutexActivarPlanificacion);
 			planificacionActivada = false;
+			planificacionFueActivadaAlgunaVez = false; //PARA QUE SI SE CREA UNA PATOTA, PASEN A READY Y NO QUEDEN EN NEW
 			pthread_mutex_unlock(&mutexActivarPlanificacion);
 		}
 		pthread_mutex_unlock(&mutexColaExit);
@@ -730,10 +730,14 @@ void gestionarTripulante(t_tripulante* tripulante){
 
 	send(tripulante->socket_MONGO,&(tripulante->tid),sizeof(uint32_t),0);
 
-	pthread_mutex_lock(&mutexActivarPlanificacion);
-	if(planificacionActivada)
-		sem_post(&(tripulante->semaforoPlanificacion));
-	pthread_mutex_unlock(&mutexActivarPlanificacion);
+	if(planificacionFueActivadaAlgunaVez){
+		if(!planificacionActivada){
+			sem_wait(&(tripulante->semaforoPlanificacion));
+			sem_post(&(tripulante->semaforoPlanificacion));
+		}
+		else
+			sem_post(&(tripulante->semaforoPlanificacion));
+	}
 
 	//SI ES EXPULSADO MIENTRAS ESTÁ EN NEW CON LA PLANIFICACIÓN PAUSADA, NO PLANIFICA, PASA DIRECTO A EXIT
 	if(!tripulante->expulsado)
