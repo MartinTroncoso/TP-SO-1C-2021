@@ -252,12 +252,18 @@ void inicializarBlocks()
 	{
 		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
-	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
-	if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1)
+	if(infoBlocks.st_size != tamanioBlock*cantidadDeBlocks)
 	{
-		log_info(loggerMongo, "No se pudo crear archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
+		if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1)
+		{
+			log_info(loggerMongo, "No se pudo crear archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
+			write(fdArchivoBlocks,string_repeat(' ', tamanioBlock*cantidadDeBlocks),tamanioBlock*cantidadDeBlocks);
+		}
+		write(fdArchivoBlocks,string_repeat(' ', tamanioBlock*cantidadDeBlocks),tamanioBlock*cantidadDeBlocks);
+		log_info(loggerMongo, "Se creo el archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
 	}
-	log_info(loggerMongo, "Se creo el archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
+	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
+
 
 	//struct stat infoBlocks;
 
@@ -268,7 +274,7 @@ void inicializarBlocks()
 			log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
 	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
-	write(fdArchivoBlocks,string_repeat(' ', tamanioBlock*cantidadDeBlocks),tamanioBlock*cantidadDeBlocks);
+	//
 }
 
 void inicializarMapeoBlocks(){
@@ -448,15 +454,28 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 			forzarSincronizacionBlocks();
 			//fin de semaforo
 			pthread_mutex_unlock(&mutexBitMap);
+			config_set_value(configuracionTripulante,"BLOCKS",string_from_format("[%d]",posicion));
 			bitarray_destroy(bitMap);
-		}
-		else
+		}else
 		{
 			int cantidadDeBloquesASolicitar = cantidadDeBytes/tamanioBlock + cantidadDeBytes%tamanioBlock;
 		}
 
+	}else
+	{
+		char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
+		int bloquePosicion=0;
+		int contador = 0;
+		while(bloquesUtilizados[contador]!=NULL)
+		{
+			bloquePosicion = atoi(bloquesUtilizados[contador]);
+			contador++;
+		}
+		log_info(loggerMongo,"Cantidad de Bloques utilizados en total: %d", contador);
+		log_info(loggerMongo,"ULTIMO BLOQUE UTILIZADO: %d", bloquePosicion);
+
 	}
-	config_save(configuracionTripulante);
+	//config_save(configuracionTripulante);
 //	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 //	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
 //	txt_close_file(bitacoraTripulante);
