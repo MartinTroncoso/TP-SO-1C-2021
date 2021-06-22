@@ -306,6 +306,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 	else
 	{
 		notificarInicioDeTarea(tripulante);
+		log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 		for(int i=0; i<tripulante->proxTarea->tiempo && !tripulante->expulsado ;i++){
 			sem_wait(&(tripulante->semaforoPlanificacion));
@@ -418,6 +419,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 			}
 
 			notificarInicioDeTarea(tripulante);
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->proxTarea->yaInicio = true;
@@ -531,6 +533,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 			sacarDeReady(tripulante);
 
 			agregarAExec(tripulante);
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 		}
 
 		while(!llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
@@ -616,6 +619,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 				sacarDeReady(tripulante);
 
 				agregarAExec(tripulante);
+				log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 			}
 
 			while(tripulante->quantum < QUANTUM && !llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
