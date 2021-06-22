@@ -260,11 +260,15 @@ void inicializarBlocks()
 	log_info(loggerMongo, "Se creo el archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
 
 	//struct stat infoBlocks;
+
+	log_info(loggerMongo,"%d",strlen(string_repeat(' ', tamanioBlock*cantidadDeBlocks)));
+
 	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
 	{
 			log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
 	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
+	write(fdArchivoBlocks,string_repeat(' ', tamanioBlock*cantidadDeBlocks),tamanioBlock*cantidadDeBlocks);
 }
 
 void inicializarMapeoBlocks(){
@@ -438,7 +442,6 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 			//semaforo para modificar bitmap y blocks
 			t_bitarray* bitMap = recuperarBitArray();
 			int posicion = posicionBlockLibre(bitMap);
-			log_info(loggerMongo, "posicion: %d",posicion);
 			bitarray_set_bit(bitMap,posicion);
 			memcpy(blocksMap+(posicion*tamanioBlock),string,cantidadDeBytes);
 			guardarBitArray(bitMap);
@@ -451,7 +454,9 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 		{
 			int cantidadDeBloquesASolicitar = cantidadDeBytes/tamanioBlock + cantidadDeBytes%tamanioBlock;
 		}
+
 	}
+	config_save(configuracionTripulante);
 //	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
 //	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
 //	txt_close_file(bitacoraTripulante);
