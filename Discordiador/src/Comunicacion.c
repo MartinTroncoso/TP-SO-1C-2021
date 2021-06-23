@@ -517,10 +517,12 @@ void gestionarSabotaje(){
 		t_list* tripulantesEnExec;
 		t_list* listaPasadosAExec;
 
+		pthread_mutex_lock(&mutexColaBlockSabotaje);
 		if(estabaEnExec)
 			tripulantesEnExec = list_take_and_remove(colaBlockEmergencia,GRADO_MULTITAREA - 1);
 		else
 			tripulantesEnExec = list_take_and_remove(colaBlockEmergencia,GRADO_MULTITAREA);
+		pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
 		pthread_mutex_lock(&mutexColaExec);
 		list_add_all(colaExec,tripulantesEnExec);

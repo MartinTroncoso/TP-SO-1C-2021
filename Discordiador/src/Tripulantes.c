@@ -730,7 +730,9 @@ void gestionarTripulante(t_tripulante* tripulante){
 
 	send(tripulante->socket_MONGO,&(tripulante->tid),sizeof(uint32_t),0);
 
+	pthread_mutex_lock(&mutexActivarPlanificacion);
 	if(planificacionFueActivadaAlgunaVez){
+		pthread_mutex_unlock(&mutexActivarPlanificacion);
 		if(!planificacionActivada){
 			sem_wait(&(tripulante->semaforoPlanificacion));
 			sem_post(&(tripulante->semaforoPlanificacion));
@@ -738,6 +740,8 @@ void gestionarTripulante(t_tripulante* tripulante){
 		else
 			sem_post(&(tripulante->semaforoPlanificacion));
 	}
+	else
+		pthread_mutex_unlock(&mutexActivarPlanificacion);
 
 	//SI ES EXPULSADO MIENTRAS ESTÁ EN NEW CON LA PLANIFICACIÓN PAUSADA, NO PLANIFICA, PASA DIRECTO A EXIT
 	if(!tripulante->expulsado)
@@ -847,6 +851,8 @@ void expulsarTripulante(int id_tripulante){
 	tripulante->expulsado = true;
 	pthread_mutex_unlock(&mutexTripulantes);
 
+	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
+
 	switch(tripulante->estado){
 	case EXIT:
 		log_info(loggerDiscordiador,"EL TRIPULANTE %d YA TERMINÓ O YA FUE EXPULSADO",tripulante->tid);
@@ -869,7 +875,10 @@ void expulsarTripulante(int id_tripulante){
 		if(list_size(colaExec)==1){
 			pthread_mutex_lock(&mutexActivarPlanificacion);
 			planificacionActivada = false;
+			planificacionFueActivadaAlgunaVez = false;
 			pthread_mutex_unlock(&mutexActivarPlanificacion);
+
+			log_info(loggerDiscordiador,"SE PAUSA LA PLANIFICACIÓN");
 		}
 		pthread_mutex_unlock(&mutexColaExec);
 
@@ -886,14 +895,20 @@ void expulsarTripulante(int id_tripulante){
 
 		agregarAExit(tripulante);
 		break;
-	case BLOCK_EMERGENCIA:
-		sacarDeBlockEmergencia(tripulante);
-
-		sem_post(&(tripulante->puedeEjecutar));
-		sem_post(&(tripulante->semaforoPlanificacion));
-
-		agregarAExit(tripulante);
-		break;
+//	case BLOCK_EMERGENCIA:
+//		sacarDeBlockEmergencia(tripulante);
+//
+//		if(tripulante->habilitado){
+//			pthread_mutex_lock(&mutexExpulsadosEnExec);
+//			expulsadosEnExecDuranteSabotaje++;
+//			pthread_mutex_unlock(&mutexExpulsadosEnExec);
+//		}
+//
+//		sem_post(&(tripulante->puedeEjecutar));
+//		sem_post(&(tripulante->semaforoPlanificacion));
+//
+//		agregarAExit(tripulante);
+//		break;
 	default:
 		log_warning(loggerDiscordiador,"Hubo un error con el estado del Tripulante");
 		break;
@@ -905,8 +920,6 @@ void expulsarTripulante(int id_tripulante){
 
 	close(tripulante->socket_MIRAM);
 	close(tripulante->socket_MONGO);
-
-	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
 }
 
 void iniciarPlanificacion(){

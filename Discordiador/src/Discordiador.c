@@ -103,15 +103,24 @@ void ingresarComandos()
 			//INICIAR_PATOTA [cant_tripulantes] [path] [pos1] [pos2] ...
 			//PRIMER COMANDO A MANDAR
 
-			if(palabras[1]!=NULL && palabras[2]!=NULL){
-				t_iniciar_patota* datosPatota = obtenerDatosPatota(palabras);
-				iniciarPatota(datosPatota);
+			pthread_mutex_lock(&mutexSituacionEmergencia);
+			if(!haySituacionDeEmergencia){
+				pthread_mutex_unlock(&mutexSituacionEmergencia);
+				if(palabras[1]!=NULL && palabras[2]!=NULL){
+					t_iniciar_patota* datosPatota = obtenerDatosPatota(palabras);
+					iniciarPatota(datosPatota);
 
-				list_destroy(datosPatota->coordenadasTripulantes);
-				free(datosPatota);
+					list_destroy(datosPatota->coordenadasTripulantes);
+					free(datosPatota);
+				}
+				else
+					log_info(loggerDiscordiador,"Metiste mal el comando");
 			}
 			else
-				log_info(loggerDiscordiador,"Metiste mal el comando");
+			{
+				pthread_mutex_unlock(&mutexSituacionEmergencia);
+				log_info(loggerDiscordiador,"NO SE PUEDEN INICIAR PATOTAS EN MEDIO DE UN SABOTAJE");
+			}
 			break;
 		}
 		case 2:{
@@ -121,24 +130,40 @@ void ingresarComandos()
 		}
 		case 3:{
 			//EXPULSAR_TRIPULANTE [idTripulante]
-			uint32_t idTripulanteAExpulsar = atoi(palabras[1]);
-			if(existeElTripulante(idTripulanteAExpulsar)){
-				expulsarTripulante(idTripulanteAExpulsar);
-				habilitarProximoAEjecutar();
+			pthread_mutex_lock(&mutexSituacionEmergencia);
+			if(!haySituacionDeEmergencia){
+				pthread_mutex_unlock(&mutexSituacionEmergencia);
+				uint32_t idTripulanteAExpulsar = atoi(palabras[1]);
+				if(existeElTripulante(idTripulanteAExpulsar)){
+					expulsarTripulante(idTripulanteAExpulsar);
+					habilitarProximoAEjecutar();
+				}
+				else
+					log_info(loggerDiscordiador,"EL TRIPULANTE INDICADO NO EXISTE");
 			}
 			else
-				log_info(loggerDiscordiador,"EL TRIPULANTE INDICADO NO EXISTE");
+			{
+				pthread_mutex_unlock(&mutexSituacionEmergencia);
+				log_info(loggerDiscordiador,"NO SE PUEDEN EXPULSAR TRIPULANTES EN MEDIO DE UN SABOTAJE");
+			}
+
 			break;
 		}
 		case 4:{
 			//INICIAR_PLANIFICACION
 			if(!planificacionActivada){
-				if(list_size(tripulantes)!=list_size(colaExit))
-					if(!haySituacionDeEmergencia)
+				if(list_size(tripulantes)!=list_size(colaExit)){
+					pthread_mutex_lock(&mutexSituacionEmergencia);
+					if(!haySituacionDeEmergencia){
+						pthread_mutex_unlock(&mutexSituacionEmergencia);
 						iniciarPlanificacion();
+					}
 					else
+					{
+						pthread_mutex_unlock(&mutexSituacionEmergencia);
 						log_info(loggerDiscordiador,"SE ESTÁ RESOLVIENDO UN SABOTAJE!");
-
+					}
+				}
 				else
 					log_info(loggerDiscordiador,"NO HAY TRIPULANTES PARA PLANIFICAR!");
 			}
@@ -240,7 +265,7 @@ void destruirTripulantes(){
 		pthread_mutex_unlock(&mutexTripulantes);
 	}
 
-	list_destroy(tripulantes);
+	list_destroy_and_destroy_elements(tripulantes,free);
 }
 
 void destruirPatotas(){
