@@ -65,6 +65,7 @@ int byteExcedente(int, int);
 void inicializarCarpetas();
 void informarSabotaje();
 void ejecutarFSCK();
+void escribirBitacora(char*,t_config*);
 char** getSiguientePosicionSabotaje();
 void destruirConfig();
 void terminar_programa();
