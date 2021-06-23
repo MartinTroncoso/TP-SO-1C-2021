@@ -15,7 +15,7 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	log_info(loggerMongo,"PID I-MONGO-STORE: %d",getpid());
+	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
 	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
