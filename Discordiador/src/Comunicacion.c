@@ -556,11 +556,18 @@ void gestionarSabotaje(){
 
 	//SI NO SE HABIA INICIADO NUNCA LA PLANIFICACION, ESPERAN A QUE SE INICIE POR CONSOLA (VER ESTO)
 	if(planificacionFueActivadaAlgunaVez){
-		pthread_mutex_lock(&mutexTripulantes);
-		tripulanteParaElSabotaje->habilitado = false;
-		pthread_mutex_unlock(&mutexTripulantes);
-
 		iniciarPlanificacion();
-		habilitarProximoAEjecutar();//SI EL QUE RESOLVIO EL SABOTAJE ESTABA EN EXEC, SE HABILITA AL PRIMERO QUE ESTABA EN READY (DESPUÉS DE HABER ORDENADO POR ID)
+
+		//SI LUEGO DE RESOLVER EL SABOTAJE VUELVE A QUEDAR EN EXEC (EN CASO DE QUE HUBIERA ESTADO CUANDO FUE INFORMADO), QUIERE DECIR QUE NO HAY NINGÚN TRIPULANTE EN LA COLA DE READY
+		if(tripulanteParaElSabotaje->estado == EXEC)
+			sem_post(&(tripulanteParaElSabotaje->puedeEjecutar));
+		else
+		{
+			pthread_mutex_lock(&mutexTripulantes);
+			tripulanteParaElSabotaje->habilitado = false;
+			pthread_mutex_unlock(&mutexTripulantes);
+
+			habilitarProximoAEjecutar();//SE HABILITA AL PRIMERO QUE QUEDÓ EN READY DESPUÉS DE HABER ORDENADO POR ID.
+		}
 	}
 }

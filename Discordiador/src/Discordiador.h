@@ -119,6 +119,7 @@ void terminarPrograma();
 //Tripulantes.c
 void sumarIdTripulante();
 void sumarIdPatota();
+void esperarSiHaySabotaje(t_tripulante*);
 void esperarParaEjecutar(t_tripulante*);
 void moverXDelTripulante(t_tripulante*,posicion*);
 void moverYDelTripulante(t_tripulante*,posicion*);

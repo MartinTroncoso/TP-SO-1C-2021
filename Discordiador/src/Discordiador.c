@@ -250,11 +250,7 @@ void esperarSabotajes(){
 
 void destruirTripulantes(){
 	pthread_mutex_lock(&mutexTripulantes);
-	int size_lista_tripulantes = list_size(tripulantes);
-	pthread_mutex_unlock(&mutexTripulantes);
-
-	for(int i=0; i < size_lista_tripulantes ;i++){
-		pthread_mutex_lock(&mutexTripulantes);
+	for(int i=0; i < list_size(tripulantes) ;i++){
 		t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
 		free(tripulante->posicion);
 		if(tripulante->proxTarea->nombre != NULL)
@@ -262,8 +258,8 @@ void destruirTripulantes(){
 		free(tripulante->proxTarea);
 		sem_destroy(&(tripulante->semaforoPlanificacion));
 		sem_destroy(&(tripulante->puedeEjecutar));
-		pthread_mutex_unlock(&mutexTripulantes);
 	}
+	pthread_mutex_unlock(&mutexTripulantes);
 
 	list_destroy_and_destroy_elements(tripulantes,free);
 }
@@ -309,7 +305,7 @@ void destruirConfig(){
 	free(PUERTO_MI_RAM);
 	free(PUERTO_I_MONGO_STORE);
 	free(PUERTO_DISCORDIADOR);
-//	config_destroy(configuracionDiscordiador);
+	config_destroy(configuracionDiscordiador);
 }
 
 void terminarPrograma(){
