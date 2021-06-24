@@ -124,5 +124,6 @@ tipo_respuesta recibir_respuesta(int);
 char* getNombreTarea(char*);
 void liberarArray(char**);
 int getTamanioArray(char**);
+char* string_substring_until_char(char* text, char separator);
 
 #endif /* UTILS_H_ */

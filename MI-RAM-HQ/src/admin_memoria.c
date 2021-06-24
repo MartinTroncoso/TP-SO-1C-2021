@@ -10,51 +10,42 @@
 static void reservar_memoria_principal(uint32_t);
 
 
-void inicializar_administrador(uint32_t mem_reservar,
+void inicializar_administrador(uint32_t mem_reservar, t_log* logger,
 		void (*f_inicializacion)(),
 		void (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),
-		datos_patota* (*f_obt_patota)(uint32_t),
-		datos_tripulante* (*f_obt_tripulante)(uint32_t),
+		char (*f_obt_est_tripulante)(uint32_t),
+		char* (*f_obt_prox_instr_tripulante)(uint32_t),
 		void (*f_act_est_tripulante)(uint32_t, char),
 		void (*f_act_pos_tripulante)(uint32_t, uint32_t, uint32_t),
 		void (*f_act_instr_tripulante)(uint32_t),
+		void (*f_generar_dump_memoria)(FILE*),
 		void (*f_liberar_tripulante)(uint32_t)
 		){
 
+	logger_admin = logger;
 	if(mem_reservar > 0) {
 		reservar_memoria_principal(mem_reservar);
 	}
 	inicializacion = f_inicializacion;
 	guardar_nueva_patota = f_g_n_patota;
 	guardar_nuevo_tripulante = f_g_n_tripulante;
-	obtener_patota = f_obt_patota;
-	obtener_tripulante = f_obt_tripulante;
+	obtener_estado_tripulante = f_obt_est_tripulante;
+	obtener_prox_instruccion_tripulante = f_obt_prox_instr_tripulante;
 	actualizar_estado_tripulante = f_act_est_tripulante;
 	actualizar_posicion_tripulante = f_act_pos_tripulante;
 	actualizar_instruccion_tripulante = f_act_instr_tripulante;
+	generar_dump_memoria = f_generar_dump_memoria;
 	liberar_tripulante = f_liberar_tripulante;
 
 	inicializacion();
 }
 
-//Primer byte para el segmento
-uint32_t obtener_direccion_logica (uint32_t n_segmento, uint32_t desplazamiento) {
-
-	uint32_t nueva_direccion = 0;
-	nueva_direccion |= desplazamiento;
-	nueva_direccion |= n_segmento << 12;
-	return nueva_direccion;
+void finalizar_administrador(){
+	free(mem_principal->bloque);
+	free(mem_principal);
+	//Luego hay que liberar lo demás que utiliza cada administrador en particular...
 }
-
-uint32_t obtener_n_segmento (uint32_t direccion) {
-	return direccion >> 12;
-}
-
-uint32_t obtener_desplazamiento (uint32_t direccion) {
-	return direccion & 0x0000ffff;
-}
-
 
 void liberar_datos_patota(datos_patota* d_patota) {
 	free(d_patota->tareas);
@@ -66,7 +57,17 @@ void liberar_datos_tripulante(datos_tripulante* d_tripulante) {
 	free(d_tripulante);
 }
 
+void lectura_de_memoria(void* buffer, uint32_t direccion_fisica, uint32_t size) {
+	memcpy(buffer, mem_principal->bloque + direccion_fisica, size);
+}
+
+void escritura_a_memoria(uint32_t direccion_fisica, uint32_t size, void* buffer) {
+	memcpy(mem_principal->bloque + direccion_fisica, buffer, size);
+}
+
 static void reservar_memoria_principal(uint32_t tam_memoria) {
-	memoria_principal = malloc(tam_memoria);
+	mem_principal = malloc(sizeof(memoria_principal));
+	mem_principal->tamanio = tam_memoria;
+	mem_principal->bloque = malloc(tam_memoria);
 }
 

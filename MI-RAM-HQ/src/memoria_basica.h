@@ -14,7 +14,9 @@
 typedef struct{
 	uint32_t pid;
 	uint32_t cant_tripulantes;
+	uint32_t tripulantes_activos;
 	char* tareas;
+	pthread_mutex_t mutex_patota;
 } bas_patota;
 
 typedef struct{
@@ -29,11 +31,12 @@ typedef struct{
 void bas_inicializacion();
 void bas_guardar_nueva_patota(datos_patota*);
 void bas_guardar_nuevo_tripulante(datos_tripulante*);
-datos_patota* bas_obtener_patota(uint32_t);
-datos_tripulante* bas_obtener_tripulante(uint32_t);
+char bas_obtener_estado_tripulante(uint32_t);
+char* bas_obtener_prox_instruccion_tripulante(uint32_t);
 void bas_actualizar_estado_tripulante(uint32_t, char);
 void bas_actualizar_posicion_tripulante(uint32_t, uint32_t, uint32_t);
 void bas_actualizar_instruccion_tripulante(uint32_t);
+void bas_generar_dump_memoria(FILE*);
 void bas_liberar_tripulante(uint32_t);
 
 #endif /* MEMORIA_BASICA_H_ */

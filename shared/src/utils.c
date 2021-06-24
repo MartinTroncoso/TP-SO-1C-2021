@@ -245,6 +245,19 @@ int getTamanioArray(char** array){
 	return i;
 }
 
+char* string_substring_until_char(char* text, char separator) {
+	char* new_string;
+	char* sep_pos = strchr(text, separator);
+
+	if(sep_pos != NULL) {
+		new_string = string_substring(text, 0, sep_pos - text);
+	}
+	else {
+		new_string = string_duplicate(text);
+	}
+	return new_string;
+}
+
 //podemos usar la lista de valores para poder hablar del for y de como recorrer la lista
 t_list* recibir_paquete(int socket_cliente)
 {

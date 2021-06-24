@@ -25,32 +25,41 @@ typedef struct {
 	uint32_t posY;
 } datos_tripulante;
 
+typedef struct {
+	uint32_t tamanio;
+	void* bloque;
+} memoria_principal;
 
-uint32_t obtener_direccion_logica (uint32_t, uint32_t);
-void inicializar_administrador(uint32_t,
+void inicializar_administrador(uint32_t, t_log*,
 		void (*f_inicializacion)(),
 		void (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),
-		datos_patota* (*f_obt_patota)(uint32_t),
-		datos_tripulante* (*f_obt_tripulante)(uint32_t),
+		char (*f_obt_est_tripulante)(uint32_t),
+		char* (*f_obt_prox_instr_tripulante)(uint32_t),
 		void (*f_act_est_tripulante)(uint32_t, char),
 		void (*f_act_pos_tripulante)(uint32_t, uint32_t, uint32_t),
 		void (*f_act_instr_tripulante)(uint32_t),
+		void (*f_generar_dump_memoria)(FILE*),
 		void (*f_liberar_tripulante)(uint32_t));
 
 void liberar_datos_tripulante(datos_tripulante*);
 void liberar_datos_patota(datos_patota*);
+void lectura_de_memoria(void* buffer, uint32_t direccion_fisica, uint32_t size);
+void escritura_a_memoria(uint32_t direccion_fisica, uint32_t size, void* buffer);
+void finalizar_administrador();
 
 void (*inicializacion)();
 void (*guardar_nueva_patota)(datos_patota*);
 void (*guardar_nuevo_tripulante)(datos_tripulante*);
-datos_patota* (*obtener_patota)(uint32_t);
-datos_tripulante* (*obtener_tripulante)(uint32_t);
+char (*obtener_estado_tripulante)(uint32_t);
+char* (*obtener_prox_instruccion_tripulante)(uint32_t);
 void (*actualizar_estado_tripulante)(uint32_t, char);
 void (*actualizar_posicion_tripulante)(uint32_t, uint32_t, uint32_t);
 void (*actualizar_instruccion_tripulante)(uint32_t);
+void (*generar_dump_memoria)(FILE*);
 void (*liberar_tripulante)(uint32_t);
 
-void* memoria_principal;
+memoria_principal* mem_principal; //Aca esta la memoria para aquellos (pag y seg) que la necesiten XD
+t_log* logger_admin; //Logger los metodos de administracion
 
 #endif /* ADMIN_MEMORIA_H_ */
