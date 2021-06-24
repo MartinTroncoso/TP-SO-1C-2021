@@ -15,6 +15,7 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
+
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -79,11 +80,13 @@ void inicializarFileSystem(){
 }
 
 void inicializarSuperBloque(){
-	cantidadDeBlocks=1024;
+
 	//calloc(cantidadDeBloques/8+cantidadDeBloques%8,1);
+	cantidadDeBlocks=1024;
 	struct stat statCarpeta;
 	if(stat(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE),&statCarpeta)==-1)
 	{
+
 		log_info(loggerMongo,"No existe SupreBloque");
 		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
 		log_info(loggerMongo,"Tamanio struct: %d", sizeof(bitArray));
@@ -520,6 +523,47 @@ void recibirPeticionDeBitacora(int socket_tripulante, uint32_t id_tripulante)
 	free(buffer);
 }
 
+char* recuperarBitacora(uint32_t id_tripulante)
+{
+
+	struct stat statCarpeta;
+	if(stat(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante),&statCarpeta)==-1)
+	{
+		log_info(loggerMongo,"NO EXISTE LA BITACORA");
+		return "NO EXISTE LA BITACORA";
+	}
+	t_config* configuracionTripulante = config_create(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
+	char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
+	int tamanioBitacora = config_get_int_value(configuracionTripulante,"SIZE");
+	if(bloquesUtilizados[0]==NULL)
+	{
+		log_info(loggerMongo,"LA BITACORA ESTA VACIA");
+		return "BITACORA VACIA";
+	}
+	char* bitacora;
+	char* bloqueRecuperado = calloc(tamanioBlock,1);
+	int contador = 0;
+	memcpy(bloqueRecuperado,blocksMap+atoi(bloquesUtilizados[contador])*tamanioBlock,tamanioBlock);
+	bitacora = string_from_format("%s",bloqueRecuperado);
+	contador++;
+	tamanioBitacora-=tamanioBlock;
+	while(bloquesUtilizados[contador]!=NULL)
+	{
+		memcpy(bloqueRecuperado,blocksMap+atoi(bloquesUtilizados[contador])*tamanioBlock,tamanioBlock);
+		bitacora = string_from_format("%s%s",bitacora,bloqueRecuperado);
+		contador++;
+	}
+	for(int i = 0; i<string_length(bitacora);i++)
+	{
+		if(bitacora[i]==';')
+		{
+			bitacora[i]='\n';
+		}
+	}
+	log_info(loggerMongo,"%s",bitacora);
+	return bitacora;
+}
+
 int byteExcedente(int cantidadDeBits, int tamanio){
 	return (cantidadDeBits%tamanio)>0;
 }
@@ -581,6 +625,16 @@ void informarSabotaje(){
 void ejecutarFSCK(){
 	//???
 	//???
+}
+
+void verificarSuperBloque()
+{
+	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
+	int cantidadDeSupuestosBloques = config_get_int_value(configuracionSuperBloque,"BLOCKS");
+	if(cantidadDeSupuestosBloques == string_length(blocksMap)/tamanioBlock)
+	{
+		log_info(loggerMongo,"SUPERBLOQUE NO AFECTADO POR SABOTAJE");
+	}
 }
 void escribirBitacora(char* string, t_config* configuracionTripulante)
 {
