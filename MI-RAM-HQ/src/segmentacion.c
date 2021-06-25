@@ -314,7 +314,7 @@ void seg_actualizar_instruccion_tripulante(uint32_t tid) {
 
 void seg_liberar_tripulante(uint32_t tid) {
 	result_busqueda* busqueda = buscar_tripulante(tid);
-	char* tid_string = string_itoa(busqueda->n_segmento);
+	char* tid_string = string_itoa(tid);
 
 	//LIBERO MEMORIA
 	segmento* registro_a_liberar = obtener_registro_de_tabla(busqueda->tabla_pid, busqueda->n_segmento); //Saco registro de la tabla
@@ -334,7 +334,6 @@ void seg_liberar_tripulante(uint32_t tid) {
 	dictionary_remove(dic_tid_tabla, tid_string); //Saco key-value del diccionario
 	pthread_mutex_unlock(&mutex_diccionario);
 
-	free(registro_a_liberar); //Libero registro
 	free(busqueda);
 	free(tid_string);
 }
