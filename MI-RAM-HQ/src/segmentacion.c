@@ -443,7 +443,8 @@ static void consolidar_libres(int index) {
 		(actual->tamanio) += ant->tamanio;
 		list_remove_and_destroy_element(areas_libres_ordenadas, index - 1, free);
 	}
-	pthread_mutex_lock(&mutex_mem_libre);
+	pthread_mutex_unlock(&mutex_mem_libre);
+	log_info(logger_admin, "[Consolidacion] - Se consolido un espacio libre");
 }
 
 //Devuelve la direccion fisica
