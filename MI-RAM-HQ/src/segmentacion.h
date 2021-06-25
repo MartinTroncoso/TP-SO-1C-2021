@@ -14,18 +14,20 @@
 typedef struct {
 	uint32_t inicio; //Direccion fisica de memoria
 	uint32_t tamanio;
+	bool inicializado;
+	bool activo;
 } segmento;
 
 typedef struct {
-	segmento* segmento;
-	bool inicializado;
-} seg_tabla_registro;
-
-typedef struct {
-	t_list* registros;
+	t_list* segmentos;
 	uint32_t c_tripulantes;
 	uint32_t pid;
 } seg_tabla;
+
+typedef struct {
+	uint32_t inicio;
+	uint32_t tamanio;
+} seg_area_libre;
 
 void seg_inicializacion();
 void seg_guardar_nueva_patota(datos_patota*);
@@ -35,6 +37,7 @@ char* seg_obtener_prox_instruccion_tripulante(uint32_t);
 void seg_actualizar_estado_tripulante(uint32_t, char);
 void seg_actualizar_posicion_tripulante(uint32_t, uint32_t, uint32_t);
 void seg_actualizar_instruccion_tripulante(uint32_t);
+void seg_generar_dump_memoria(FILE*);
 void seg_liberar_tripulante(uint32_t);
 
 #endif /* SEGMENTACION_H_ */

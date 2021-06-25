@@ -7,14 +7,14 @@
 
 #include "memoria_basica.h"
 
-t_list* tripulantes;
-t_list* patotas;
-pthread_mutex_t mutex_lista_patotas;
-pthread_mutex_t mutex_lista_tripulantes;
+static t_list* tripulantes;
+static t_list* patotas;
+static pthread_mutex_t mutex_lista_patotas;
+static pthread_mutex_t mutex_lista_tripulantes;
 
 static bas_patota* buscar_patota(uint32_t);
 static bas_tripulante* buscar_tripulante(uint32_t tid);
-void _bas_liberar_patota(bas_patota* patota);
+static void _bas_liberar_patota(bas_patota* patota);
 
 void bas_inicializacion() {
 	patotas = list_create();

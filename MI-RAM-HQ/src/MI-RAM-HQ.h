@@ -14,13 +14,6 @@
 #include "memoria_basica.h"
 #include "segmentacion.h"
 
-int TAMANIO_MEMORIA;
-char* ESQUEMA_MEMORIA;
-int TAMANIO_PAGINA;
-int TAMANIO_SWAP;
-char* PATH_SWAP;
-char* ALGORITMO_REEMPLAZO;
-char* IP_MI_RAM;
 char* PUERTO_MI_RAM;
 
 void inicializarVariables();

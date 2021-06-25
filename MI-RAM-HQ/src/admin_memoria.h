@@ -30,7 +30,15 @@ typedef struct {
 	void* bloque;
 } memoria_principal;
 
-void inicializar_administrador(uint32_t, t_log*,
+int TAMANIO_MEMORIA;
+char* ESQUEMA_MEMORIA;
+int TAMANIO_PAGINA;
+int TAMANIO_SWAP;
+char* PATH_SWAP;
+char* ALGORITMO_REEMPLAZO;
+char* CRITERIO_SELECCION;
+
+void inicializar_administrador(t_log*,
 		void (*f_inicializacion)(),
 		void (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),

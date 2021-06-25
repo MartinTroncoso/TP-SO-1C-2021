@@ -24,18 +24,27 @@ const uint32_t TCB_POS_PROX_T = 13;
 const uint32_t TCB_POS_PUNT_PCB = 17;
 
 //GLOBALES IMPORTANTE!!!
-t_dictionary* dic_tid_tabla; //Sin este diccionario, para buscar la tabla, habría que buscar en cada tabla y recorrer cada registro...
-t_list* tablas_segmentacion; //Aca van las tablas de segmentos
-t_list* segmentos_ordenados; //Aca van los segmentos ocupados en memoria, ordenados por su posicion de memoria (inicio)
+static t_dictionary* dic_tid_tabla; //Sin este diccionario, para buscar la tabla, habría que buscar en cada tabla y recorrer cada registro...
+static t_list* tablas_segmentacion; //Aca van las tablas de segmentos
+static t_list* areas_libres_ordenadas; //Areas de memoria libres, ordenadas por posicion de inicio
 
-static bool segmento_esta_antes(void*, void*);
+//SEMAFOROS
+static pthread_mutex_t mutex_diccionario;
+static pthread_mutex_t mutex_tablas;
+static pthread_mutex_t mutex_mem_libre;
+
+
+static bool _area_esta_antes(void* area1, void* area2);
 static seg_tabla* buscar_tabla(uint32_t);
 static int buscar_tripulante_no_inicializado(seg_tabla*);
-static seg_tabla_registro* obtener_registro_de_tabla(seg_tabla*, int);
+static segmento* obtener_registro_de_tabla(seg_tabla*, int);
 static result_busqueda* buscar_tripulante(uint32_t tid);
+static void consolidar_libres(int index);
 
-static segmento* buscar_reservar_memoria_first_fit(uint32_t tamanio);
-static segmento* reservar_memoria(uint32_t posicion, uint32_t tamanio);
+static segmento* (*critero_reserva_memoria)(uint32_t tamanio_pedido);
+static segmento* buscar_reservar_memoria_first_fit(uint32_t tamanio_pedido);
+static segmento* buscar_reservar_memoria_best_fit(uint32_t tamanio_pedido);
+static segmento* reservar_memoria(uint32_t tamanio_pedido, seg_area_libre* area_libre);
 
 static uint32_t obtener_direccion_logica (uint32_t, uint32_t);
 static uint32_t obtener_n_segmento (uint32_t);
@@ -44,9 +53,28 @@ static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica);
 static uint32_t segmentacion_mmu_mult(uint32_t pid, uint32_t direccion_logica, uint32_t size);
 
 void seg_inicializacion() {
+	areas_libres_ordenadas = list_create();
 	tablas_segmentacion = list_create();
-	segmentos_ordenados = list_create();
 	dic_tid_tabla = dictionary_create();
+	pthread_mutex_init(&mutex_diccionario, NULL);
+	pthread_mutex_init(&mutex_tablas, NULL);
+	pthread_mutex_init(&mutex_mem_libre, NULL);
+
+	seg_area_libre* area_inicial = malloc(sizeof(seg_area_libre));
+	area_inicial->inicio = 0;
+	area_inicial->tamanio = mem_principal->tamanio;
+	list_add(areas_libres_ordenadas, area_inicial);
+
+	if(strcmp(CRITERIO_SELECCION, "FF")) {
+		critero_reserva_memoria = buscar_reservar_memoria_first_fit;
+	}
+	else if(strcmp(CRITERIO_SELECCION, "BF")) {
+		critero_reserva_memoria = buscar_reservar_memoria_best_fit;
+	}
+	else {
+		log_error(logger_admin, "Ha ocurrido un error, no se selecciono un CRITERIO_SELECCION VALIDO");
+	}
+
 	log_info(logger_admin, "Se inicia la administracion de memoria: SEGMENTACION");
 }
 
@@ -57,43 +85,40 @@ void seg_guardar_nueva_patota(datos_patota* nueva_patota) {
 	uint32_t cantidad_tripulantes = nueva_patota->tripulantes;
 	uint32_t tamanio_tareas = strlen(nueva_patota->tareas) + 1;
 
+	//ARMO TABLA DE SEGMENTOS:
+
+	seg_tabla* nueva_tabla = malloc(sizeof(seg_tabla));
+
+	nueva_tabla->segmentos = list_create();
+	nueva_tabla->c_tripulantes = nueva_patota->tripulantes;
+	nueva_tabla->pid = nueva_patota->pid;
+
+	log_info(logger_admin, "[Almacenamiento patota %d] Se armo la tabla de segmentos", nueva_patota->pid);
+
 	//RESERVO MEMORIA PRIMERO:
 
-	segmento* segmento_pcb = buscar_reservar_memoria_first_fit(TAMANIO_PCB);
-	t_list* segmentos_tcb = list_create();
+	segmento* segmento_pcb = critero_reserva_memoria(TAMANIO_PCB);
+	segmento_pcb->inicializado = true;
+	segmento_pcb->activo = true;
+	list_add(nueva_tabla->segmentos, segmento_pcb);
 	for(int i = 0; i < cantidad_tripulantes; i++) {
-		list_add(segmentos_tcb, buscar_reservar_memoria_first_fit(TAMANIO_TCB));
+		segmento* un_segmento_tcb = critero_reserva_memoria(TAMANIO_TCB);
+		un_segmento_tcb->inicializado = false;
+		un_segmento_tcb->activo = true;
+		list_add(nueva_tabla->segmentos, un_segmento_tcb);
 	}
-	segmento* segmento_tareas = buscar_reservar_memoria_first_fit(tamanio_tareas);
+	segmento* segmento_tareas = critero_reserva_memoria(tamanio_tareas);
+	segmento_tareas->inicializado = true;
+	segmento_tareas->activo = true;
+	list_add(nueva_tabla->segmentos, segmento_tareas);
 
 	log_info(logger_admin, "[Almacenamiento patota %d] Se reservo la memoria de todos los segmentos", nueva_patota->pid);
 
-	// ARMO LA TABLA DE SEGMENTOS
+	//SUMO LA TABLA A LAS TABLAS DE SEGMENTACION:
 
-	seg_tabla* nueva_tabla = malloc(sizeof(seg_tabla));
-	nueva_tabla->c_tripulantes = nueva_patota->tripulantes;
-	nueva_tabla->registros = list_create();
-	nueva_tabla->pid = nueva_patota->pid;
+	pthread_mutex_lock(&mutex_tablas);
 	list_add(tablas_segmentacion, nueva_tabla);
-
-	seg_tabla_registro* registro_pcb = malloc(sizeof(seg_tabla_registro));
-	registro_pcb->inicializado = true;
-	registro_pcb->segmento = segmento_pcb;
-	list_add(nueva_tabla->registros, registro_pcb);
-
-	for(int i = 0; i < cantidad_tripulantes; i++) {
-		seg_tabla_registro* registro_tcb = malloc(sizeof(seg_tabla_registro));
-		registro_tcb->inicializado = false;
-		registro_tcb->segmento = (segmento*) list_get(segmentos_tcb, i);
-		list_add(nueva_tabla->registros, registro_tcb);
-	}
-
-	seg_tabla_registro* registro_tareas = malloc(sizeof(seg_tabla_registro));
-	registro_tareas->inicializado = true;
-	registro_tareas->segmento = segmento_tareas;
-	list_add(nueva_tabla->registros, registro_tareas);
-
-	log_info(logger_admin, "[Almacenamiento patota %d] Se armo la tabla de segmentos", nueva_patota->pid);
+	pthread_mutex_unlock(&mutex_tablas);
 
 	//CARGO PRIMER REGISTRO DE TABLA = PCB, Y EL ULTIMO: TAREAS
 
@@ -121,7 +146,6 @@ void seg_guardar_nueva_patota(datos_patota* nueva_patota) {
 	//LIBERO
 
 	free(buffer);
-	list_destroy(segmentos_tcb);
 
 	log_info(logger_admin, "[Almacenamiento patota %d] Se finalizo la operacion", nueva_patota->pid);
 }
@@ -166,7 +190,10 @@ void seg_guardar_nuevo_tripulante(datos_tripulante* nuevo_tripulante) {
 	obtener_registro_de_tabla(tabla_pid, n_registro)->inicializado = true;
 
 	char* tid_string = string_itoa(nuevo_tripulante->tid);
+
+	pthread_mutex_lock(&mutex_diccionario);
 	dictionary_put(dic_tid_tabla, tid_string, (void*)tabla_pid);
+	pthread_mutex_unlock(&mutex_diccionario);
 
 	free(tid_string);
 	free(buffer);
@@ -185,6 +212,7 @@ char seg_obtener_estado_tripulante(uint32_t tid) {
 	log_info(logger_admin, "[Obtención estado trip %d] Se finaliza la operacion - estado actual: %c", tid, estado);
 	return estado;
 }
+
 char* seg_obtener_prox_instruccion_tripulante(uint32_t tid) {
 
 	log_info(logger_admin, "[Obtención prox inst trip %d] Se inicia la operacion", tid);
@@ -199,7 +227,7 @@ char* seg_obtener_prox_instruccion_tripulante(uint32_t tid) {
 
 	int n_segmento_tareas = obtener_n_segmento(dir_logica_prox_tarea);
 	uint32_t desplazamiento_tareas = obtener_desplazamiento(dir_logica_prox_tarea);
-	uint32_t tam_seg_tareas = obtener_registro_de_tabla(busqueda->tabla_pid, n_segmento_tareas)->segmento->tamanio;
+	uint32_t tam_seg_tareas = obtener_registro_de_tabla(busqueda->tabla_pid, n_segmento_tareas)->tamanio;
 	uint32_t cant_caracteres_restantes = tam_seg_tareas - desplazamiento_tareas;
 	char* tareas_restantes = malloc(cant_caracteres_restantes);
 	uint32_t dir_fisica_prox_tarea = segmentacion_mmu_mult(busqueda->tabla_pid->pid, dir_logica_prox_tarea, cant_caracteres_restantes);
@@ -249,7 +277,7 @@ void seg_actualizar_instruccion_tripulante(uint32_t tid) {
 
 	int n_segmento_tareas = obtener_n_segmento(dir_logica_prox_tarea);
 	uint32_t desplazamiento_tareas = obtener_desplazamiento(dir_logica_prox_tarea);
-	uint32_t tam_seg_tareas = obtener_registro_de_tabla(busqueda->tabla_pid, n_segmento_tareas)->segmento->tamanio;
+	uint32_t tam_seg_tareas = obtener_registro_de_tabla(busqueda->tabla_pid, n_segmento_tareas)->tamanio;
 	uint32_t cant_caracteres_restantes = tam_seg_tareas - desplazamiento_tareas;
 	char* tareas_restantes = malloc(cant_caracteres_restantes);
 	uint32_t dir_fisica_prox_tarea = segmentacion_mmu_mult(busqueda->tabla_pid->pid, dir_logica_prox_tarea, cant_caracteres_restantes);
@@ -289,66 +317,133 @@ void seg_liberar_tripulante(uint32_t tid) {
 	char* tid_string = string_itoa(busqueda->n_segmento);
 
 	//LIBERO MEMORIA
+	segmento* registro_a_liberar = obtener_registro_de_tabla(busqueda->tabla_pid, busqueda->n_segmento); //Saco registro de la tabla
+	registro_a_liberar->activo = false;
 
-	seg_tabla_registro* registro_a_liberar = list_remove(busqueda->tabla_pid->registros, busqueda->n_segmento); //Saco registro de la tabla
+	seg_area_libre* area_nueva = malloc(sizeof(seg_area_libre));
+	area_nueva->inicio = registro_a_liberar->inicio;
+	area_nueva->tamanio = registro_a_liberar->tamanio;
+	pthread_mutex_lock(&mutex_mem_libre);
+	int index = list_add_sorted(areas_libres_ordenadas, area_nueva, _area_esta_antes);
+	pthread_mutex_unlock(&mutex_mem_libre);
 
-	bool es_el_segmento_trip(void* segmento) {
-		return segmento == registro_a_liberar->segmento;
-	}
-	list_remove_by_condition(segmentos_ordenados, es_el_segmento_trip); //Saco de la lista de segmentos_ordenados, ya se puede ocupar por otro
+	//Verificar compactacion de areas
+	consolidar_libres(index);
+
+	pthread_mutex_lock(&mutex_diccionario);
 	dictionary_remove(dic_tid_tabla, tid_string); //Saco key-value del diccionario
-	free(registro_a_liberar->segmento); //Libero segmento del registro
+	pthread_mutex_unlock(&mutex_diccionario);
+
 	free(registro_a_liberar); //Libero registro
 	free(busqueda);
 	free(tid_string);
 }
 
+void seg_generar_dump_memoria(FILE* archivo) {
 
-//Devuelve el segmento donde se reservo la informacion
-//Devuelve null si no se encontro un lugar disponible
-static segmento* buscar_reservar_memoria_first_fit(uint32_t tamanio) {
+	void escritura_por_patota(void* _patota) {
+		seg_tabla* tabla_patota = (seg_tabla*) _patota;
 
-	log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Se comienza operacion", tamanio);
-
-	uint32_t pos_candidata = 0;
-
-	int cant_segmentos = list_size(segmentos_ordenados);
-
-	//Ver si entraria al principio...
-	if(cant_segmentos == 0) {
-		log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - No hay segmentos, va al inicio", tamanio);
-		return reservar_memoria(pos_candidata, tamanio);
-	}
-
-	for(int i = 0; i < cant_segmentos; i++) {
-		segmento* segmento_ya_reservado = (segmento*) list_get(segmentos_ordenados, i);
-		if(pos_candidata + tamanio <= segmento_ya_reservado->inicio) {
-			log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Se encontro un espacio disponible", tamanio);
-			return reservar_memoria(pos_candidata, tamanio);
+		for(int i = 0; i <= tabla_patota->c_tripulantes + 1; i++) {
+			segmento* segment = obtener_registro_de_tabla(tabla_patota, i);
+			if(segment->activo) {
+				char* linea = string_from_format("Proceso: %d\tSegmento: %d\tInicio: %#010X\tTam: %dB\n", tabla_patota->pid, i, segment->inicio, segment->tamanio);
+				txt_write_in_file(archivo, linea);
+				free(linea);
+			}
 		}
-		pos_candidata = segmento_ya_reservado->inicio + segmento_ya_reservado->tamanio;
-		log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Busco el prox segmento", tamanio);
 	}
-
-	//Ver si entra al final...
-	if(pos_candidata + tamanio <= mem_principal->tamanio) {
-		log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Se encontro un espacio luego del ultimo segmento", tamanio);
-		return reservar_memoria(pos_candidata, tamanio);
-	}
-
-	log_error(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Ocurrio un error, no hay memoria", tamanio);
-	return NULL;
+	pthread_mutex_lock(&mutex_tablas);
+	list_iterate(tablas_segmentacion, escritura_por_patota);
+	pthread_mutex_unlock(&mutex_tablas);
 }
 
-static segmento* reservar_memoria(uint32_t posicion, uint32_t tamanio) {
+//Devuelve null si no se encontro un lugar disponible
+//Se encarga de buscar un segmento libree
+//Devuelve el segmento donde se reservo la informacion
+static segmento* buscar_reservar_memoria_first_fit(uint32_t tamanio_pedido) {
 
-	segmento* segmento_reservado = malloc(sizeof(segmento));
-	segmento_reservado->inicio = posicion;
-	segmento_reservado->tamanio = tamanio;
-	list_add_sorted(segmentos_ordenados, segmento_reservado, segmento_esta_antes);
-	log_info(logger_admin, "[Reserva mem] - Se reserva memoria: [%d-%d] ", posicion, posicion + tamanio - 1);
-	log_info(logger_admin, "[Reserva mem] - Ahora hay: %d segmentos", list_size(segmentos_ordenados));
-	return segmento_reservado;
+	log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Se comienza operacion", tamanio_pedido);
+
+	bool area_con_tamanio_suf(void* _area) {
+		return ((seg_area_libre*) _area)->tamanio >= tamanio_pedido;
+	}
+
+	pthread_mutex_lock(&mutex_mem_libre);
+	seg_area_libre* area_a_utilizar = list_find(areas_libres_ordenadas, area_con_tamanio_suf);
+	pthread_mutex_unlock(&mutex_mem_libre);
+
+	if(area_a_utilizar == NULL) {
+		log_error(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - Ocurrio un error, no hay memoria suficiente", tamanio_pedido);
+		return NULL;
+	}
+
+	log_info(logger_admin, "[Reserva mem FIRST FIT] Pedido %d bytes - "
+			"Se encontro un lugar disponible de: inicio(%d) / tamanio (%d)", tamanio_pedido, area_a_utilizar->inicio, area_a_utilizar->tamanio);
+
+	return reservar_memoria(tamanio_pedido, area_a_utilizar);
+}
+
+static segmento* buscar_reservar_memoria_best_fit(uint32_t tamanio_pedido) {
+
+	log_info(logger_admin, "[Reserva mem BEST FIT] Pedido %d bytes - Se comienza operacion", tamanio_pedido);
+
+	seg_area_libre* mejor_area = NULL;
+
+	void buscador_del_mejor(void* _area) {
+		seg_area_libre* area = (seg_area_libre*) _area;
+		if(area->tamanio < tamanio_pedido) return;
+		if(mejor_area == NULL || area->tamanio > mejor_area->tamanio)
+			mejor_area = area;
+	}
+
+	pthread_mutex_lock(&mutex_mem_libre);
+	list_iterate(areas_libres_ordenadas, buscador_del_mejor);
+	pthread_mutex_unlock(&mutex_mem_libre);
+
+	if(mejor_area == NULL) {
+		log_error(logger_admin, "[Reserva mem BEST FIT] Pedido %d bytes - Ocurrio un error, no hay memoria suficiente", tamanio_pedido);
+		return NULL;
+	}
+
+	log_info(logger_admin, "[Reserva mem BEST FIT] Pedido %d bytes - "
+			"Se encontro un lugar disponible de: inicio(%d) / tamanio (%d)", tamanio_pedido, mejor_area->inicio, mejor_area->tamanio);
+
+	return reservar_memoria(tamanio_pedido, mejor_area);
+}
+
+static segmento* reservar_memoria(uint32_t tamanio_pedido, seg_area_libre* area_libre) {
+
+	uint32_t inicio_anterior = area_libre->inicio;
+	(area_libre->inicio) += tamanio_pedido;
+	(area_libre->tamanio) -= tamanio_pedido;
+
+	segmento* nuevo_segmento = malloc(sizeof(segmento));
+	nuevo_segmento->inicio = inicio_anterior;
+	nuevo_segmento->tamanio = tamanio_pedido;
+	log_info(logger_admin, "[Reserva mem] - Se reserva memoria para nuevo segmento: [%d-%d] ", inicio_anterior, inicio_anterior + tamanio_pedido - 1);
+	return nuevo_segmento;
+}
+
+static void consolidar_libres(int index) {
+
+	pthread_mutex_lock(&mutex_mem_libre);
+	seg_area_libre* ant = index > 0 ? list_get(areas_libres_ordenadas, index - 1) : NULL;
+	seg_area_libre* actual = list_get(areas_libres_ordenadas, index);
+	seg_area_libre* post = index < list_size(areas_libres_ordenadas) - 1? list_get(areas_libres_ordenadas, index + 1) : NULL;
+
+	//Primero el post, así no altero el indice del ant
+	if(post != NULL && post->inicio == actual->inicio + actual->tamanio) {
+		(actual->tamanio) += post->tamanio;
+		list_remove_and_destroy_element(areas_libres_ordenadas, index + 1, free);
+	}
+
+	if(ant != NULL && ant->inicio + ant->tamanio == actual->inicio) {
+		actual->inicio = ant->inicio;
+		(actual->tamanio) += ant->tamanio;
+		list_remove_and_destroy_element(areas_libres_ordenadas, index - 1, free);
+	}
+	pthread_mutex_lock(&mutex_mem_libre);
 }
 
 //Devuelve la direccion fisica
@@ -363,7 +458,7 @@ static uint32_t segmentacion_mmu_mult(uint32_t pid, uint32_t direccion_logica, u
 	seg_tabla* tabla = buscar_tabla(pid);
 	uint32_t n_segmento = obtener_n_segmento(direccion_logica);
 	uint32_t desplazamiento = obtener_desplazamiento(direccion_logica);
-	segmento* segmento = obtener_registro_de_tabla(tabla, n_segmento)->segmento;
+	segmento* segmento = obtener_registro_de_tabla(tabla, n_segmento);
 	//Chequeo que el inicio no supere el tam del segmento
 	if(desplazamiento > segmento->tamanio - 1) {
 		log_error(logger_admin, "[MMU] Error al intentar traducir la dir_log(%#010X):"
@@ -397,29 +492,28 @@ static uint32_t obtener_desplazamiento (uint32_t direccion) {
 	return direccion & 0x0000ffff;
 }
 
-static bool segmento_esta_antes(void* segmento1, void* segmento2) {
-	return ((segmento*) segmento1)->inicio < ((segmento*) segmento2)->inicio;
+static bool _area_esta_antes(void* area1, void* area2) {
+	return ((seg_area_libre*) area1)->inicio < ((seg_area_libre*) area2)->inicio;
 }
 
 static seg_tabla* buscar_tabla(uint32_t pid) {
 	bool tabla_es_del_pid(void* tabla) {
 		return ((seg_tabla*) tabla)->pid == pid;
 	}
-	return (seg_tabla*) list_find(tablas_segmentacion, tabla_es_del_pid);
+	pthread_mutex_lock(&mutex_tablas);
+	seg_tabla* tabla_encontrada = (seg_tabla*)list_find(tablas_segmentacion, tabla_es_del_pid);
+	pthread_mutex_unlock(&mutex_tablas);
+	return tabla_encontrada;
 }
 
-static seg_tabla_registro* obtener_registro_de_tabla(seg_tabla* tabla, int n_segmento) {
-	return (seg_tabla_registro*)list_get(tabla->registros, n_segmento);
+static segmento* obtener_registro_de_tabla(seg_tabla* tabla, int n_segmento) {
+	return (segmento*)list_get(tabla->segmentos, n_segmento);
 }
 
 // Devuelve el numero de segmento donde esta el tripulante
 static int buscar_tripulante_no_inicializado(seg_tabla* tabla) {
-	//En la tabla, los registros:
-	// 0 -> PCB
-	// 1 .. c_tripulantes -> TCB's
-	// c_tripulantes+1 -> tareas
 	for(int i = 1; i <= tabla->c_tripulantes; i++) {
-		seg_tabla_registro* registro_actual = obtener_registro_de_tabla(tabla, i);
+		segmento* registro_actual = obtener_registro_de_tabla(tabla, i);
 		if(!registro_actual->inicializado) {
 			return i;
 		}
@@ -435,13 +529,16 @@ static result_busqueda* buscar_tripulante(uint32_t tid) {
 	uint32_t dir_logica;
 	uint32_t dir_fisica;
 	char* tid_string = string_itoa(tid);
+	pthread_mutex_lock(&mutex_diccionario);
 	seg_tabla* tabla_pid = (seg_tabla*) dictionary_get(dic_tid_tabla, tid_string);
+	pthread_mutex_unlock(&mutex_diccionario);
+
 	uint32_t* buffer_tid = malloc(sizeof(uint32_t));
 
 	//Recorro registros tripulantes de la tabla..
 	for(n = 1; n <= tabla_pid->c_tripulantes; n++) {
-		seg_tabla_registro* registro_trip = obtener_registro_de_tabla(tabla_pid, n);
-		if(registro_trip->inicializado) {  //Espero que no puedan expulsar si no lo inicializaron!
+		segmento* registro_trip = obtener_registro_de_tabla(tabla_pid, n);
+		if(registro_trip->activo && registro_trip->inicializado) {  //Espero que no puedan expulsar si no lo inicializaron!
 			dir_logica = obtener_direccion_logica(n, 0); //El TID esta en el inicio...
 			dir_fisica = segmentacion_mmu(tabla_pid->pid, dir_logica);
 			lectura_de_memoria(buffer_tid, dir_fisica, sizeof(uint32_t));

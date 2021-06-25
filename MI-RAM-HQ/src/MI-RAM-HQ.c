@@ -32,7 +32,7 @@ int main(void) {
 	inicializarVariables();
 	log_info(logger_mi_ram,"PID MI-RAM HQ: %d",getpid());
 
-	int socket_escucha = iniciarServidor(IP_MI_RAM,PUERTO_MI_RAM);
+	int socket_escucha = iniciarServidor("127.0.0.1", PUERTO_MI_RAM);
 	log_info(logger_mi_ram, "MI-RAM-HQ Listo para atender a los Tripulantes!");
 
 	while(1) {
@@ -69,16 +69,15 @@ void inicializarVariables(){
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
-	IP_MI_RAM = config_get_string_value(configuracionMiRam,"IP_MI_RAM");
 	PUERTO_MI_RAM = config_get_string_value(configuracionMiRam,"PUERTO");
 	ESQUEMA_MEMORIA = config_get_string_value(configuracionMiRam,"ESQUEMA_MEMORIA");
 	PATH_SWAP = config_get_string_value(configuracionMiRam,"PATH_SWAP");
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
+	CRITERIO_SELECCION = config_get_string_value(configuracionMiRam,"CRITERIO_SELECCION");
 	inicializarMapa();
 
-	/*if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0) {
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0) {
 		inicializar_administrador(
-				TAMANIO_MEMORIA,
 				logger_mi_ram,
 				seg_inicializacion,
 				seg_guardar_nueva_patota,
@@ -88,13 +87,11 @@ void inicializarVariables(){
 				seg_actualizar_estado_tripulante,
 				seg_actualizar_posicion_tripulante,
 				seg_actualizar_instruccion_tripulante,
-				NULL,
+				seg_generar_dump_memoria,
 				seg_liberar_tripulante);
 	}
-	else { */
-	//Por el momento todx con lo basicooo
+	else {
 	inicializar_administrador(
-			0,
 			logger_mi_ram,
 			bas_inicializacion,
 			bas_guardar_nueva_patota,
@@ -106,7 +103,7 @@ void inicializarVariables(){
 			bas_actualizar_instruccion_tripulante,
 			bas_generar_dump_memoria,
 			bas_liberar_tripulante);
-	//}
+	}
 }
 
 void atenderTripulante(void* _cliente) {

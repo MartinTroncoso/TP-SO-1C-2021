@@ -7,10 +7,9 @@
 
 #include "admin_memoria.h"
 
-static void reservar_memoria_principal(uint32_t);
+static void reservar_memoria_principal();
 
-
-void inicializar_administrador(uint32_t mem_reservar, t_log* logger,
+void inicializar_administrador(t_log* logger,
 		void (*f_inicializacion)(),
 		void (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),
@@ -22,11 +21,8 @@ void inicializar_administrador(uint32_t mem_reservar, t_log* logger,
 		void (*f_generar_dump_memoria)(FILE*),
 		void (*f_liberar_tripulante)(uint32_t)
 		){
-
 	logger_admin = logger;
-	if(mem_reservar > 0) {
-		reservar_memoria_principal(mem_reservar);
-	}
+	reservar_memoria_principal();
 	inicializacion = f_inicializacion;
 	guardar_nueva_patota = f_g_n_patota;
 	guardar_nuevo_tripulante = f_g_n_tripulante;
@@ -65,9 +61,9 @@ void escritura_a_memoria(uint32_t direccion_fisica, uint32_t size, void* buffer)
 	memcpy(mem_principal->bloque + direccion_fisica, buffer, size);
 }
 
-static void reservar_memoria_principal(uint32_t tam_memoria) {
+static void reservar_memoria_principal() {
 	mem_principal = malloc(sizeof(memoria_principal));
-	mem_principal->tamanio = tam_memoria;
-	mem_principal->bloque = malloc(tam_memoria);
+	mem_principal->tamanio = TAMANIO_MEMORIA;
+	mem_principal->bloque = malloc(TAMANIO_MEMORIA);
 }
 
