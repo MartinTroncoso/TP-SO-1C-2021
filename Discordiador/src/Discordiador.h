@@ -154,7 +154,7 @@ void agregarABlockIO(t_tripulante*);
 void sacarDeReady(t_tripulante*);
 void sacarDeExec(t_tripulante*);
 void sacarDeBlockIO(t_tripulante*);
-void sacarDeBlockEmergencia(t_tripulante*);
+//void sacarDeBlockEmergencia(t_tripulante*);
 bool llegoALaPosicion(t_tripulante*,posicion*);
 t_iniciar_patota* obtenerDatosPatota(char**);
 char* obtenerTareasComoCadena(char*);

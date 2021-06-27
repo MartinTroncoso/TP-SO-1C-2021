@@ -255,6 +255,8 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 		break;
 	}
 
+	//ESTOS 3 ATRIBUTOS TIENEN SENTIDO PARA PLANIFICACIÓN CON ROUND ROBIN (PARA FIFO NO SIRVEN PARA NOTHING e.e)
+	proximaTarea->tiempoEjecutado = 0;
 	proximaTarea->finalizada = false;
 	proximaTarea->yaInicio = false;
 
@@ -482,8 +484,8 @@ void gestionarSabotaje(){
 		pthread_mutex_unlock(&mutexIdTripulanteSabotaje);
 	}
 
-	t_list* execYReadyPasadosAEmergencia = list_map(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
-	t_list* blockIOPasadosAEmergencia = list_map(colaBlockIO,(void*) pasarABlockPorEmergencia); //NO LOS SACO DE LA DE I/O PORQUE NO CAMBIA EN NADA
+	list_iterate(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
+	list_iterate(colaBlockIO,(void*) pasarABlockPorEmergencia); //NO LOS SACO DE LA DE I/O PORQUE NO CAMBIA EN NADA
 
 	log_info(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteParaElSabotaje->tid);
 
@@ -515,7 +517,6 @@ void gestionarSabotaje(){
 
 	if(planificacionFueActivadaAlgunaVez){
 		t_list* tripulantesEnExec;
-		t_list* listaPasadosAExec;
 
 		pthread_mutex_lock(&mutexColaBlockSabotaje);
 		if(estabaEnExec)
@@ -528,27 +529,21 @@ void gestionarSabotaje(){
 		list_add_all(colaExec,tripulantesEnExec);
 		pthread_mutex_unlock(&mutexColaExec);
 
-		listaPasadosAExec = list_map(colaExec,(void*) pasarAExec);
+		list_iterate(colaExec,(void*) pasarAExec);
 
 		list_destroy(tripulantesEnExec);
-		list_destroy(listaPasadosAExec);
 	}
 
 	pthread_mutex_lock(&mutexColaReady);
-	list_add_all(colaReady,colaBlockEmergencia);
+	list_add_all(colaReady,colaBlockEmergencia); //AL REMOVER LOS QUE VAN A EXEC, TODOS LOS QUEDAN EN EMERGENCIA PASAN A READY
 	pthread_mutex_unlock(&mutexColaReady);
 
 	pthread_mutex_lock(&mutexColaBlockSabotaje);
 	list_clean(colaBlockEmergencia);
 	pthread_mutex_unlock(&mutexColaBlockSabotaje);
 
-	t_list* listaPasadosAReady = list_map(colaReady,(void*) pasarAReady);
-	t_list* listaPasadosABlockIO = list_map(colaBlockIO,(void*) pasarABlockIO);
-
-	list_destroy(execYReadyPasadosAEmergencia);
-	list_destroy(blockIOPasadosAEmergencia);
-	list_destroy(listaPasadosAReady);
-	list_destroy(listaPasadosABlockIO);
+	list_iterate(colaReady,(void*) pasarAReady);
+	list_iterate(colaBlockIO,(void*) pasarABlockIO);
 
 	pthread_mutex_lock(&mutexSituacionEmergencia);
 	haySituacionDeEmergencia = false;
@@ -558,11 +553,8 @@ void gestionarSabotaje(){
 	if(planificacionFueActivadaAlgunaVez){
 		iniciarPlanificacion();
 
-		//SI LUEGO DE RESOLVER EL SABOTAJE VUELVE A QUEDAR EN EXEC (EN CASO DE QUE HUBIERA ESTADO CUANDO FUE INFORMADO), QUIERE DECIR QUE NO HAY NINGÚN TRIPULANTE EN LA COLA DE READY
-		if(tripulanteParaElSabotaje->estado == EXEC)
-			sem_post(&(tripulanteParaElSabotaje->puedeEjecutar));
-		else
-		{
+		//SI DESPUÉS DE RESOLVER EL SABOTAJE VUELVE A QUEDAR EN EXEC, QUIERE DECIR QUE ANTES TAMBIÉN ESTABA. NO QUEDA NINGUNO EN READY
+		if(tripulanteParaElSabotaje->estado == READY){
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulanteParaElSabotaje->habilitado = false;
 			pthread_mutex_unlock(&mutexTripulantes);

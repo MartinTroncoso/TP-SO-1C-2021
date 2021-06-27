@@ -94,7 +94,7 @@ typedef struct{
 	uint32_t parametro;
 	posicion posicion;
 	uint32_t tiempo;
-//	uint32_t tiempoEjecutado; //PARA PLANIFICACIÓN RR
+	uint32_t tiempoEjecutado; //PARA PLANIFICACIÓN RR
 	bool esDeEntradaSalida;
 	bool finalizada; //PARA PLANIFICACIÓN RR
 	bool yaInicio; //PARA PLANIFICACIÓN RR
