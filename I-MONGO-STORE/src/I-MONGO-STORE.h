@@ -15,6 +15,7 @@
 #include <fcntl.h>
 
 pthread_mutex_t mutexSincro;
+pthread_mutex_t mutexBlocks;
 pthread_mutex_t mutexBitMap;
 
 char* PUNTO_MONTAJE;
@@ -70,6 +71,10 @@ void verificarSuperBloque();
 void verificarFiles();
 void escribirBitacora(char*,t_config*);
 char** getSiguientePosicionSabotaje();
+void escribirFile(char*, int);
+int ocuparBitVacio();
+void escribirEnBlocks(int, char*);
+void rellenarEnBlocks(int, char*, int);
 void destruirConfig();
 void terminar_programa();
 
