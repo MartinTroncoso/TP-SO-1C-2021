@@ -129,6 +129,8 @@ void inicializarSuperBloque(){
 		msync(mapeoArchivo,string_length(stringArchivo)+bitArray->size,MS_INVALIDATE);
 		munmap(mapeoArchivo,string_length(stringArchivo)+bitArray->size);
 		close(archivo);
+		free(stringArchivo);
+		free(bitArray->bitarray);
 		bitarray_destroy(bitArray);
 	}else
 	{
@@ -136,6 +138,7 @@ void inicializarSuperBloque(){
 		t_bitarray* recuperado = recuperarBitArray();
 		log_info(loggerMongo,"Posicion del blocks libre: %d", posicionBlockLibre(recuperado));
 		guardarBitArray(recuperado);
+		free(recuperado->bitarray);
 		bitarray_destroy(recuperado);
 	}
 	free(direccionSuperBloque);
@@ -165,7 +168,7 @@ t_bitarray* recuperarBitArray(){
 	//	{
 	//		printf("%c",archivoEnMemoria[marcador]);
 	//	}
-	void* punteroMemoria = malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8));
+	void* punteroMemoria = calloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8),1);
 	t_bitarray* nuevoBitArray = bitarray_create_with_mode(punteroMemoria, cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
 	//char* charArray = malloc(caracteristicasArchivo2.st_size - marcador);
 	for(int i = 0; i<bitarray_get_max_bit(nuevoBitArray);i++)
@@ -179,13 +182,14 @@ t_bitarray* recuperarBitArray(){
 	{
 		memcpy((nuevoBitArray->bitarray),archivoEnMemoria+marcador,caracteristicasArchivo.st_size - marcador);
 	}
-	free(punteroMemoria);
+	//free(punteroMemoria);
 	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
 	{
 		//bitarray_set_bit(bitArray,i);
 		printf("%d",bitarray_test_bit(nuevoBitArray,i));
 	}
 	free(direccionSuperBloque);
+	munmap(archivoEnMemoria,caracteristicasArchivo.st_size);
 	return nuevoBitArray;
 }
 
@@ -327,12 +331,14 @@ void atenderTripulante(void* _cliente)
 	recv(socket_tripulante,&idTripulante,sizeof(uint32_t),0);
 
 	struct stat statCarpeta;
-	if(stat(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),&statCarpeta)==-1)
+	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante);
+	if(stat(directorioTripulante,&statCarpeta)==-1)
 	{
-		FILE* archivoBitacora = fopen(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante),"w");
+		FILE* archivoBitacora = fopen(directorioTripulante,"w");
 		txt_write_in_file(archivoBitacora, "SIZE=0\nBLOCKS=[]");
 		log_info(loggerMongo, "Archivo Tripulante%d.ims creado",idTripulante);
 	}
+	free(directorioTripulante);
 	//pthread_t idHilo = pthread_self();
 	while(1){
 		int op_code = recibir_operacion(socket_tripulante);
@@ -368,12 +374,10 @@ void atenderTripulante(void* _cliente)
 			break;
 		case EXPULSAR_TRIPULANTE:
 			close(socket_tripulante);
-			pthread_exit(NULL);
 			return;
 			break;
 		default:
 			log_info(loggerMongo , "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",idTripulante);
-			pthread_exit(NULL);
 			close(socket_tripulante);
 			return;
 			break;
@@ -455,7 +459,6 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	char* direccionBitacoraTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(direccionBitacoraTripulante);
 	char* stringBitacora = string_from_format("Se mueve de %d|%d a %d|%d;",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva);
-
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);
@@ -559,6 +562,7 @@ char* recuperarBitacora(uint32_t id_tripulante)
 		return "NO EXISTE LA BITACORA";
 	}
 	t_config* configuracionTripulante = config_create(direccionBitacora);
+	free(direccionBitacora);
 	char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
 	int tamanioBitacora = config_get_int_value(configuracionTripulante,"SIZE");
 	config_destroy(configuracionTripulante);
@@ -597,7 +601,7 @@ char* recuperarBitacora(uint32_t id_tripulante)
 		i++;
 	}
 	free(bloquesUtilizados);
-	free(direccionBitacora);
+
 	return bitacora;
 }
 
@@ -714,17 +718,19 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 				//log_info(loggerMongo,"String partido pre FOR: %s posicion: %d", string_substring(string, cantidad*tamanioBlock, tamanioBlock),cantidad*tamanioBlock);
 				char* stringPartido = string_substring(string,cantidad*tamanioBlock,tamanioBlock);
 				escribirEnBlocks(posicionBloque, stringPartido);
+				free(stringPartido);
 				//memcpy(blocksMap+(posicionBloque*tamanioBlock),string_substring(string, cantidad*tamanioBlock, tamanioBlock),tamanioBlock);
 				cantidad++;
 				for(; cantidad<cantidadDeBloquesASolicitar;cantidad++)
 				{
-					log_info(loggerMongo,"String partido FOR: %s posicion: %d", string_substring(string, cantidad*tamanioBlock, tamanioBlock),cantidad*tamanioBlock);
 					posicionBloque = ocuparBitVacio();
 					//bitarray_set_bit(bitMap,posicionBloque);
 					stringPartido = string_substring(string,cantidad*tamanioBlock,tamanioBlock);
 					escribirEnBlocks(posicionBloque, stringPartido);
 					//memcpy(blocksMap+(posicionBloque*tamanioBlock),string_substring(string, cantidad*tamanioBlock, tamanioBlock),string_length(string_substring(string, cantidad*tamanioBlock, tamanioBlock)));
-					bloquesSolicitados = string_from_format("%s,%d",bloquesSolicitados,posicionBloque);
+					string_append_with_format(&bloquesSolicitados, ",%d",posicionBloque);
+					//bloquesSolicitados = string_from_format("%s,%d",bloquesSolicitados,posicionBloque);
+					free(stringPartido);
 
 				}
 				//log_info(loggerMongo,"cantidad: %d",cantidad);
@@ -732,10 +738,15 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 				forzarSincronizacionBlocks();
 				//pthread_mutex_unlock(&mutexBitMap);//semaforo cierre
 				//log_info(loggerMongo,"Bloques pedidos: %s",bloquesSolicitados);
-				config_set_value(configuracionTripulante,"BLOCKS",string_from_format("[%s]",bloquesSolicitados));
+				char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
+				config_set_value(configuracionTripulante,"BLOCKS",bloquesConf);
 				tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
-				config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioString));
-				free(stringPartido);
+				char* sizeConf = string_from_format("%d",tamanioString);
+				config_set_value(configuracionTripulante,"SIZE",sizeConf);
+				//free(stringPartido);
+				free(bloquesSolicitados);
+				free(sizeConf);
+				free(bloquesConf);
 			}else
 			{
 				char* stringPartido = string_substring(string, 0, tamanioBlock);
@@ -774,13 +785,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
 			contador++;
 		}
-		int i = 0;
-		while(bloquesUtilizados[i]!=NULL)
-		{
-			free(bloquesUtilizados[i]);
-			i++;
-		}
-		free(bloquesUtilizados);
+		liberarArray(bloquesUtilizados);
 		//log_info(loggerMongo,"Bloques utilizados: %s",bloques);
 		//log_info(loggerMongo,"Cantidad de Bloques utilizados en total: %d", contador);
 		//log_info(loggerMongo,"ULTIMO BLOQUE UTILIZADO: %d", bloquePosicion);
@@ -885,6 +890,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 					posicionString += string_length(stringPartido);
 					escribirEnBlocks(nuevoBloque, stringPartido);
 					string_append_with_format(&bloques, ",%d",nuevoBloque);
+					free(stringPartido);
 					//bloques = string_from_format("%s,%d",bloques,nuevoBloque);
 				}
 				tamanioBitacora += string_length(string);
@@ -895,17 +901,11 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 				free(bloquesConf);
 				free(sizeConf);
 			}
-			free(stringPartido);
+			//free(stringPartido);
 			free(bloques);
 		}
 	}
-	int i = 0;
-	while(listaBloques[i]!=NULL)
-	{
-		free(listaBloques[i]);
-		i++;
-	}
-	free(listaBloques);
+	liberarArray(listaBloques);
 }
 
 int ocuparBitVacio()
@@ -915,6 +915,7 @@ int ocuparBitVacio()
 	int posicion = posicionBlockLibre(bitMap);
 	bitarray_set_bit(bitMap,posicion);
 	guardarBitArray(bitMap);
+	free(bitMap->bitarray);
 	bitarray_destroy(bitMap);
 	pthread_mutex_unlock(&mutexBitMap);
 	return posicion;
@@ -983,6 +984,5 @@ void terminar_programa(){
 	dictionary_destroy(caracterAsociadoATarea);
 	destruirConfig();
 	log_destroy(loggerMongo);
-	fflush(stdout);
 	exit(0);
 }
