@@ -946,24 +946,132 @@ void escribirFile(char* recurso, int cantidad)
 		FILE* archivoBitacora = fopen(string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso),"w");
 		char* textoAEscribir = string_from_format("SIZE=0\nBLOCK_COUNT=0\nBLOCKS=[]\nCARACTER_LLENADO=%c\nMD5_ARCHIVO=",recurso[0]);
 		txt_write_in_file(archivoBitacora, textoAEscribir);
+		fclose(archivoBitacora);
 		log_info(loggerMongo, "File %s.ims creado",recurso);
 		free(textoAEscribir);
+
 	}
 	t_config* configFile = config_create(direccionArchivo);
-	int cantidadDeBloques = config_get_int_value(configuracionMongo,"BLOCK_COUNT");
+	int tamanioFile = config_get_int_value(configFile,"SIZE");
+	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
+	char* bloquesUtilizados = config_get_string_value(configFile,"BLOCKS");
+	char* stringRecurso = string_repeat(recurso[0], cantidad);
 	if(cantidadDeBloques==0)
 	{//si no tiene ningun bloque
 		if(cantidad<=tamanioBlock)
 		{//si la cantidad es menor que un bloque de tamanio
+			int posicion = ocuparBitVacio();
 
+			char* posicionBit = string_from_format("[%d]",posicion);
+			char* tamanioRecurso = string_itoa(cantidad);
+			escribirEnBlocks(posicion, stringRecurso);
+			forzarSincronizacionBlocks();
+
+			config_set_value(configFile, "SIZE",tamanioRecurso);
+			config_set_value(configFile,"BLOCK_COUNT","1");
+			config_set_value(configFile,"BLOCKS",posicionBit);
+
+			config_save(configFile);
+			config_destroy(configFile);
+			free(posicionBit);
+			free(tamanioRecurso);
+			//hashear en md5 y configsetvalue MD5
 		}else
 		{//si la cantidad es mayor a un bloque
-
+			int cantidadDeBloquesASolicitar = cantidad/tamanioBlock + byteExcedente(cantidad, tamanioBlock);
+			int contador = 0;
+			int posicionBloque = ocuparBitVacio();
+			char* bloquesSolicitados = string_from_format("%d",posicionBloque);
+			char* stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
+			escribirEnBlocks(posicionBloque, stringPartido);
+			free(stringPartido);
+			cantidad++;
+			for(;contador<cantidadDeBloquesASolicitar;contador++)
+			{
+				posicionBloque = ocuparBitVacio();
+				stringPartido = string_from_format("%d",posicionBloque);
+				escribirEnBlocks(posicionBloque, stringPartido);
+				string_append_with_format(&bloquesSolicitados, ",%d",posicionBloque);
+				free(stringPartido);
+				cantidadDeBloques++;
+			}
+			forzarSincronizacionBlocks();
+			char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
+			config_set_value(configFile,"BLOCKS",bloquesConf);
+			char* tamanioRecurso = string_itoa(cantidad);
+			char* cantidadBloquesConf = string_itoa(cantidadDeBloques);
+			config_set_value(configFile,"SIZE",tamanioRecurso);
+			config_set_value(configFile,"BLOCK_COUNT",cantidadBloquesConf);
+			free(bloquesSolicitados);
+			free(bloquesConf);
+			free(tamanioRecurso);
+			free(cantidadBloquesConf);
 		}
 	}else
 	{//si ya uso bloques, buscar y completar
-
+		char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+		int bloquePosicion = 0;
+		int contador = 0;
+		char* bloques;
+		while(bloquesUtilizados[contador] != NULL)
+		{
+			if(contador == 0)
+			{
+				bloques = string_from_format("%s",bloquesUtilizados[contador]);
+			}else
+			{
+				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]);
+			}
+			bloquePosicion = atoi(bloquesUtilizados[contador]);
+			contador++;
+		}
+		liberarArray(bloquesUtilizados);
+		if(tamanioFile<=tamanioBlock)
+		{
+			if(tamanioBlock - tamanioFile%tamanioBlock >= cantidad && tamanioFile%tamanioBlock != 0)
+			{
+				rellenarEnBlocks(bloquePosicion, stringRecurso, tamanioFile);
+				forzarSincronizacionBlocks();
+				tamanioFile += cantidad;
+				char* sizeConf = string_itoa(tamanioFile);
+				config_set_value(configFile,"SIZE",sizeConf);
+				free(sizeConf);
+			}else
+			{
+				int posicionString = 0;
+				int nuevoBloque = ocuparBitVacio();
+				string_append(&bloques, ",%d",nuevoBloque);
+				if(tamanioFile%tamanioBlock == 0)
+				{
+					escribirEnBlocks(nuevoBloque, stringRecurso);
+					tamanioFile += cantidad;
+				}else
+				{
+					char* stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock-tamanioFile%tamanioBlock);
+					rellenarEnBlocks(bloquePosicion,stringPartido,tamanioFile);
+					posicionString += tamanioBlock - tamanioFile%tamanioBlock;
+					tamanioFile += string_length(stringPartido);
+					free(stringPartido);
+					stringPartido = string_substring(stringRecurso, posicionString, string_length(stringRecurso)-posicionString);
+					escribirEnBlocks(nuevoBloque, stringPartido);
+					tamanioFile+=string_length(stringPartido);
+					cantidadDeBloques++;
+					free(stringPartido);
+				}
+				forzarSincronizacionBlocks();
+				char* blocksConf = string_from_format("[%s]",bloques);
+				char* sizeConf = string_itoa(tamanioFile);
+				char* cantidadConf = string_itoa(cantidadDeBloques);
+				config_set_value(configFile,"BLOCKS",blocksConf);
+				config_set_value(configFile,"SIZE",sizeConf);
+				config_set_value(configFile,"BLOCK_COUNT",cantidadConf);
+				free(blocksConf);
+				free(sizeConf);
+				free(cantidadConf);
+			}
+		}
 	}
+
 }
 
 void destruirConfig(){
