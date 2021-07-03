@@ -255,7 +255,7 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 		break;
 	}
 
-	//ESTOS 3 ATRIBUTOS TIENEN SENTIDO PARA PLANIFICACIÓN CON ROUND ROBIN (PARA FIFO NO SIRVEN PARA NOTHING e.e)
+	//LOS DOS PRIMEROS ATRIBUTOS SOLO SE USAN SI SE PLANIFICA ROUND ROBIN
 	proximaTarea->tiempoEjecutado = 0;
 	proximaTarea->finalizada = false;
 	proximaTarea->yaInicio = false;
@@ -535,7 +535,7 @@ void gestionarSabotaje(){
 	}
 
 	pthread_mutex_lock(&mutexColaReady);
-	list_add_all(colaReady,colaBlockEmergencia); //AL REMOVER LOS QUE VAN A EXEC, TODOS LOS QUEDAN EN EMERGENCIA PASAN A READY
+	list_add_all(colaReady,colaBlockEmergencia); //AL REMOVER LOS QUE VAN A EXEC, TODOS LOS QUE QUEDAN EN EMERGENCIA PASAN A READY
 	pthread_mutex_unlock(&mutexColaReady);
 
 	pthread_mutex_lock(&mutexColaBlockSabotaje);

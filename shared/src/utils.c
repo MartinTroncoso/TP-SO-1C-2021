@@ -7,18 +7,6 @@
 
 #include "utils.h"
 
-//void holiwis(){
-//	printf("Holiwis\n");
-//}
-//
-//void comoAndas(){
-//	printf("Como andas?\n");
-//}
-//
-//void bien(){
-//	printf("Mal\n");
-//}
-
 int iniciarServidor(char* ip, char* puerto)
 {
 	int socket_servidor;

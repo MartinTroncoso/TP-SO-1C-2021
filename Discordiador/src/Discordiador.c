@@ -133,7 +133,7 @@ void ingresarComandos()
 			pthread_mutex_lock(&mutexSituacionEmergencia);
 			if(!haySituacionDeEmergencia){
 				pthread_mutex_unlock(&mutexSituacionEmergencia);
-				uint32_t idTripulanteAExpulsar = atoi(palabras[1]);
+				int idTripulanteAExpulsar = atoi(palabras[1]);
 				if(existeElTripulante(idTripulanteAExpulsar)){
 					expulsarTripulante(idTripulanteAExpulsar);
 					habilitarProximoAEjecutar();
@@ -196,7 +196,12 @@ void ingresarComandos()
 		}
 		case 6:{
 			//OBTENER_BITACORA [idTripulante]
-			obtenerBitacora(atoi(palabras[1]));
+			int id_tripulante = atoi(palabras[1]);
+
+			if(existeElTripulante(id_tripulante))
+				obtenerBitacora(id_tripulante);
+			else
+				log_info(loggerDiscordiador,"EL TRIPULANTE INDICADO NO EXISTE");
 			break;
 		}
 		default:
@@ -258,6 +263,13 @@ void destruirTripulantes(){
 		free(tripulante->proxTarea);
 		sem_destroy(&(tripulante->semaforoPlanificacion));
 		sem_destroy(&(tripulante->puedeEjecutar));
+
+		//TODO LE AVISO ACÁ A I-MONGO QUE TERMINÓ (VER SI HAY QUE AVISARLE CUANDO TERMINA LAS TAREAS O LO EXPULSAN, LO MISMO QUE LOS SOCKETS)
+		tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
+
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
 	}
 	pthread_mutex_unlock(&mutexTripulantes);
 
@@ -305,7 +317,7 @@ void destruirConfig(){
 	free(PUERTO_MI_RAM);
 	free(PUERTO_I_MONGO_STORE);
 	free(PUERTO_DISCORDIADOR);
-	config_destroy(configuracionDiscordiador);
+//	config_destroy(configuracionDiscordiador); --> A VECES TIRA SEGFAULT
 }
 
 void terminarPrograma(){

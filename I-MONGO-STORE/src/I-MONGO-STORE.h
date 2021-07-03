@@ -58,7 +58,7 @@ void guardarBitArray(t_bitarray*);
 int posicionBlockLibre(t_bitarray*);
 void recibirInformeDeDesplazamiento(int,uint32_t);
 void recibirInicioDeTarea(int,uint32_t);
-void recibirPeticionDeBitacora(int,uint32_t);
+void enviarBitacora(int,uint32_t);
 void recibirFinalizaTarea(int,uint32_t);
 void recibirAtenderSabotaje(int,uint32_t);
 void recibirResolucionSabotaje(int,uint32_t);

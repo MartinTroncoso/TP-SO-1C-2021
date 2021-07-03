@@ -697,8 +697,8 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
 
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
+//		close(tripulante->socket_MIRAM);
+//		close(tripulante->socket_MONGO);
 	}
 }
 
@@ -802,8 +802,8 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
 
-		close(tripulante->socket_MIRAM);
-		close(tripulante->socket_MONGO);
+//		close(tripulante->socket_MIRAM);
+//		close(tripulante->socket_MONGO);
 	}
 }
 
@@ -1028,10 +1028,9 @@ void expulsarTripulante(int id_tripulante){
 
 	tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
 	send(tripulante->socket_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
-	send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0);
 
-	close(tripulante->socket_MIRAM);
-	close(tripulante->socket_MONGO);
+//	close(tripulante->socket_MIRAM);
+//	close(tripulante->socket_MONGO);
 }
 
 void iniciarPlanificacion(){
@@ -1065,30 +1064,21 @@ void pausarPlanificacion(){
 	pthread_mutex_unlock(&mutexActivarPlanificacion);
 }
 
-void obtenerBitacora(uint32_t idTripulante){ //debe devolver un stream o string de la bitacora
-	//se manda un mensaje a I-MONGO solicitando la bitacora de un tripulante
-	int socketClienteIMONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = OBTENER_BITACORA;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = sizeof(uint32_t);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
+void obtenerBitacora(int id_tripulante){
+	bool buscarTripulante(void* elemento){
+		return ((t_tripulante*) elemento)->tid == id_tripulante;
+	}
 
-	memcpy(paquete->buffer->stream,&idTripulante,sizeof(uint32_t));
+	pthread_mutex_lock(&mutexTripulantes);
+	t_tripulante* tripulante = (t_tripulante*) list_find(tripulantes,buscarTripulante);
+	pthread_mutex_unlock(&mutexTripulantes);
 
-	enviar_paquete(paquete,socketClienteIMONGO);
+	tipo_mensaje opCode = OBTENER_BITACORA;
+	send(tripulante->socket_MONGO,&opCode,sizeof(tipo_mensaje),0);
 
-//	tipo_respuesta respuesta = recibir_respuesta(socketClienteIMONGO);
-//	switch(respuesta)
-//	{
-//	case OK:
-//		printf("TODO OK\n");
-//		break;
-//	default:
-//		break;
-//	}
+	uint32_t size;
+	char* buffer = (char*) recibir_buffer(&size,tripulante->socket_MONGO);
 
-	close(socketClienteIMONGO);
-	//levanto un socket server? para recibir la respuesta? mando el socket int
-	//return "Funciona";
+	log_info(loggerDiscordiador,buffer);
+	free(buffer);
 }

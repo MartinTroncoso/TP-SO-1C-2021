@@ -142,7 +142,7 @@ void listarTripulantes();
 void expulsarTripulante(int);
 void iniciarPlanificacion();
 void pausarPlanificacion();
-void obtenerBitacora(uint32_t);
+void obtenerBitacora(int);
 
 //Comunicacion.c
 char getEstadoComoCaracter(estado);

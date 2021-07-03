@@ -15,8 +15,8 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	char* bitacora = recuperarBitacora(1);
-	free(bitacora);
+//	char* bitacora = recuperarBitacora(1);
+//	free(bitacora);
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -370,7 +370,7 @@ void atenderTripulante(void* _cliente)
 			ejecutarFSCK();
 			break;
 		case OBTENER_BITACORA:
-			recibirPeticionDeBitacora(socket_tripulante,idTripulante);
+			enviarBitacora(socket_tripulante,idTripulante);
 			break;
 		case EXPULSAR_TRIPULANTE:
 			close(socket_tripulante);
@@ -539,15 +539,14 @@ void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante)
 	free(buffer);
 }
 
-void recibirPeticionDeBitacora(int socket_tripulante, uint32_t id_tripulante)
-{
-	void* buffer;
-	uint32_t sizeBuffer;
-
-	buffer = recibir_buffer(&sizeBuffer,socket_tripulante);
-	memcpy(&id_tripulante,buffer,sizeof(uint32_t));
-	log_info(loggerMongo,"[TRIPULANTE %d] SOLICITÓ SU BITÁCORA",id_tripulante);
-	//enviar_respuesta(OK, socketCliente);
+void enviarBitacora(int socket_tripulante, uint32_t id_tripulante){
+	char* bitacora = recuperarBitacora(id_tripulante);
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = strlen(bitacora) + 1;
+	buffer->stream = malloc(buffer->size);
+	memcpy(buffer->stream,bitacora,buffer->size);
+	enviar_buffer(buffer,socket_tripulante);
+	free(buffer->stream);
 	free(buffer);
 }
 
@@ -974,7 +973,7 @@ void destruirConfig(){
 	free(IP_DISCORDIADOR);
 	free(PUERTO_DISCORDIADOR);
 	liberarArray(POSICIONES_SABOTAJE);
-	config_destroy(configuracionMongo);
+//	config_destroy(configuracionMongo); --> A VECES TIRA SEGFAULT
 }
 
 void terminar_programa(){
