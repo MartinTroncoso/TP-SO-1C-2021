@@ -14,6 +14,8 @@ static t_config* configuracionMiRam;
 static t_log* logger_mi_ram;
 static NIVEL* nivel;
 
+static pthread_mutex_t mutex_screen;
+
 static char calcular_identificador(uint32_t);
 
 #define ASSERT_CREATE(nivel, id, err)                                                   \
@@ -215,8 +217,10 @@ uint32_t recibir_datos_tripulante(int socket_tripulante) {
 	//GUARDO EL TRIPULANTE
 	guardar_nuevo_tripulante(datos_trip_nuevo);
 
+	pthread_mutex_lock(&mutex_screen);
 	personaje_crear(nivel, calcular_identificador(datos_trip_nuevo->tid), datos_trip_nuevo->posX, datos_trip_nuevo->posY);
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_screen);
 
 	tid = datos_trip_nuevo->tid;
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se ha creado tripulante. Pertenece a la patota %d.", tid, datos_trip_nuevo->pid);
@@ -276,8 +280,10 @@ void recibir_movimiento_tripulante(int socket_tripulante, uint32_t tid) {
 	//ACTUALIZO POS TRIPULANTE
 	actualizar_posicion_tripulante(tid, posX, posY);
 
+	pthread_mutex_lock(&mutex_screen);
 	item_mover(nivel,calcular_identificador(tid),posX, posY);
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_screen);
 	
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se actualiza posicion a: %d|%d", tid, posX, posY);
 
@@ -295,8 +301,10 @@ char recibir_cambio_estado(int socket_tripulante, uint32_t tid) {
 }
 
 void finalizar_tripulante(int socket_tripulante, uint32_t tid) {
+	pthread_mutex_lock(&mutex_screen);
 	item_borrar(nivel, calcular_identificador(tid));
 	nivel_gui_dibujar(nivel);
+	pthread_mutex_unlock(&mutex_screen);
 	liberar_tripulante(tid);
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se lo libera de memoria y elimina del mapa",tid);
 	close(socket_tripulante);
@@ -309,10 +317,9 @@ static char calcular_identificador(uint32_t tid) {
 void inicializarMapa(){
 	nivel = nivel_crear("AMONGASOO");
 	int filas, columnas;
-
 	nivel_gui_inicializar();
-
 	nivel_gui_get_area_nivel(&columnas,&filas);
+	pthread_mutex_init(&mutex_screen, NULL);
 }
 
 void iniciar_dump_memoria() {
@@ -345,6 +352,7 @@ void realizar_dump() {
 
 void terminar_programa() {
 	config_destroy(configuracionMiRam);
+	pthread_mutex_destroy(&mutex_screen);
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 	finalizar_administrador();

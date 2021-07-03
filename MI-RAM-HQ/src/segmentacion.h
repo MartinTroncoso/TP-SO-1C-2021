@@ -14,6 +14,7 @@
 typedef struct {
 	uint32_t inicio; //Direccion fisica de memoria
 	uint32_t tamanio;
+	int n_segmento;
 	bool inicializado;
 	bool activo;
 } segmento;
