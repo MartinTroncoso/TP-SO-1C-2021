@@ -74,7 +74,10 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 
 					sleep(RETARDO_CICLO_CPU);
 
-					if(llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion)) break;
+					if(llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion)){
+						esperarSiHaySabotaje(tripulante); //TODO PROBAR
+						break;
+					}
 				}
 
 				if(tripulante->quantum == QUANTUM && !tripulante->expulsado){
@@ -121,6 +124,9 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 				sem_post(&(tripulante->semaforoPlanificacion));
 
 				sleep(RETARDO_CICLO_CPU);
+
+				if(llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion))
+					esperarSiHaySabotaje(tripulante); //TODO PRINCIPALMENTE PARA QUE SI SE PRODUCE OTRO SABOTAJE EN EL ULTIMO SLEEP, SE VUELVA A MOVER
 			}
 		}
 	}
@@ -268,10 +274,13 @@ void realizarPeticionIO(t_tripulante* tripulante){
 	if(tripulante->tid == idTripulanteResolviendoSabotaje)
 		esperarParaEjecutar(tripulante); //TODO TAREA YA INICIADA
 
-	tipo_mensaje op_code = PETICION_ENTRADA_SALIDA;
-	send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
+	//SI ES EXPULSADO ESTANDO EN 'esperarParaEjecutar()', NO REALIZA LA PETICIÓN DE I/O
+	if(!tripulante->expulsado){
+		tipo_mensaje op_code = PETICION_ENTRADA_SALIDA;
+		send(tripulante->socket_MONGO,&op_code,sizeof(tipo_mensaje),0);
 
-	sleep(RETARDO_CICLO_CPU);
+		sleep(RETARDO_CICLO_CPU);
+	}
 }
 
 void realizarAccionTareaIO(t_tripulante* tripulante){
