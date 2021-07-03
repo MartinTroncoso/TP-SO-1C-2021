@@ -1040,7 +1040,7 @@ void escribirFile(char* recurso, int cantidad)
 			{
 				int posicionString = 0;
 				int nuevoBloque = ocuparBitVacio();
-				string_append(&bloques, ",%d",nuevoBloque);
+				string_append_with_format(&bloques, ",%d",nuevoBloque);
 				if(tamanioFile%tamanioBlock == 0)
 				{
 					escribirEnBlocks(nuevoBloque, stringRecurso);
