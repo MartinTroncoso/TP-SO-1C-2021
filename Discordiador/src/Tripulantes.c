@@ -1077,8 +1077,8 @@ void obtenerBitacora(int id_tripulante){
 	send(tripulante->socket_MONGO,&opCode,sizeof(tipo_mensaje),0);
 
 	uint32_t size;
-	char* buffer = (char*) recibir_buffer(&size,tripulante->socket_MONGO);
+	char* bitacora = (char*) recibir_buffer(&size,tripulante->socket_MONGO);
 
-	log_info(loggerDiscordiador,buffer);
-	free(buffer);
+	log_info(loggerDiscordiador,bitacora);
+	free(bitacora);
 }
