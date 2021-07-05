@@ -311,7 +311,14 @@ void finalizar_tripulante(int socket_tripulante, uint32_t tid) {
 }
 
 static char calcular_identificador(uint32_t tid) {
-	return tid + 64;
+	char identificador;
+
+	if(tid<=26)
+		identificador = tid + 64; //A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P-Q-R-S-T-U-V-W-X-Y-Z
+	else
+		identificador = tid + 70; //a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p-q-r-s-t-u-v-w-x-y-z
+
+	return identificador;
 }
 
 void inicializarMapa(){
