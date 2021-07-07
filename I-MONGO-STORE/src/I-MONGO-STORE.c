@@ -15,8 +15,9 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-//	char* bitacora = recuperarBitacora(1);
-//	free(bitacora);
+	char* varia = obtenerMD5("oooooooooo ");
+	log_info(loggerMongo,"MD5: %s",varia);
+	free(varia);
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -952,21 +953,25 @@ void escribirFile(char* recurso, int cantidad)
 
 	}
 	t_config* configFile = config_create(direccionArchivo);
+	char* fileCompleto = string_new();
+	char* fileMD5;
 	int tamanioFile = config_get_int_value(configFile,"SIZE");
 	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
-	char* bloquesUtilizados = config_get_string_value(configFile,"BLOCKS");
+	char** bloquesUtilizados = config_get_string_value(configFile,"BLOCKS");
 	char* stringRecurso = string_repeat(recurso[0], cantidad);
 	if(cantidadDeBloques==0)
 	{//si no tiene ningun bloque
 		if(cantidad<=tamanioBlock)
 		{//si la cantidad es menor que un bloque de tamanio
 			int posicion = ocuparBitVacio();
-
+			//string_append(&fileCompleto, stringRecurso);
 			char* posicionBit = string_from_format("[%d]",posicion);
 			char* tamanioRecurso = string_itoa(cantidad);
 			escribirEnBlocks(posicion, stringRecurso);
+			fileMD5 = obtenerMD5(stringRecurso);
 			forzarSincronizacionBlocks();
 
+			config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 			config_set_value(configFile, "SIZE",tamanioRecurso);
 			config_set_value(configFile,"BLOCK_COUNT","1");
 			config_set_value(configFile,"BLOCKS",posicionBit);
@@ -995,11 +1000,13 @@ void escribirFile(char* recurso, int cantidad)
 				free(stringPartido);
 				cantidadDeBloques++;
 			}
+			fileMD5 = obtenerMD5(stringRecurso);
 			forzarSincronizacionBlocks();
 			char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
 			config_set_value(configFile,"BLOCKS",bloquesConf);
 			char* tamanioRecurso = string_itoa(cantidad);
 			char* cantidadBloquesConf = string_itoa(cantidadDeBloques);
+			config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 			config_set_value(configFile,"SIZE",tamanioRecurso);
 			config_set_value(configFile,"BLOCK_COUNT",cantidadBloquesConf);
 			free(bloquesSolicitados);
@@ -1009,18 +1016,25 @@ void escribirFile(char* recurso, int cantidad)
 		}
 	}else
 	{//si ya uso bloques, buscar y completar
-		char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+		//char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 		int bloquePosicion = 0;
 		int contador = 0;
+		char* bloqueRecuperado;
 		char* bloques;
 		while(bloquesUtilizados[contador] != NULL)
 		{
 			if(contador == 0)
 			{
 				bloques = string_from_format("%s",bloquesUtilizados[contador]);
+				bloqueRecuperado = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
+				string_append(&fileCompleto, bloqueRecuperado);
+				free(bloqueRecuperado);
 			}else
 			{
 				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]);
+				bloqueRecuperado = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
+				string_append(&fileCompleto, bloqueRecuperado);
+				free(bloqueRecuperado);
 			}
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
 			contador++;
@@ -1072,6 +1086,47 @@ void escribirFile(char* recurso, int cantidad)
 		}
 	}
 
+}
+
+char* obtenerMD5(char* bloquesRecuperados)
+{
+	char* directorioAuxiliar = string_from_format("%s/Files/AuxiliarFile.txt",PUNTO_MONTAJE);
+	char* directorioMD5 = string_from_format("%s/Files/AuxiliarMD5.txt",PUNTO_MONTAJE);
+	FILE* archivoAuxiliar = fopen(directorioAuxiliar,"w");
+
+	txt_write_in_file(archivoAuxiliar, bloquesRecuperados);
+	txt_close_file(archivoAuxiliar);
+	char* comando = string_from_format("md5sum %s > %s",directorioAuxiliar,directorioMD5);
+	system(comando);
+	int archivoMD5 = open(directorioMD5, O_RDWR, S_IRUSR | S_IWUSR);
+	int contadorPosicion = 0;
+	struct stat caracteristicasMD5;
+	if(fstat(archivoMD5,&caracteristicasMD5)== -1)
+	{
+		log_info(loggerMongo, "No se pudo obtener stat de MD5");
+	}
+	//blocksMapOriginal = mmap(NULL, cantidadDeBlocks * tamanioBlock,PROT_READ | PROT_WRITE, MAP_SHARED,fdArchivoBlocks,0);
+
+	char* mapeadoMD5 = mmap(NULL, caracteristicasMD5.st_size,PROT_READ | PROT_WRITE, MAP_SHARED,archivoMD5,0);
+	while(mapeadoMD5[contadorPosicion]!=' ')
+	{
+		contadorPosicion++;
+	}
+	char* salidaMD5 = calloc(contadorPosicion,1);
+	memcpy(salidaMD5,mapeadoMD5,contadorPosicion);
+	munmap(mapeadoMD5,caracteristicasMD5.st_size);
+	free(directorioAuxiliar);
+	free(directorioMD5);
+	free(comando);
+	close(archivoMD5);
+	return salidaMD5;
+}
+
+char* bloqueRecuperado(int posicionBloque)
+{
+	char* recuperado = calloc(tamanioBlock,1);
+	memcpy(recuperado,blocksMap+posicionBloque*tamanioBlock,tamanioBlock);
+	return recuperado;
 }
 
 void destruirConfig(){

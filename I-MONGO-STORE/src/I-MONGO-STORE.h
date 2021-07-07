@@ -72,6 +72,8 @@ void verificarFiles();
 void escribirBitacora(char*,t_config*);
 char** getSiguientePosicionSabotaje();
 void escribirFile(char*, int);
+char* obtenerMD5(char*);
+char* bloqueRecuperado(int);
 int ocuparBitVacio();
 void escribirEnBlocks(int, char*);
 void rellenarEnBlocks(int, char*, int);
