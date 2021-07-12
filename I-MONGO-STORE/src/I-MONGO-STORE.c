@@ -360,11 +360,10 @@ void atenderTripulante(void* _cliente)
 			realizarTareaIO(socket_tripulante,idTripulante);
 			break;
 		case ATENDER_SABOTAJE:
-			log_info(loggerMongo,"[TRIPULANTE %d] ATIENDE EL SABOTAJE",idTripulante);
+			loggearAtencionSabotaje(idTripulante);
 			break;
 		case RESOLUCION_SABOTAJE:
-			log_info(loggerMongo,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE!",idTripulante);
-			posicionSabotajeActual = getSiguientePosicionSabotaje();
+			loggearResolucionSabotaje(idTripulante);
 			break;
 		case INVOCAR_FSCK:
 			log_info(loggerMongo,"Se ejecuta el FSCK. Por ahora no hace nada :D");
@@ -455,7 +454,6 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	desplazamiento += sizeof(uint32_t);
 	memcpy(&coorYNueva,buffer+desplazamiento,sizeof(uint32_t));
 
-	//Hasta tener bien definido lo de los archivos solo lo logeo
 	log_info(loggerMongo,"[TRIPULANTE %d] Se mueve de %d|%d a %d|%d",id_tripulante,coorXAnterior,coorYAnterior,coorXNueva,coorYNueva);
 	char* direccionBitacoraTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(direccionBitacoraTripulante);
@@ -465,10 +463,6 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	config_destroy(configuracionTripulante);
 	free(stringBitacora);
 	free(direccionBitacoraTripulante);
-//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
-//	txt_write_in_file(bitacoraTripulante, string_from_format("Se mueve de %d|%d a %d|%d\n",coorXAnterior,coorYAnterior,coorXNueva,coorYNueva));
-//	txt_close_file(bitacoraTripulante);
-
 	free(buffer);
 }
 
@@ -488,26 +482,21 @@ void recibirInicioDeTarea(int socket_tripulante, uint32_t id_tripulante)
 	char* tarea = malloc(sizeTarea);
 	memcpy(tarea, buffer + desplazamiento, sizeTarea);
 
-	//Hasta tener bien definido lo de los archivos solo lo logeo
 	log_info(loggerMongo,"[TRIPULANTE %d] Inicia la tarea %s",id_tripulante,tarea);
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
-	char* stringBitacora = string_from_format("Comienza ejecucion de tarea %s;",tarea);
+	char* stringBitacora = string_from_format("Inicia la tarea %s;",tarea);
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);
 	free(directorioTripulante);
 	free(stringBitacora);
 	free(tarea);
-//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
-//	txt_write_in_file(bitacoraTripulante, string_from_format("Comienza ejecucion de tarea %s\n",tarea));
-//	txt_close_file(bitacoraTripulante);
 	free(buffer);
 }
 
-void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante)
-{
+void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante){
 	void* buffer;
 	uint32_t sizeBuffer;
 	uint32_t sizeTarea;
@@ -522,7 +511,6 @@ void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante)
 	char* tarea = malloc(sizeTarea);
 	memcpy(tarea, buffer + desplazamiento, sizeTarea);
 
-	//Hasta tener bien definido lo de los archivos solo lo logeo
 	log_info(loggerMongo,"[TRIPULANTE %d] Finaliza la tarea %s",id_tripulante,tarea);
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
@@ -531,13 +519,42 @@ void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante)
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);
-//	FILE* bitacoraTripulante = txt_open_for_append(string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante));
-//	txt_write_in_file(bitacoraTripulante, string_from_format("Se finaliza la tarea %s\n",tarea));
-//	txt_close_file(bitacoraTripulante);
+
 	free(directorioTripulante);
 	free(stringBitacora);
 	free(tarea);
 	free(buffer);
+}
+
+void loggearAtencionSabotaje(uint32_t id_tripulante){
+	log_info(loggerMongo,"[TRIPULANTE %d] ATIENDE EL SABOTAJE",id_tripulante);
+	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
+	t_config* configuracionTripulante = config_create(directorioTripulante);
+
+	char* stringBitacora = string_duplicate("Atiende el sabotaje");
+	escribirBitacora(stringBitacora, configuracionTripulante);
+	config_save(configuracionTripulante);
+	config_destroy(configuracionTripulante);
+
+	free(directorioTripulante);
+	free(stringBitacora);
+}
+
+void loggearResolucionSabotaje(uint32_t id_tripulante){
+	log_info(loggerMongo,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",id_tripulante);
+	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
+	t_config* configuracionTripulante = config_create(directorioTripulante);
+
+	char* stringBitacora = string_duplicate("Resolvio el sabotaje");
+	escribirBitacora(stringBitacora, configuracionTripulante);
+	config_save(configuracionTripulante);
+	config_destroy(configuracionTripulante);
+
+	liberarArray(posicionSabotajeActual);
+	posicionSabotajeActual = getSiguientePosicionSabotaje();
+
+	free(directorioTripulante);
+	free(stringBitacora);
 }
 
 void enviarBitacora(int socket_tripulante, uint32_t id_tripulante){
@@ -549,11 +566,10 @@ void enviarBitacora(int socket_tripulante, uint32_t id_tripulante){
 	enviar_buffer(buffer,socket_tripulante);
 	free(buffer->stream);
 	free(buffer);
+	free(bitacora);
 }
 
-char* recuperarBitacora(uint32_t id_tripulante)
-{
-
+char* recuperarBitacora(uint32_t id_tripulante){
 	struct stat statCarpeta;
 	char* direccionBitacora = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	if(stat(direccionBitacora,&statCarpeta)==-1)
@@ -681,16 +697,14 @@ void verificarSuperBloque()
 		log_info(loggerMongo,"SUPERBLOQUE NO AFECTADO POR SABOTAJE");
 	}
 }
-void escribirBitacora(char* string, t_config* configuracionTripulante)
-{
+void escribirBitacora(char* string, t_config* configuracionTripulante){
 	int tamanioString = string_length(string);
 	char** listaBloques = config_get_array_value(configuracionTripulante,"BLOCKS");
-	if(listaBloques[0]==NULL)
-		{
+
+	if(listaBloques[0]==NULL){
 		//si no tiene ningun bloque entonces:
 		int cantidadDeBytes = string_length(string);
-		if(cantidadDeBytes <= tamanioBlock)
-		{
+		if(cantidadDeBytes <= tamanioBlock){
 			//semaforo para modificar bitmap y blocks
 			int posicion = ocuparBitVacio();
 			escribirEnBlocks(posicion, string);//lo mismo que la linea de abajo pero con mutex para blocks
@@ -700,15 +714,15 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 			config_set_value(configuracionTripulante,"BLOCKS",string_from_format("[%d]",posicion));
 			tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
 			config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioString));
-		}else
+		}
+		else
 		{
 			int cantidadDeBloquesASolicitar = cantidadDeBytes/tamanioBlock + byteExcedente(cantidadDeBytes, tamanioBlock);
-			char* bloquesSolicitados= string_new();
+			char* bloquesSolicitados = string_new();
 			//pthread_mutex_lock(&mutexBitMap);
 			//t_bitarray* bitMap = recuperarBitArray();
 
-			if(cantidadDeBloquesASolicitar>2)
-			{
+			if(cantidadDeBloquesASolicitar > 2){
 				int cantidad = 0;
 				int posicionBloque = ocuparBitVacio();
 				//int posicionBloque = posicionBlockLibre(bitMap);
@@ -747,7 +761,8 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 				free(bloquesSolicitados);
 				free(sizeConf);
 				free(bloquesConf);
-			}else
+			}
+			else
 			{
 				char* stringPartido = string_substring(string, 0, tamanioBlock);
 				int posicionBloque = ocuparBitVacio();
@@ -761,11 +776,11 @@ void escribirBitacora(char* string, t_config* configuracionTripulante)
 				tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
 				config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioString));
 				free(stringPartido);
+				free(bloquesSolicitados);
 			}
-			free(bloquesSolicitados);
 		}
-
-	}else
+	}
+	else
 	{
 		char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
 		int bloquePosicion=0;
@@ -937,6 +952,7 @@ void rellenarEnBlocks(int posicion, char* string, int tamanioBitacora)
 	memcpy(blocksMap+(posicion*tamanioBlock)+tamanioBitacora%tamanioBlock,string,tamanioString);
 	pthread_mutex_unlock(&mutexBlocks);
 }
+
 void escribirFile(char* recurso, int cantidad)
 {
 	struct stat statCarpeta;
@@ -1145,6 +1161,7 @@ void terminar_programa(){
 	munmap(blocksMapOriginal,tamanioBlock*cantidadDeBlocks);
 	dictionary_destroy(caracterAsociadoATarea);
 	destruirConfig();
+	liberarArray(posicionSabotajeActual);
 	log_destroy(loggerMongo);
 	exit(0);
 }

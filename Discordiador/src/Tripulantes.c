@@ -1061,7 +1061,10 @@ void iniciarPlanificacion(){
 void pausarPlanificacion(){
 	void deshabilitarSemaforo(void* elemento){
 		t_tripulante* tripulante = (t_tripulante*) elemento;
-		sem_wait(&(tripulante->semaforoPlanificacion));
+		int valorSemaforo;
+		sem_getvalue(&(tripulante->semaforoPlanificacion),&valorSemaforo);
+		if(valorSemaforo == 1) //TODO CUIDADITOOO
+			sem_wait(&(tripulante->semaforoPlanificacion));
 	}
 
 	log_info(loggerDiscordiador,"SE PAUSA LA PLANIFICACIÓN");
