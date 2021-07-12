@@ -957,7 +957,7 @@ void escribirFile(char* recurso, int cantidad)
 	char* fileMD5;
 	int tamanioFile = config_get_int_value(configFile,"SIZE");
 	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
-	char** bloquesUtilizados = config_get_string_value(configFile,"BLOCKS");
+	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 	char* stringRecurso = string_repeat(recurso[0], cantidad);
 	if(cantidadDeBloques==0)
 	{//si no tiene ningun bloque
@@ -1019,22 +1019,22 @@ void escribirFile(char* recurso, int cantidad)
 		//char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 		int bloquePosicion = 0;
 		int contador = 0;
-		char* bloqueRecuperado;
+		char* bloqueRecuperadoFile;
 		char* bloques;
 		while(bloquesUtilizados[contador] != NULL)
 		{
 			if(contador == 0)
 			{
 				bloques = string_from_format("%s",bloquesUtilizados[contador]);
-				bloqueRecuperado = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
-				string_append(&fileCompleto, bloqueRecuperado);
-				free(bloqueRecuperado);
+				bloqueRecuperadoFile = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
+				string_append(&fileCompleto, bloqueRecuperadoFile);
+				free(bloqueRecuperadoFile);
 			}else
 			{
 				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]);
-				bloqueRecuperado = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
-				string_append(&fileCompleto, bloqueRecuperado);
-				free(bloqueRecuperado);
+				bloqueRecuperadoFile = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
+				string_append(&fileCompleto, bloqueRecuperadoFile);
+				free(bloqueRecuperadoFile);
 			}
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
 			contador++;
