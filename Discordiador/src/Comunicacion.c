@@ -551,8 +551,6 @@ void gestionarSabotaje(){
 
 	//SI NO SE HABIA INICIADO NUNCA LA PLANIFICACION, ESPERAN A QUE SE INICIE POR CONSOLA (VER ESTO)
 	if(planificacionFueActivadaAlgunaVez){
-		iniciarPlanificacion();
-
 		//SI DESPUÉS DE RESOLVER EL SABOTAJE VUELVE A QUEDAR EN EXEC, QUIERE DECIR QUE ANTES TAMBIÉN ESTABA. NO QUEDA NINGUNO EN READY
 		if(tripulanteParaElSabotaje->estado == READY){
 			pthread_mutex_lock(&mutexTripulantes);
@@ -561,5 +559,7 @@ void gestionarSabotaje(){
 
 			habilitarProximoAEjecutar();//SE HABILITA AL PRIMERO QUE QUEDÓ EN READY DESPUÉS DE HABER ORDENADO POR ID.
 		}
+
+		iniciarPlanificacion();
 	}
 }

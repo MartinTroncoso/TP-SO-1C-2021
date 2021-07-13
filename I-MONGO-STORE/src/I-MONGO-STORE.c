@@ -545,7 +545,7 @@ void loggearResolucionSabotaje(uint32_t id_tripulante){
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
-	char* stringBitacora = string_duplicate("Resolvio el sabotaje");
+	char* stringBitacora = string_duplicate("Resolvio el sabotaje\n");
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);

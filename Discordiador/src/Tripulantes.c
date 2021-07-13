@@ -35,6 +35,8 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 
 	if(tripulante->estado == READY){
 		sem_wait(&(tripulante->puedeEjecutar));
+		sem_wait(&(tripulante->semaforoPlanificacion));
+		sem_post(&(tripulante->semaforoPlanificacion));
 		sacarDeReady(tripulante);
 		agregarAExec(tripulante);
 	}
@@ -49,6 +51,7 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 
 				while(tripulante->quantum < QUANTUM && !tripulante->expulsado){
 					sem_wait(&(tripulante->semaforoPlanificacion));
+					sem_post(&(tripulante->semaforoPlanificacion));
 
 					//ACÁ ENTRARÍA SI LE TOCA RESOLVER OTRA VEZ UN SABOJE
 					if(tripulante->tid == idTripulanteResolviendoSabotaje && tripulante->estado == READY){
@@ -66,7 +69,6 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 					}
 
 					moverTripulante(tripulante,&tripulante->proxTarea->posicion);
-					sem_post(&(tripulante->semaforoPlanificacion));
 
 					pthread_mutex_lock(&mutexTripulantes);
 					tripulante->quantum++;
@@ -108,6 +110,7 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 		{
 			while(!llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
 				sem_wait(&(tripulante->semaforoPlanificacion));
+				sem_post(&(tripulante->semaforoPlanificacion));
 
 				//ACÁ ENTRARÍA SI LE TOCA RESOLVER OTRA VEZ UN SABOJE MIENTRAS VOLVÍA A DIRIGIRSE HACIA LA TAREA
 				if(tripulante->tid == idTripulanteResolviendoSabotaje && tripulante->estado == READY){
@@ -121,7 +124,6 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 				}
 
 				moverTripulante(tripulante,&tripulante->proxTarea->posicion);
-				sem_post(&(tripulante->semaforoPlanificacion));
 
 				sleep(RETARDO_CICLO_CPU);
 
@@ -367,6 +369,10 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			realizarAccionTareaIO(tripulante);
 
+			esperarSiHaySabotaje(tripulante);
+			if(idTripulanteResolviendoSabotaje == tripulante->tid)
+				esperarParaEjecutar(tripulante);
+
 			sacarDeExec(tripulante);
 
 			agregarABlockIO(tripulante);
@@ -421,11 +427,11 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 
 		for(int i=0; i<tripulante->proxTarea->tiempo && !tripulante->expulsado ;i++){
 			sem_wait(&(tripulante->semaforoPlanificacion));
+			sem_post(&(tripulante->semaforoPlanificacion));
 			if(tripulante->tid == idTripulanteResolviendoSabotaje){
 				esperarParaEjecutar(tripulante); //TODO TAREA YA INICIADA
 				i = 0; //PARA QUE VUELVA A EJECUTAR LA TAREA DESDE EL PRINCIPIO
 			}
-			sem_post(&(tripulante->semaforoPlanificacion));
 
 			sleep(RETARDO_CICLO_CPU);
 		}
@@ -439,7 +445,6 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 			tripulante->proxTarea->finalizada = true;
 			tripulante->tareasPendientes--;
 			pthread_mutex_unlock(&mutexTripulantes);
-
 
 			if(tieneTareasPendientes(tripulante)){
 				esperarSiHaySabotaje(tripulante);
@@ -473,6 +478,10 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 		//SI JUSTO EL TRIPULANTE ES EXPULSADO DURANTE LA RÁFAGA EN LA QUE HACE LA PETICIÓN DE I/O, NO ENTRA ACÁ
 		if(!tripulante->expulsado){
 			realizarAccionTareaIO(tripulante);
+
+			esperarSiHaySabotaje(tripulante);
+			if(idTripulanteResolviendoSabotaje == tripulante->tid)
+				esperarParaEjecutar(tripulante);
 
 			sacarDeExec(tripulante);
 
@@ -525,6 +534,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 		while(tripulante->quantum < QUANTUM && tripulante->proxTarea->tiempoEjecutado < tripulante->proxTarea->tiempo && !tripulante->expulsado){
 			sem_wait(&(tripulante->semaforoPlanificacion));
+			sem_post(&(tripulante->semaforoPlanificacion));
 			if(tripulante->tid == idTripulanteResolviendoSabotaje){
 				pthread_mutex_lock(&mutexTripulantes);
 				tripulante->quantum = 0;
@@ -533,7 +543,6 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 				esperarParaEjecutar(tripulante);//TODO TAREA YA INICIADA
 			}
-			sem_post(&(tripulante->semaforoPlanificacion));
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->quantum++;
@@ -567,7 +576,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 						tripulante->habilitado = false;
 						pthread_mutex_unlock(&mutexTripulantes);
 
-						//SI DESPUÉS DEL SABOTAJE QUEDARA EN READY, NO HABRÍA QUE SACARLO DE EXEC NI AGREGARLO A READY (PORQUE YA ESTÁ AHÍ :3)
+						//SI DESPUÉS DEL SABOTAJE QUEDARA EN READY (ES DECIR QUE LO RESUELVE ÉL), NO HABRÍA QUE SACARLO DE EXEC NI AGREGARLO A READY (PORQUE YA ESTÁ AHÍ :3)
 						if(tripulante->estado == EXEC){
 							sacarDeExec(tripulante);
 
@@ -663,11 +672,11 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		//SE MUEVE A LA POSICIÓN DE LA TAREA
 		while(!llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
 			sem_wait(&(tripulante->semaforoPlanificacion));
+			sem_post(&(tripulante->semaforoPlanificacion));
 			if(tripulante->tid == idTripulanteResolviendoSabotaje)
 				esperarParaEjecutar(tripulante);
 
 			moverTripulante(tripulante,&tripulante->proxTarea->posicion);
-			sem_post(&(tripulante->semaforoPlanificacion));
 
 			sleep(RETARDO_CICLO_CPU);
 		}
@@ -744,11 +753,11 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 
 			while(tripulante->quantum < QUANTUM && !llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
 				sem_wait(&(tripulante->semaforoPlanificacion));
+				sem_post(&(tripulante->semaforoPlanificacion));
 				if(tripulante->tid == idTripulanteResolviendoSabotaje)
 					esperarParaEjecutar(tripulante);
 
 				moverTripulante(tripulante,&tripulante->proxTarea->posicion);
-				sem_post(&(tripulante->semaforoPlanificacion));
 
 				pthread_mutex_lock(&mutexTripulantes);
 				tripulante->quantum++;
@@ -1061,10 +1070,7 @@ void iniciarPlanificacion(){
 void pausarPlanificacion(){
 	void deshabilitarSemaforo(void* elemento){
 		t_tripulante* tripulante = (t_tripulante*) elemento;
-		int valorSemaforo;
-		sem_getvalue(&(tripulante->semaforoPlanificacion),&valorSemaforo);
-		if(valorSemaforo == 1) //TODO CUIDADITOOO
-			sem_wait(&(tripulante->semaforoPlanificacion));
+		sem_wait(&(tripulante->semaforoPlanificacion));
 	}
 
 	log_info(loggerDiscordiador,"SE PAUSA LA PLANIFICACIÓN");
