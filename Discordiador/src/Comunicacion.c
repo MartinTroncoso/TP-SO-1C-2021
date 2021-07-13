@@ -154,9 +154,8 @@ t_iniciar_patota* obtenerDatosPatota(char** array){
 
 char* obtenerTareasComoCadena(char* path){
 	FILE* tareas = fopen(path,"r");
-	if(tareas == NULL){
-		tareas = fopen("/home/utnso/Tareas/tareasPatotaDefault.txt","r");
-	}
+	if(tareas == NULL)
+		return "";
 
 	int MAX_PER_LINE = 50;
 	char* buffer = malloc(sizeof(char) * MAX_PER_LINE);
@@ -214,9 +213,9 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 	desplazamiento += sizeof(uint32_t);
 
 	char* stringCadena = malloc(sizeTarea);
-	memcpy(stringCadena, buffer + desplazamiento,sizeTarea);
+	memcpy(stringCadena, buffer + desplazamiento, sizeTarea);
 
-	char** tareaSpliteada;
+	char** tareaSpliteada; //TODO FALTA LIBERAR BIEN LA MEMORIA
 	int tiempo;
 	switch(op_code){
 	case ENTRADA_SALIDA:
@@ -551,7 +550,7 @@ void gestionarSabotaje(){
 
 	//SI NO SE HABIA INICIADO NUNCA LA PLANIFICACION, ESPERAN A QUE SE INICIE POR CONSOLA (VER ESTO)
 	if(planificacionFueActivadaAlgunaVez){
-		//SI DESPUÉS DE RESOLVER EL SABOTAJE VUELVE A QUEDAR EN EXEC, QUIERE DECIR QUE ANTES TAMBIÉN ESTABA. NO QUEDA NINGUNO EN READY
+		//SI DESPUÉS DE RESOLVER EL SABOTAJE QUEDA EN EXEC, QUIERE DECIR QUE ANTES TAMBIÉN ESTABA. NO QUEDA NINGUNO EN READY
 		if(tripulanteParaElSabotaje->estado == READY){
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulanteParaElSabotaje->habilitado = false;

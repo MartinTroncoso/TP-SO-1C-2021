@@ -373,6 +373,8 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 			if(idTripulanteResolviendoSabotaje == tripulante->tid)
 				esperarParaEjecutar(tripulante);
 
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
+
 			sacarDeExec(tripulante);
 
 			agregarABlockIO(tripulante);
@@ -382,8 +384,6 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 			pthread_mutex_unlock(&mutexTripulantes);
 
 			habilitarProximoAEjecutar();
-
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 
 			notificarInicioDeTarea(tripulante);
 		}
@@ -483,13 +483,13 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 			if(idTripulanteResolviendoSabotaje == tripulante->tid)
 				esperarParaEjecutar(tripulante);
 
+			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
+
 			sacarDeExec(tripulante);
 
 			agregarABlockIO(tripulante);
 
 			habilitarProximoAEjecutar();
-
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 
 			notificarInicioDeTarea(tripulante);
 		}
@@ -703,6 +703,9 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
+		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		//send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
+
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
 		if(list_size(colaExit)==list_size(tripulantes)){
@@ -808,6 +811,9 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
+		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		//send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
+
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
 		if(list_size(colaExit)==list_size(tripulantes)){
@@ -878,13 +884,18 @@ void gestionarTripulante(t_tripulante* tripulante){
 }
 
 void iniciarPatota(t_iniciar_patota* estructura){
-	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+	char* tareas = obtenerTareasComoCadena(estructura->rutaDeTareas);
+	if(strcmp(tareas,"")==0){
+		log_info(loggerDiscordiador,"EL ARCHIVO DE TAREAS INDICADO NO EXISTE");
+		list_destroy_and_destroy_elements(estructura->coordenadasTripulantes,free);
+		return;
+	}
 
+	int socket_cliente_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
 	t_patota* patota = malloc(sizeof(t_patota));
 	patota->tripulantes = list_create();
 	patota->pid = idPatota;
 	patota->archivoTareas = estructura->rutaDeTareas;
-	char* tareas = obtenerTareasComoCadena(patota->archivoTareas);
 	patota->cantidadTareas = getCantidadTareasPatota(tareas);
 	int sizeTareas = strlen(tareas) + 1;
 	sumarIdPatota();
@@ -945,6 +956,9 @@ void iniciarPatota(t_iniciar_patota* estructura){
 		pthread_detach(hiloTripulante);
 	}
 
+	list_destroy(estructura->coordenadasTripulantes);
+	free(estructura);
+
 	if(patota->pid == 1 || list_size(colaExit)==list_size(tripulantes))
 		log_info(loggerDiscordiador,"Discordiador LISTO PARA PLANIFICAR (%s)",ALGORITMO);
 }
@@ -979,8 +993,6 @@ void expulsarTripulante(int id_tripulante){
 	t_tripulante* tripulante = list_find(tripulantes,buscarTripulante);
 	tripulante->expulsado = true;
 	pthread_mutex_unlock(&mutexTripulantes);
-
-	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
 
 	switch(tripulante->estado){
 	case EXIT:
@@ -1043,6 +1055,8 @@ void expulsarTripulante(int id_tripulante){
 		log_warning(loggerDiscordiador,"Hubo un error con el estado del Tripulante");
 		break;
 	}
+
+	log_info(loggerDiscordiador,"SE EXPULSA AL TRIPULANTE %d",id_tripulante);
 
 	tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
 	send(tripulante->socket_MIRAM,&finalizar,sizeof(tipo_mensaje),0);

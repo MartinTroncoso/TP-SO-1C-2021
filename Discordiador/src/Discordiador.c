@@ -97,8 +97,7 @@ void ingresarComandos()
 	char** palabras = string_split(comando, " ");
 
 	while(1){
-		switch((int) dictionary_get(diccionarioComandos,palabras[0]))
-		{
+		switch((int) dictionary_get(diccionarioComandos,palabras[0])){
 		case 1:{
 			//INICIAR_PATOTA [cant_tripulantes] [path] [pos1] [pos2] ...
 			//PRIMER COMANDO A MANDAR
@@ -109,9 +108,6 @@ void ingresarComandos()
 				if(palabras[1]!=NULL && palabras[2]!=NULL){
 					t_iniciar_patota* datosPatota = obtenerDatosPatota(palabras);
 					iniciarPatota(datosPatota);
-
-					list_destroy(datosPatota->coordenadasTripulantes);
-					free(datosPatota);
 				}
 				else
 					log_info(loggerDiscordiador,"Metiste mal el comando");
@@ -125,7 +121,10 @@ void ingresarComandos()
 		}
 		case 2:{
 			//LISTAR_TRIPULANTES
-			listarTripulantes();
+			if(palabras[1]==NULL)
+				listarTripulantes();
+			else
+				log_info(loggerDiscordiador,"Metiste mal el comando");
 			break;
 		}
 		case 3:{
@@ -176,20 +175,21 @@ void ingresarComandos()
 			pthread_mutex_lock(&mutexActivarPlanificacion);
 			if(planificacionActivada){
 				pthread_mutex_unlock(&mutexActivarPlanificacion);
+				pausarPlanificacion();
+			}
+			else
+			{
+				pthread_mutex_unlock(&mutexActivarPlanificacion);
 				pthread_mutex_lock(&mutexSituacionEmergencia);
 				if(!haySituacionDeEmergencia){
 					pthread_mutex_unlock(&mutexSituacionEmergencia);
-					pausarPlanificacion();
+					log_info(loggerDiscordiador,"LA PLANIFICACIÓN NO EMPEZÓ O YA ESTÁ PAUSADA");
 				}
 				else
 				{
 					pthread_mutex_unlock(&mutexSituacionEmergencia);
 					log_info(loggerDiscordiador,"SE ESTÁ RESOLVIENDO UN SABOTAJE!");
 				}
-			}
-			else{
-				pthread_mutex_unlock(&mutexActivarPlanificacion);
-				log_info(loggerDiscordiador,"LA PLANIFICACIÓN NO EMPEZÓ O YA ESTÁ PAUSADA");
 			}
 
 			break;
