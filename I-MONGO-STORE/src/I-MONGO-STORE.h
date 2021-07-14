@@ -17,6 +17,7 @@
 pthread_mutex_t mutexSincro;
 pthread_mutex_t mutexBlocks;
 pthread_mutex_t mutexBitMap;
+pthread_mutex_t mutexMD5;
 
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;

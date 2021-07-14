@@ -15,9 +15,8 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	char* varia = obtenerMD5("oooooooooo ");
-	log_info(loggerMongo,"MD5: %s",varia);
-	free(varia);
+	//escribirFile("Oxigeno", 200);
+	log_info(loggerMongo, recuperarBitacora(1));
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -53,6 +52,7 @@ void inicializarVariables(){
 
 	pthread_mutex_init(&mutexBitMap, NULL);
 	pthread_mutex_init(&mutexSincro,NULL);
+	pthread_mutex_init(&mutexMD5,NULL);
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
@@ -392,6 +392,7 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 	case GENERAR_OXIGENO:{
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		escribirFile("Oxigeno", caracteresAGenerar);
 		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Oxigeno.ims: %d\n",id_tripulante,caracteresAGenerar);
 		break;
 	}
@@ -406,6 +407,7 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 	case GENERAR_COMIDA:{
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		escribirFile("Comida", caracteresAGenerar);
 		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Comida.ims: %d\n",id_tripulante,caracteresAGenerar);
 		break;
 	}
@@ -420,6 +422,7 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 	case GENERAR_BASURA:{
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
+		escribirFile("Basura", caracteresAGenerar);
 		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Basura.ims: %d\n",id_tripulante,caracteresAGenerar);
 		break;
 	}
@@ -1006,7 +1009,7 @@ void escribirFile(char* recurso, int cantidad)
 			char* stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
 			escribirEnBlocks(posicionBloque, stringPartido);
 			free(stringPartido);
-			cantidad++;
+			cantidadDeBloques++;
 			for(;contador<cantidadDeBloquesASolicitar;contador++)
 			{
 				posicionBloque = ocuparBitVacio();
@@ -1055,8 +1058,10 @@ void escribirFile(char* recurso, int cantidad)
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
 			contador++;
 		}
+		string_append(&fileCompleto, stringRecurso);
+		fileMD5 = obtenerMD5(fileCompleto);
 		liberarArray(bloquesUtilizados);
-		if(tamanioFile<=tamanioBlock)
+		if(cantidad<=tamanioBlock)
 		{
 			if(tamanioBlock - tamanioFile%tamanioBlock >= cantidad && tamanioFile%tamanioBlock != 0)
 			{
@@ -1064,6 +1069,7 @@ void escribirFile(char* recurso, int cantidad)
 				forzarSincronizacionBlocks();
 				tamanioFile += cantidad;
 				char* sizeConf = string_itoa(tamanioFile);
+				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 				config_set_value(configFile,"SIZE",sizeConf);
 				free(sizeConf);
 			}else
@@ -1092,6 +1098,68 @@ void escribirFile(char* recurso, int cantidad)
 				char* blocksConf = string_from_format("[%s]",bloques);
 				char* sizeConf = string_itoa(tamanioFile);
 				char* cantidadConf = string_itoa(cantidadDeBloques);
+				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
+				config_set_value(configFile,"BLOCKS",blocksConf);
+				config_set_value(configFile,"SIZE",sizeConf);
+				config_set_value(configFile,"BLOCK_COUNT",cantidadConf);
+				free(blocksConf);
+				free(sizeConf);
+				free(cantidadConf);
+			}
+		}else
+		{
+			//int tamanioTolta = string_length(stringRecurso);
+			int cantidadDeBloquesASolicitar;
+			int posicionString = 0;
+			char* stringPartido;
+			if(tamanioFile%tamanioBlock!=0)
+			{
+				stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock - tamanioFile%tamanioBlock);
+				rellenarEnBlocks(bloquePosicion, stringPartido, tamanioFile);
+				int tamanioStringRestante = cantidad - string_length(stringPartido);
+				cantidadDeBloquesASolicitar = tamanioStringRestante/tamanioBlock + byteExcedente(tamanioStringRestante, tamanioBlock);
+				int nuevoBloque;
+				free(stringPartido);
+				for(int i = 0; i<cantidadDeBloquesASolicitar;i++)
+				{
+					nuevoBloque = ocuparBitVacio();
+					stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock);
+					posicionString = string_length(stringPartido);
+					escribirEnBlocks(nuevoBloque, stringPartido);
+					string_append_with_format(&bloques, ",%d",nuevoBloque);
+					cantidadDeBloques++;
+					free(stringPartido);
+				}
+				tamanioFile += cantidad;
+				char* blocksConf = string_from_format("[%s]",bloques);
+				char* sizeConf = string_itoa(tamanioFile);
+				char* cantidadConf = string_itoa(cantidadDeBloques);
+				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
+				config_set_value(configFile,"BLOCKS",blocksConf);
+				config_set_value(configFile,"SIZE",sizeConf);
+				config_set_value(configFile,"BLOCK_COUNT",cantidadConf);
+				free(blocksConf);
+				free(sizeConf);
+				free(cantidadConf);
+			}else
+			{
+				cantidadDeBloquesASolicitar = cantidad/tamanioBlock + byteExcedente(cantidad, tamanioBlock);
+				int nuevoBloque;
+				for(int i = 0; i<cantidadDeBloquesASolicitar;i++)
+				{
+					nuevoBloque = ocuparBitVacio();
+					stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock);
+					posicionString += string_length(stringPartido);
+					escribirEnBlocks(nuevoBloque, stringPartido);
+					string_append_with_format(&bloques, ",%d",nuevoBloque);
+					cantidadDeBloques++;
+					free(stringPartido);
+				}
+				tamanioFile += cantidad;
+				char* blocksConf = string_from_format("[%s]",bloques);
+				char* sizeConf = string_itoa(tamanioFile);
+				char* cantidadConf = string_itoa(cantidadDeBloques);
+				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 				config_set_value(configFile,"BLOCKS",blocksConf);
 				config_set_value(configFile,"SIZE",sizeConf);
 				config_set_value(configFile,"BLOCK_COUNT",cantidadConf);
@@ -1101,11 +1169,13 @@ void escribirFile(char* recurso, int cantidad)
 			}
 		}
 	}
-
+	config_save(configFile);
+	config_destroy(configFile);
 }
 
 char* obtenerMD5(char* bloquesRecuperados)
 {
+	pthread_mutex_lock(&mutexMD5);
 	char* directorioAuxiliar = string_from_format("%s/Files/AuxiliarFile.txt",PUNTO_MONTAJE);
 	char* directorioMD5 = string_from_format("%s/Files/AuxiliarMD5.txt",PUNTO_MONTAJE);
 	FILE* archivoAuxiliar = fopen(directorioAuxiliar,"w");
@@ -1135,6 +1205,7 @@ char* obtenerMD5(char* bloquesRecuperados)
 	free(directorioMD5);
 	free(comando);
 	close(archivoMD5);
+	pthread_mutex_unlock(&mutexMD5);
 	return salidaMD5;
 }
 
