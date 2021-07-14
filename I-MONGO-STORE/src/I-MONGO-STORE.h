@@ -17,6 +17,7 @@
 pthread_mutex_t mutexSincro;
 pthread_mutex_t mutexBlocks;
 pthread_mutex_t mutexBitMap;
+pthread_mutex_t mutexFile;
 pthread_mutex_t mutexMD5;
 
 char* PUNTO_MONTAJE;
@@ -74,6 +75,9 @@ void escribirBitacora(char*,t_config*);
 char** getSiguientePosicionSabotaje();
 void escribirFile(char*, int);
 char* obtenerMD5(char*);
+void eliminarCaracterFile(char* , int);
+void liberarBloque(int);
+void liberarBit(int);
 char* bloqueRecuperado(int);
 int ocuparBitVacio();
 void escribirEnBlocks(int, char*);

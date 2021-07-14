@@ -15,8 +15,6 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	//escribirFile("Oxigeno", 200);
-	log_info(loggerMongo, recuperarBitacora(1));
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -53,6 +51,7 @@ void inicializarVariables(){
 	pthread_mutex_init(&mutexBitMap, NULL);
 	pthread_mutex_init(&mutexSincro,NULL);
 	pthread_mutex_init(&mutexMD5,NULL);
+	pthread_mutex_init(&mutexFile,NULL);
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
@@ -961,6 +960,7 @@ void escribirFile(char* recurso, int cantidad)
 	struct stat statCarpeta;
 	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
 	//mutexFile lock
+	pthread_mutex_lock(&mutexFile);
 	if(stat(direccionArchivo,&statCarpeta)==-1)
 	{
 		FILE* archivoBitacora = fopen(string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso),"w");
@@ -1013,7 +1013,8 @@ void escribirFile(char* recurso, int cantidad)
 			for(;contador<cantidadDeBloquesASolicitar;contador++)
 			{
 				posicionBloque = ocuparBitVacio();
-				stringPartido = string_from_format("%d",posicionBloque);
+				stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
+				log_info(loggerMongo, "string_partido%s",stringPartido);
 				escribirEnBlocks(posicionBloque, stringPartido);
 				string_append_with_format(&bloquesSolicitados, ",%d",posicionBloque);
 				free(stringPartido);
@@ -1039,6 +1040,7 @@ void escribirFile(char* recurso, int cantidad)
 		int bloquePosicion = 0;
 		int contador = 0;
 		char* bloqueRecuperadoFile;
+		char* recursosEnFS = string_repeat(recurso[0], tamanioFile+cantidad);
 		char* bloques;
 		while(bloquesUtilizados[contador] != NULL)
 		{
@@ -1058,8 +1060,8 @@ void escribirFile(char* recurso, int cantidad)
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
 			contador++;
 		}
-		string_append(&fileCompleto, stringRecurso);
-		fileMD5 = obtenerMD5(fileCompleto);
+		//string_append(&recursosEnFS, stringRecurso);
+		fileMD5 = obtenerMD5(recursosEnFS);
 		liberarArray(bloquesUtilizados);
 		if(cantidad<=tamanioBlock)
 		{
@@ -1169,10 +1171,45 @@ void escribirFile(char* recurso, int cantidad)
 			}
 		}
 	}
+	free(stringRecurso);
 	config_save(configFile);
 	config_destroy(configFile);
+	pthread_mutex_unlock(&mutexFile);
 }
 
+void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo que existe el archivo
+{
+//	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
+//	t_config* configFile = config_create(direccionArchivo);
+//	char* fileCompleto = string_new();
+//	char* fileMD5;
+//	int tamanioFile = config_get_int_value(configFile,"SIZE");
+//	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
+//	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+	//mutexFile lock
+
+
+}
+
+void liberarBloque(int bloqueALiberar)
+{
+	char* stringBloqueVacio = string_repeat(' ', tamanioBlock);
+	escribirEnBlocks(bloqueALiberar, stringBloqueVacio);
+	liberarBit(bloqueALiberar);
+	free(stringBloqueVacio);
+}
+
+void liberarBit(int bit)
+{
+	pthread_mutex_lock(&mutexBitMap);
+	t_bitarray* bitMap = recuperarBitArray();
+	int posicion = posicionBlockLibre(bitMap);
+	bitarray_clean_bit(bitMap,posicion);
+	guardarBitArray(bitMap);
+	free(bitMap->bitarray);
+	bitarray_destroy(bitMap);
+	pthread_mutex_unlock(&mutexBitMap);
+}
 char* obtenerMD5(char* bloquesRecuperados)
 {
 	pthread_mutex_lock(&mutexMD5);
