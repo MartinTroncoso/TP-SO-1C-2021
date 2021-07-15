@@ -16,10 +16,10 @@
 
 char* PUERTO_MI_RAM;
 
-void inicializarVariables();
-void inicializarMapa();
+void inicializar_variables();
+void inicializar_mapa();
 
-void atenderTripulante(void* _cliente);
+void atender_tripulante(void* _cliente);
 void recibir_datos_patota(void* _cliente);
 uint32_t recibir_datos_tripulante(int socket_tripulante);
 
@@ -29,7 +29,9 @@ void enviar_proxima_tarea(int socket_tripulante, uint32_t tid);
 void finalizar_tripulante(int socket_tripulante, uint32_t tid);
 
 void iniciar_dump_memoria();
+void iniciar_accion_sigusr2();
 void realizar_dump();
+void realizar_accion_sigusr2();
 void terminar_programa();
 
 #endif /* MI_RAM_HQ_H_ */

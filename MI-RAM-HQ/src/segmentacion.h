@@ -16,7 +16,6 @@ typedef struct {
 	uint32_t tamanio;
 	int n_segmento;
 	bool inicializado;
-	bool activo;
 } segmento;
 
 typedef struct {
@@ -39,6 +38,7 @@ void seg_actualizar_estado_tripulante(uint32_t, char);
 void seg_actualizar_posicion_tripulante(uint32_t, uint32_t, uint32_t);
 void seg_actualizar_instruccion_tripulante(uint32_t);
 void seg_generar_dump_memoria(FILE*);
+void seg_receptor_sigusr2(); //Compactación
 void seg_liberar_tripulante(uint32_t);
 
 #endif /* SEGMENTACION_H_ */

@@ -48,6 +48,7 @@ void inicializar_administrador(t_log*,
 		void (*f_act_pos_tripulante)(uint32_t, uint32_t, uint32_t),
 		void (*f_act_instr_tripulante)(uint32_t),
 		void (*f_generar_dump_memoria)(FILE*),
+		void (*f_receptor_sigusr2)(),
 		void (*f_liberar_tripulante)(uint32_t));
 
 void liberar_datos_tripulante(datos_tripulante*);
@@ -56,16 +57,17 @@ void lectura_de_memoria(void* buffer, uint32_t direccion_fisica, uint32_t size);
 void escritura_a_memoria(uint32_t direccion_fisica, uint32_t size, void* buffer);
 void finalizar_administrador();
 
-void (*inicializacion)();
-void (*guardar_nueva_patota)(datos_patota*);
-void (*guardar_nuevo_tripulante)(datos_tripulante*);
-char (*obtener_estado_tripulante)(uint32_t);
-char* (*obtener_prox_instruccion_tripulante)(uint32_t);
-void (*actualizar_estado_tripulante)(uint32_t, char);
-void (*actualizar_posicion_tripulante)(uint32_t, uint32_t, uint32_t);
-void (*actualizar_instruccion_tripulante)(uint32_t);
-void (*generar_dump_memoria)(FILE*);
-void (*liberar_tripulante)(uint32_t);
+void (*mem_inicializacion)();
+void (*mem_guardar_nueva_patota)(datos_patota*);
+void (*mem_guardar_nuevo_tripulante)(datos_tripulante*);
+char (*mem_obtener_estado_tripulante)(uint32_t);
+char* (*mem_obtener_prox_instruccion_tripulante)(uint32_t);
+void (*mem_actualizar_estado_tripulante)(uint32_t, char);
+void (*mem_actualizar_posicion_tripulante)(uint32_t, uint32_t, uint32_t);
+void (*mem_actualizar_instruccion_tripulante)(uint32_t);
+void (*mem_generar_dump_memoria)(FILE*); //sigusr1
+void (*mem_receptor_sigusr2)();
+void (*mem_liberar_tripulante)(uint32_t);
 
 memoria_principal* mem_principal; //Aca esta la memoria para aquellos (pag y seg) que la necesiten XD
 t_log* logger_admin; //Logger los metodos de administracion

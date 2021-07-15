@@ -8,6 +8,7 @@
 #include "admin_memoria.h"
 
 static void reservar_memoria_principal();
+static void def_receptor_sigusr2();
 
 void inicializar_administrador(t_log* logger,
 		void (*f_inicializacion)(),
@@ -19,22 +20,24 @@ void inicializar_administrador(t_log* logger,
 		void (*f_act_pos_tripulante)(uint32_t, uint32_t, uint32_t),
 		void (*f_act_instr_tripulante)(uint32_t),
 		void (*f_generar_dump_memoria)(FILE*),
+		void (*f_receptor_sigusr2)(),
 		void (*f_liberar_tripulante)(uint32_t)
 		){
 	logger_admin = logger;
 	reservar_memoria_principal();
-	inicializacion = f_inicializacion;
-	guardar_nueva_patota = f_g_n_patota;
-	guardar_nuevo_tripulante = f_g_n_tripulante;
-	obtener_estado_tripulante = f_obt_est_tripulante;
-	obtener_prox_instruccion_tripulante = f_obt_prox_instr_tripulante;
-	actualizar_estado_tripulante = f_act_est_tripulante;
-	actualizar_posicion_tripulante = f_act_pos_tripulante;
-	actualizar_instruccion_tripulante = f_act_instr_tripulante;
-	generar_dump_memoria = f_generar_dump_memoria;
-	liberar_tripulante = f_liberar_tripulante;
+	mem_inicializacion = f_inicializacion;
+	mem_guardar_nueva_patota = f_g_n_patota;
+	mem_guardar_nuevo_tripulante = f_g_n_tripulante;
+	mem_obtener_estado_tripulante = f_obt_est_tripulante;
+	mem_obtener_prox_instruccion_tripulante = f_obt_prox_instr_tripulante;
+	mem_actualizar_estado_tripulante = f_act_est_tripulante;
+	mem_actualizar_posicion_tripulante = f_act_pos_tripulante;
+	mem_actualizar_instruccion_tripulante = f_act_instr_tripulante;
+	mem_generar_dump_memoria = f_generar_dump_memoria;
+	mem_receptor_sigusr2 = f_receptor_sigusr2 == NULL ? def_receptor_sigusr2 : f_receptor_sigusr2;
+	mem_liberar_tripulante = f_liberar_tripulante;
 
-	inicializacion();
+	mem_inicializacion();
 }
 
 void finalizar_administrador(){
@@ -67,3 +70,6 @@ static void reservar_memoria_principal() {
 	mem_principal->bloque = malloc(TAMANIO_MEMORIA);
 }
 
+static void def_receptor_sigusr2() {
+	log_info(logger_admin, "No se ha definido comportamiento para SIGUSR2");
+}

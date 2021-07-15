@@ -14,7 +14,8 @@ static t_config* configuracionMiRam;
 static t_log* logger_mi_ram;
 static NIVEL* nivel;
 
-static pthread_mutex_t mutex_screen;
+static pthread_mutex_t mutex_mapa;
+static pthread_mutex_t mutex_memoria;
 
 static char calcular_identificador(uint32_t);
 
@@ -28,11 +29,12 @@ static char calcular_identificador(uint32_t);
 
 int main(void) {
 
-	signal(SIGUSR1, iniciar_dump_memoria);
 	signal(SIGINT, terminar_programa);
+	signal(SIGUSR1, iniciar_dump_memoria);
+	signal(SIGUSR2, iniciar_accion_sigusr2);
 
-	inicializarVariables();
-	log_info(logger_mi_ram,"PID MI-RAM HQ: %d",getpid());
+	inicializar_variables();
+	log_info(logger_mi_ram,"PID MI-RAM HQ: %d", getpid());
 
 	int socket_escucha = iniciarServidor("127.0.0.1", PUERTO_MI_RAM);
 	log_info(logger_mi_ram, "MI-RAM-HQ Listo para atender a los Tripulantes!");
@@ -50,7 +52,7 @@ int main(void) {
 			pthread_detach(hilo_receptor);
 			break;
 		case INICIAR_TRIPULANTE:
-			pthread_create(&hilo_receptor, NULL,(void*) atenderTripulante, (void*) socket_cliente);
+			pthread_create(&hilo_receptor, NULL,(void*) atender_tripulante, (void*) socket_cliente);
 			pthread_detach(hilo_receptor);
 			break;
 		default:
@@ -65,7 +67,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-void inicializarVariables(){
+void inicializar_variables(){
 	configuracionMiRam = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.config");
 	logger_mi_ram = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.log", "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
@@ -76,8 +78,8 @@ void inicializarVariables(){
 	PATH_SWAP = config_get_string_value(configuracionMiRam,"PATH_SWAP");
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
 	CRITERIO_SELECCION = config_get_string_value(configuracionMiRam,"CRITERIO_SELECCION");
-	inicializarMapa();
-
+	pthread_mutex_init(&mutex_memoria, NULL);
+	inicializar_mapa();
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0) {
 		inicializar_administrador(
 				logger_mi_ram,
@@ -90,6 +92,7 @@ void inicializarVariables(){
 				seg_actualizar_posicion_tripulante,
 				seg_actualizar_instruccion_tripulante,
 				seg_generar_dump_memoria,
+				seg_receptor_sigusr2,
 				seg_liberar_tripulante);
 	}
 	else {
@@ -104,11 +107,12 @@ void inicializarVariables(){
 			bas_actualizar_posicion_tripulante,
 			bas_actualizar_instruccion_tripulante,
 			bas_generar_dump_memoria,
+			NULL,
 			bas_liberar_tripulante);
 	}
 }
 
-void atenderTripulante(void* _cliente) {
+void atender_tripulante(void* _cliente) {
 	log_info(logger_mi_ram, "Se conectó un Tripulante!");
 	log_info(logger_mi_ram, "Primero recibo sus datos y armo TCB");
 
@@ -122,7 +126,9 @@ void atenderTripulante(void* _cliente) {
 		switch (tipo_msg) {
 		case PROXIMA_TAREA:
 			enviar_proxima_tarea(socket_tripulante, tid);
-			actualizar_instruccion_tripulante(tid);
+			pthread_mutex_lock(&mutex_memoria);
+			mem_actualizar_instruccion_tripulante(tid);
+			pthread_mutex_unlock(&mutex_memoria);
 			break;
 		case INFORMAR_MOVIMIENTO:
 			recibir_movimiento_tripulante(socket_tripulante, tid);
@@ -180,7 +186,9 @@ void recibir_datos_patota(void* _cliente) {
 	memcpy(datos_patota_nuevo->tareas, buffer + desplazamiento, inst_len);
 
 	//GUARDO LA PATOTA
-	guardar_nueva_patota(datos_patota_nuevo);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_guardar_nueva_patota(datos_patota_nuevo);
+	pthread_mutex_unlock(&mutex_memoria);
 
 	enviar_respuesta(OK, socket_cliente);
 	log_info(logger_mi_ram, "Se ha creado la patota: %d."
@@ -215,12 +223,14 @@ uint32_t recibir_datos_tripulante(int socket_tripulante) {
 	memcpy(&(datos_trip_nuevo->posY), buffer + desplazamiento, sizeof(uint32_t));
 
 	//GUARDO EL TRIPULANTE
-	guardar_nuevo_tripulante(datos_trip_nuevo);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_guardar_nuevo_tripulante(datos_trip_nuevo);
+	pthread_mutex_unlock(&mutex_memoria);
 
-	pthread_mutex_lock(&mutex_screen);
+	pthread_mutex_lock(&mutex_mapa);
 	personaje_crear(nivel, calcular_identificador(datos_trip_nuevo->tid), datos_trip_nuevo->posX, datos_trip_nuevo->posY);
 	nivel_gui_dibujar(nivel);
-	pthread_mutex_unlock(&mutex_screen);
+	pthread_mutex_unlock(&mutex_mapa);
 
 	tid = datos_trip_nuevo->tid;
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se ha creado tripulante. Pertenece a la patota %d.", tid, datos_trip_nuevo->pid);
@@ -231,7 +241,9 @@ uint32_t recibir_datos_tripulante(int socket_tripulante) {
 }
 
 void enviar_proxima_tarea(int socket_tripulante, uint32_t tid) {
-	char* prox_instruccion = obtener_prox_instruccion_tripulante(tid);
+	pthread_mutex_lock(&mutex_memoria);
+	char* prox_instruccion = mem_obtener_prox_instruccion_tripulante(tid);
+	pthread_mutex_unlock(&mutex_memoria);
 
 	int size_instruccion = strlen(prox_instruccion) + 1;
 
@@ -278,12 +290,14 @@ void recibir_movimiento_tripulante(int socket_tripulante, uint32_t tid) {
 	desplazamiento += sizeof(uint32_t);
 
 	//ACTUALIZO POS TRIPULANTE
-	actualizar_posicion_tripulante(tid, posX, posY);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_actualizar_posicion_tripulante(tid, posX, posY);
+	pthread_mutex_unlock(&mutex_memoria);
 
-	pthread_mutex_lock(&mutex_screen);
+	pthread_mutex_lock(&mutex_mapa);
 	item_mover(nivel,calcular_identificador(tid),posX, posY);
 	nivel_gui_dibujar(nivel);
-	pthread_mutex_unlock(&mutex_screen);
+	pthread_mutex_unlock(&mutex_mapa);
 	
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se actualiza posicion a: %d|%d", tid, posX, posY);
 
@@ -291,21 +305,27 @@ void recibir_movimiento_tripulante(int socket_tripulante, uint32_t tid) {
 }
 
 char recibir_cambio_estado(int socket_tripulante, uint32_t tid) {
-	char estado_actual = obtener_estado_tripulante(tid);
+	pthread_mutex_lock(&mutex_memoria);
+	char estado_actual = mem_obtener_estado_tripulante(tid);
+	pthread_mutex_unlock(&mutex_memoria);
 	char nuevo_estado;
 	recv(socket_tripulante, &nuevo_estado, sizeof(char), 0);
 
-	actualizar_estado_tripulante(tid, nuevo_estado);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_actualizar_estado_tripulante(tid, nuevo_estado);
+	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Pasa de estado %c a %c", tid, estado_actual, nuevo_estado);
 	return nuevo_estado;
 }
 
 void finalizar_tripulante(int socket_tripulante, uint32_t tid) {
-	pthread_mutex_lock(&mutex_screen);
+	pthread_mutex_lock(&mutex_mapa);
 	item_borrar(nivel, calcular_identificador(tid));
 	nivel_gui_dibujar(nivel);
-	pthread_mutex_unlock(&mutex_screen);
-	liberar_tripulante(tid);
+	pthread_mutex_unlock(&mutex_mapa);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_liberar_tripulante(tid);
+	pthread_mutex_unlock(&mutex_memoria);
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se lo libera de memoria y elimina del mapa",tid);
 	close(socket_tripulante);
 }
@@ -321,18 +341,25 @@ static char calcular_identificador(uint32_t tid) {
 	return identificador;
 }
 
-void inicializarMapa(){
+void inicializar_mapa(){
 	nivel = nivel_crear("AMONGASOO");
 	int filas, columnas;
+	pthread_mutex_init(&mutex_mapa, NULL);
 	nivel_gui_inicializar();
-	nivel_gui_get_area_nivel(&columnas,&filas);
-	pthread_mutex_init(&mutex_screen, NULL);
+	nivel_gui_get_area_nivel(&columnas, &filas);
+	nivel_gui_dibujar(nivel);
 }
 
 void iniciar_dump_memoria() {
 	pthread_t hilo_dump;
 	pthread_create(&hilo_dump, NULL, (void*) realizar_dump, NULL);
 	pthread_detach(hilo_dump);
+}
+
+void iniciar_accion_sigusr2() {
+	pthread_t hilo_sigusr2;
+	pthread_create(&hilo_sigusr2, NULL, (void*) realizar_accion_sigusr2, NULL);
+	pthread_detach(hilo_sigusr2);
 }
 
 void realizar_dump() {
@@ -346,7 +373,9 @@ void realizar_dump() {
 	log_info(logger_mi_ram, "[DUMP] Se inicia del dump de la memoria - Timestamp: %s", timestamp_file);
 	txt_write_in_file(archivo_dump, cadena_guion);
 	txt_write_in_file(archivo_dump, cabecera);
-	generar_dump_memoria(archivo_dump);
+	pthread_mutex_lock(&mutex_memoria);
+	mem_generar_dump_memoria(archivo_dump);
+	pthread_mutex_unlock(&mutex_memoria);
 	txt_write_in_file(archivo_dump, cadena_guion);
 	log_info(logger_mi_ram, "[DUMP] Se finaliza el dump de la memoria");
 
@@ -357,9 +386,17 @@ void realizar_dump() {
 	free(path_archivo);
 }
 
+void realizar_accion_sigusr2() {
+	pthread_mutex_lock(&mutex_memoria);
+	mem_receptor_sigusr2();
+	pthread_mutex_unlock(&mutex_memoria);
+}
+
+
 void terminar_programa() {
 	config_destroy(configuracionMiRam);
-	pthread_mutex_destroy(&mutex_screen);
+	pthread_mutex_destroy(&mutex_mapa);
+	pthread_mutex_destroy(&mutex_memoria);
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 	finalizar_administrador();
