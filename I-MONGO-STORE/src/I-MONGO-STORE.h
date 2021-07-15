@@ -76,6 +76,7 @@ char** getSiguientePosicionSabotaje();
 void escribirFile(char*, int);
 char* obtenerMD5(char*);
 void eliminarCaracterFile(char* , int);
+bool existeArchivoRecurso(char*);
 void liberarBloque(int);
 void liberarBit(int);
 char* bloqueRecuperado(int);

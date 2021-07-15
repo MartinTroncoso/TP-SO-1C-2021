@@ -1,4 +1,4 @@
-/*
+	/*
  ============================================================================
  Name        : I-MONGO-STORE.c
  Author      : 
@@ -396,11 +396,19 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		break;
 	}
 	case CONSUMIR_OXIGENO:{
-		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
-		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
-		uint32_t caracteresABorrar;
-		recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
-		printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d\n",id_tripulante,caracteresABorrar);
+		if(existeArchivoRecurso("Oxigeno"))
+		{
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+			uint32_t caracteresABorrar;
+			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
+			eliminarCaracterFile("Oxigeno", caracteresABorrar);
+			printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d\n",id_tripulante,caracteresABorrar);
+		}else
+		{
+			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		}
 		break;
 	}
 	case GENERAR_COMIDA:{
@@ -995,8 +1003,8 @@ void escribirFile(char* recurso, int cantidad)
 			config_set_value(configFile,"BLOCK_COUNT","1");
 			config_set_value(configFile,"BLOCKS",posicionBit);
 
-			config_save(configFile);
-			config_destroy(configFile);
+//			config_save(configFile);
+//			config_destroy(configFile);
 			free(posicionBit);
 			free(tamanioRecurso);
 			//hashear en md5 y configsetvalue MD5
@@ -1179,16 +1187,86 @@ void escribirFile(char* recurso, int cantidad)
 
 void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo que existe el archivo
 {
-//	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
-//	t_config* configFile = config_create(direccionArchivo);
-//	char* fileCompleto = string_new();
-//	char* fileMD5;
-//	int tamanioFile = config_get_int_value(configFile,"SIZE");
-//	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
-//	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+	//struct stat statCarpeta;
+	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
+
+	pthread_mutex_lock(&mutexFile);
+	t_config* configFile = config_create(direccionArchivo);
+	char* fileMD5;
+	int tamanioFile = config_get_int_value(configFile,"SIZE");
+	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
+	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+	int nuevoSize = tamanioFile - cantidad;
 	//mutexFile lock
+	if(cantidad >= tamanioFile)
+	{
+		int contador = 0;
+		while(bloquesUtilizados[contador] != NULL)
+		{
+			liberarBloque(atoi(bloquesUtilizados[contador]));
+			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[contador]);
+			contador++;
+		}
+		fileMD5 = obtenerMD5("");
+		config_set_value(configFile,"SIZE","0");
+		config_set_value(configFile,"BLOCK_COUNT","0");
+		config_set_value(configFile,"BLOCKS","[]");
+		config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
+		if(cantidad==tamanioFile)
+		{
+			log_info(loggerMongo,"Se quisieron eliminar mas caracteres de los existentes de %s",recurso);
+		}
 
+	}else
+	{
+		int cantidadDeBloquesNecesarios = nuevoSize/tamanioBlock + byteExcedente(nuevoSize, tamanioBlock);
+		while(cantidadDeBloques != cantidadDeBloquesNecesarios)
+		{
+			liberarBloque(atoi(bloquesUtilizados[cantidadDeBloques-1]));
+			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[cantidadDeBloques-1]);
+			cantidadDeBloques--;
+		}
+		if(nuevoSize%tamanioBlock != 0)
+		{
+			char* nuevoStringBloque = string_repeat(' ', tamanioBlock);
+			char* nuevoStringRecurso = string_repeat(recurso[0],nuevoSize%tamanioBlock);
+			memcpy(nuevoStringBloque,nuevoStringBloque,string_length(nuevoStringRecurso));
+			escribirEnBlocks(atoi(bloquesUtilizados[cantidadDeBloques-1]), nuevoStringBloque);
+			free(nuevoStringBloque);
+			free(nuevoStringRecurso);
+		}
+		char* nuevoArray = bloquesUtilizados[0];
+		for(int i = 1 ; i<cantidadDeBloquesNecesarios;i++)
+		{
+			string_append_with_format(&nuevoArray, ",%s",bloquesUtilizados[i]);
+		}
+		char* recursoTotal = string_repeat(recurso[0],nuevoSize);
+		char* bloquesConf = string_from_format("[%s]",nuevoArray);
+		char* sizeConf = string_itoa(nuevoSize);
+		char* contadorConf = string_itoa(cantidadDeBloquesNecesarios);
+		fileMD5 = obtenerMD5(recursoTotal);
+		config_set_value(configFile,"SIZE",sizeConf);
+		config_set_value(configFile,"BLOCK_COUNT",contadorConf);
+		config_set_value(configFile,"BLOCKS",bloquesConf);
+		config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
+		free(nuevoArray);
+		free(recursoTotal);
+		free(bloquesConf);
+		free(sizeConf);
+		free(contadorConf);
+	}
+	config_save(configFile);
+	pthread_mutex_unlock(&mutexFile);
+	config_destroy(configFile);
+	free(fileMD5);
+	//liberarArray(bloquesUtilizados);
+}
 
+bool existeArchivoRecurso(char* recurso)
+{
+	struct stat statCarpeta;
+	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
+	return !(stat(direccionArchivo,&statCarpeta)==-1);
 }
 
 void liberarBloque(int bloqueALiberar)
@@ -1203,13 +1281,14 @@ void liberarBit(int bit)
 {
 	pthread_mutex_lock(&mutexBitMap);
 	t_bitarray* bitMap = recuperarBitArray();
-	int posicion = posicionBlockLibre(bitMap);
-	bitarray_clean_bit(bitMap,posicion);
+	//int posicion = posicionBlockLibre(bitMap);
+	bitarray_clean_bit(bitMap,bit);
 	guardarBitArray(bitMap);
 	free(bitMap->bitarray);
 	bitarray_destroy(bitMap);
 	pthread_mutex_unlock(&mutexBitMap);
 }
+
 char* obtenerMD5(char* bloquesRecuperados)
 {
 	pthread_mutex_lock(&mutexMD5);
