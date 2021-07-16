@@ -12,7 +12,8 @@
 
 void inicializarVariables(){
 	configuracionDiscordiador = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.config");
-	loggerDiscordiador = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiador.log","Discordiador",1,LOG_LEVEL_INFO);
+	loggerDiscordiador = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiadorPrincipal.log","DiscordiadorPrincipal",1,LOG_LEVEL_TRACE);
+	loggerSecundario = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/Discordiador/discordiadorSecundario.log","DiscordiadorSecundario",1,LOG_LEVEL_TRACE);
 	diccionarioComandos= dictionary_create();
 	diccionarioTareas = dictionary_create();
 
@@ -328,6 +329,7 @@ void terminarPrograma(){
 	destruirSemaforos();
 	destruirConfig();
 	log_destroy(loggerDiscordiador);
+	log_destroy(loggerSecundario);
 	free(posicionSabotajeActual);
 	close(socket_escucha_iMongo);
 	exit(0);

@@ -67,6 +67,7 @@ typedef enum{
 
 t_config* configuracionDiscordiador;
 t_log* loggerDiscordiador;
+t_log* loggerSecundario;
 t_dictionary* diccionarioComandos;
 t_dictionary* diccionarioTareas;
 
