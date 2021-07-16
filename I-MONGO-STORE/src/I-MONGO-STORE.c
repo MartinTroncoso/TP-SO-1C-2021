@@ -15,8 +15,8 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	//escribirFile("Oxigeno", 40);
-	bool unvalor = verificarBitMap();
+	//escribirFile("Oxigeno", 39);
+	//bool unvalor = verificarSizeFile();
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -322,7 +322,7 @@ void inicializarMapeoBlocks(){
 void forzarSincronizacionBlocks(){
 	memcpy(blocksMapOriginal, blocksMap, cantidadDeBlocks * tamanioBlock);
 	if(msync(blocksMapOriginal,(cantidadDeBlocks*tamanioBlock),MS_SYNC)==0)
-		log_info(loggerMongo, "BLOCK SINCRONIZADO");
+	log_info(loggerMongo, "BLOCK SINCRONIZADO");
 }
 
 void atenderTripulante(void* _cliente)
@@ -1006,6 +1006,7 @@ void escribirFile(char* recurso, int cantidad)
 	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
 	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 	char* stringRecurso = string_repeat(recurso[0], cantidad);
+	log_info(loggerMongo,"Tamanio stringRecurso: %d",string_length(stringRecurso));
 	if(cantidadDeBloques==0)
 	{//si no tiene ningun bloque
 		if(cantidad<=tamanioBlock)
@@ -1031,18 +1032,20 @@ void escribirFile(char* recurso, int cantidad)
 		}else
 		{//si la cantidad es mayor a un bloque
 			int cantidadDeBloquesASolicitar = cantidad/tamanioBlock + byteExcedente(cantidad, tamanioBlock);
+			//log_info(loggerMongo,"Cantidad de bloques a solicitar %d",cantidadDeBloquesASolicitar);
 			int contador = 0;
 			int posicionBloque = ocuparBitVacio();
 			char* bloquesSolicitados = string_from_format("%d",posicionBloque);
 			char* stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
 			escribirEnBlocks(posicionBloque, stringPartido);
+			contador++;
 			free(stringPartido);
 			cantidadDeBloques++;
 			for(;contador<cantidadDeBloquesASolicitar;contador++)
 			{
 				posicionBloque = ocuparBitVacio();
 				stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
-				log_info(loggerMongo, "string_partido%s",stringPartido);
+				//log_info(loggerMongo, "string_partido %s",stringPartido);
 				escribirEnBlocks(posicionBloque, stringPartido);
 				string_append_with_format(&bloquesSolicitados, ",%d",posicionBloque);
 				free(stringPartido);

@@ -100,5 +100,8 @@ void terminar_programa();
 //sabotajes
 bool verificarCantidadBlocks();
 bool verificarBitMap();
+t_bitarray* bitmapDesdeBloques();
+bool verificarSizeFile();
+bool verificarMD5();
 
 #endif /* I_MONGO_STORE_H_ */
