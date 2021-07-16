@@ -83,7 +83,7 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 				}
 
 				if(tripulante->quantum == QUANTUM && !tripulante->expulsado){
-					log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+					log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 					esperarSiHaySabotaje(tripulante); //SI LLEGA EL SABOTAJE EN EL ÚLTIMO SLEEP, SE ESPERA PARA HABILITAR AL PRÓXIMO
 
@@ -292,7 +292,7 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		uint32_t caracteresAGenerar = tripulante->proxTarea->parametro;
 		send(tripulante->socket_MONGO,&tipoTarea,sizeof(TAREA_IO),0);
 		send(tripulante->socket_MONGO,&caracteresAGenerar,sizeof(uint32_t),0);
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] SE GENERAN %d OXIGENOS",tripulante->tid,caracteresAGenerar);
+		log_info(loggerSecundario,"[TRIPULANTE %d] SE GENERAN %d OXIGENOS",tripulante->tid,caracteresAGenerar);
 		break;
 	}
 	case 2:{
@@ -304,10 +304,10 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		if(respuesta == EXISTE_EL_ARCHIVO){
 			uint32_t caracteresABorrar = tripulante->proxTarea->parametro;
 			send(tripulante->socket_MONGO,&caracteresABorrar,sizeof(uint32_t),0);
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] SE BORRAN %d OXIGENOS",tripulante->tid,caracteresABorrar);
+			log_info(loggerSecundario,"[TRIPULANTE %d] SE BORRAN %d OXIGENOS",tripulante->tid,caracteresABorrar);
 		}
 		else
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] EL ARCHIVO Oxigeno.ims NO EXISTE",tripulante->tid);
+			log_info(loggerSecundario,"[TRIPULANTE %d] EL ARCHIVO Oxigeno.ims NO EXISTE",tripulante->tid);
 		break;
 	}
 	case 3:{
@@ -315,7 +315,7 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		uint32_t caracteresAGenerar = tripulante->proxTarea->parametro;
 		send(tripulante->socket_MONGO,&tipoTarea,sizeof(TAREA_IO),0);
 		send(tripulante->socket_MONGO,&caracteresAGenerar,sizeof(uint32_t),0);
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] SE GENERAN %d COMIDAS",tripulante->tid,caracteresAGenerar);
+		log_info(loggerSecundario,"[TRIPULANTE %d] SE GENERAN %d COMIDAS",tripulante->tid,caracteresAGenerar);
 		break;
 	}
 	case 4:{
@@ -327,10 +327,10 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		if(respuesta == EXISTE_EL_ARCHIVO){
 			uint32_t caracteresABorrar = tripulante->proxTarea->parametro;
 			send(tripulante->socket_MONGO,&caracteresABorrar,sizeof(uint32_t),0);
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] SE BORRAN %d COMIDAS",tripulante->tid,caracteresABorrar);
+			log_info(loggerSecundario,"[TRIPULANTE %d] SE BORRAN %d COMIDAS",tripulante->tid,caracteresABorrar);
 		}
 		else
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] EL ARCHIVO Comida.ims NO EXISTE",tripulante->tid);
+			log_info(loggerSecundario,"[TRIPULANTE %d] EL ARCHIVO Comida.ims NO EXISTE",tripulante->tid);
 		break;
 	}
 	case 5:{
@@ -338,7 +338,7 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		uint32_t caracteresAGenerar = tripulante->proxTarea->parametro;
 		send(tripulante->socket_MONGO,&tipoTarea,sizeof(TAREA_IO),0);
 		send(tripulante->socket_MONGO,&caracteresAGenerar,sizeof(uint32_t),0);
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] SE GENERAN %d BASURAS",tripulante->tid,caracteresAGenerar);
+		log_info(loggerSecundario,"[TRIPULANTE %d] SE GENERAN %d BASURAS",tripulante->tid,caracteresAGenerar);
 		break;
 	}
 	case 6:{
@@ -348,9 +348,9 @@ void realizarAccionTareaIO(t_tripulante* tripulante){
 		recv(tripulante->socket_MONGO,&respuesta,sizeof(tipo_mensaje),0);
 
 		if(respuesta == EXISTE_EL_ARCHIVO)
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] SE ELIMINA EL ARCHIVO Basura.ims",tripulante->tid);
+			log_info(loggerSecundario,"[TRIPULANTE %d] SE ELIMINA EL ARCHIVO Basura.ims",tripulante->tid);
 		else
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] EL ARCHIVO Basura.ims NO EXISTE",tripulante->tid);
+			log_info(loggerSecundario,"[TRIPULANTE %d] EL ARCHIVO Basura.ims NO EXISTE",tripulante->tid);
 		break;
 	}
 	default:{
@@ -373,19 +373,15 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 			if(idTripulanteResolviendoSabotaje == tripulante->tid)
 				esperarParaEjecutar(tripulante);
 
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
-
 			sacarDeExec(tripulante);
 
 			agregarABlockIO(tripulante);
 
-			pthread_mutex_lock(&mutexTripulantes);
-			tripulante->habilitado = false;
-			pthread_mutex_unlock(&mutexTripulantes);
-
 			habilitarProximoAEjecutar();
 
 			notificarInicioDeTarea(tripulante);
+
+			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 		}
 
 		pthread_mutex_lock(&mutexEjecutarIO);
@@ -401,7 +397,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			esperarSiHaySabotaje(tripulante);
 
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ EL BLOQUEO POR I/O",tripulante->tid);
+			log_trace(loggerSecundario,"[TRIPULANTE %d] TERMINÉ EL BLOQUEO POR I/O",tripulante->tid);
 			sacarDeBlockIO(tripulante);
 
 			notificarFinalizacionDeTarea(tripulante);
@@ -419,7 +415,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 	else
 	{
 		notificarInicioDeTarea(tripulante);
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
+		log_info(loggerSecundario,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 		pthread_mutex_lock(&mutexTripulantes);
 		tripulante->proxTarea->yaInicio = true;
@@ -437,7 +433,7 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 		}
 
 		if(!tripulante->expulsado){
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
+			log_info(loggerSecundario,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 			notificarFinalizacionDeTarea(tripulante);
 
@@ -483,8 +479,6 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 			if(idTripulanteResolviendoSabotaje == tripulante->tid)
 				esperarParaEjecutar(tripulante);
 
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
-
 			sacarDeExec(tripulante);
 
 			agregarABlockIO(tripulante);
@@ -492,6 +486,8 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 			habilitarProximoAEjecutar();
 
 			notificarInicioDeTarea(tripulante);
+
+			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 		}
 
 		pthread_mutex_lock(&mutexEjecutarIO);
@@ -506,7 +502,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			esperarSiHaySabotaje(tripulante);
 
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ EL BLOQUEO POR I/O",tripulante->tid);
+			log_trace(loggerSecundario,"[TRIPULANTE %d] TERMINÉ EL BLOQUEO POR I/O",tripulante->tid);
 			sacarDeBlockIO(tripulante);
 
 			notificarFinalizacionDeTarea(tripulante);
@@ -525,7 +521,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 	{
 		if(!tripulante->proxTarea->yaInicio){
 			notificarInicioDeTarea(tripulante);
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
+			log_info(loggerSecundario,"[TRIPULANTE %d] EMPIEZO A EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 			pthread_mutex_lock(&mutexTripulantes);
 			tripulante->proxTarea->yaInicio = true;
@@ -556,7 +552,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 		if(!tripulante->expulsado){
 			//SI EL TIEMPO EJECUTADO DE LA TAREA ES EL TIEMPO TOTAL, FINALIZA LA MISMA
 			if(tripulante->proxTarea->tiempoEjecutado == tripulante->proxTarea->tiempo){
-				log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
+				log_info(loggerSecundario,"[TRIPULANTE %d] TERMINÉ DE EJECUTAR %s",tripulante->tid,tripulante->proxTarea->nombre);
 
 				notificarFinalizacionDeTarea(tripulante);
 
@@ -567,7 +563,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 				if(tieneTareasPendientes(tripulante)){
 					if(tripulante->quantum == QUANTUM){
-						log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+						log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 						esperarSiHaySabotaje(tripulante);
 
@@ -620,7 +616,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 					pthread_mutex_unlock(&mutexTripulantes);
 				}
 
-				log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+				log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 				esperarSiHaySabotaje(tripulante);
 
@@ -659,14 +655,14 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		if(tripulante->expulsado)
 			break;
 
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
+		log_info(loggerSecundario,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
 
 		//PREGUNTO SI ESTÁ EN READY PORQUE SI TERMINA DE EJECUTAR UNA TAREA COMÚN, SIGUE EN EXEC.
 		if(tripulante->estado == READY){
 			sacarDeReady(tripulante);
 
 			agregarAExec(tripulante);
-			log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
+			log_info(loggerSecundario,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 		}
 
 		//SE MUEVE A LA POSICIÓN DE LA TAREA
@@ -741,7 +737,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		if(tripulante->expulsado)
 			break;
 
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
+		log_info(loggerSecundario,"[TRIPULANTE %d] TENGO QUE LLEGAR A %d|%d",tripulante->tid,tripulante->proxTarea->posicion.posX,tripulante->proxTarea->posicion.posY);
 		sem_post(&(tripulante->puedeEjecutar));
 
 		while(!tripulante->proxTarea->finalizada && !tripulante->expulsado){
@@ -751,7 +747,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 				sacarDeReady(tripulante);
 
 				agregarAExec(tripulante);
-				log_info(loggerDiscordiador,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
+				log_info(loggerSecundario,"[TRIPULANTE %d] EJECUTO...",tripulante->tid);
 			}
 
 			while(tripulante->quantum < QUANTUM && !llegoALaPosicion(tripulante,&tripulante->proxTarea->posicion) && !tripulante->expulsado){
@@ -773,7 +769,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 			if(!tripulante->expulsado){
 				//SI EL QUANTUM DEL TRIPULANTE ES IGUAL AL MAXIMO, QUIERE DECIR QUE NO PUEDE EMPEZAR A EJECUTAR LA TAREA. VUELVE A READY
 				if(tripulante->quantum == QUANTUM){
-					log_info(loggerDiscordiador,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+					log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 					esperarSiHaySabotaje(tripulante);
 
@@ -898,7 +894,6 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	patota->archivoTareas = estructura->rutaDeTareas;
 	patota->cantidadTareas = getCantidadTareasPatota(tareas);
 	int sizeTareas = strlen(tareas) + 1;
-	sumarIdPatota();
 	list_add(patotas,patota);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -932,6 +927,8 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	}
 
 	close(socket_cliente_MIRAM);
+
+	sumarIdPatota();
 
 	for(int i=0; i<estructura->cantidadTripulantes; i++){
 		pthread_mutex_lock(&mutexTripulantes);
@@ -970,15 +967,15 @@ void listarTripulantes(){
 	else
 	{
 		char* fecha = temporal_get_string_time("%d/%m/%y %H:%M:%S");
-		log_info(loggerDiscordiador,"------------------------------------------------------");
-		log_info(loggerDiscordiador,"Estado de la Nave: %s",fecha);
+		log_trace(loggerDiscordiador,"------------------------------------------------------");
+		log_trace(loggerDiscordiador,"Estado de la Nave: %s",fecha);
 		pthread_mutex_lock(&mutexTripulantes);
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
-			log_info(loggerDiscordiador,"Tripulante: %d    Patota: %d    Status: %s",tripulante->tid, tripulante->idPatota, getEstadoComoCadena(tripulante->estado));
+			log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Status: %s",tripulante->tid, tripulante->idPatota, getEstadoComoCadena(tripulante->estado));
 		}
 		pthread_mutex_unlock(&mutexTripulantes);
-		log_info(loggerDiscordiador,"------------------------------------------------------");
+		log_trace(loggerDiscordiador,"------------------------------------------------------");
 
 		free(fecha);
 	}

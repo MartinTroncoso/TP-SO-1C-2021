@@ -229,10 +229,11 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 		proximaTarea->parametro = atoi(parametrosSpliteados[0]);
 		proximaTarea->posicion.posX = atoi(parametrosSpliteados[1]);
 		proximaTarea->posicion.posY = atoi(parametrosSpliteados[2]);
-		proximaTarea->nombre = tareaSpliteada[0];
-		proximaTarea->longNombre = strlen(proximaTarea->nombre) + 1;
+		proximaTarea->longNombre = strlen(tareaSpliteada[0]) + 1;
 		proximaTarea->tiempo = tiempo;
 		proximaTarea->esDeEntradaSalida = true;
+		proximaTarea->nombre = malloc(strlen(tareaSpliteada[0]) + 1);
+		memcpy(proximaTarea->nombre,tareaSpliteada[0],strlen(tareaSpliteada[0]) + 1);
 
 		liberarArray(parametrosSpliteados);
 		break;
@@ -241,13 +242,15 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 		tareaSpliteada = string_split(stringCadena,";");
 
 		tiempo = atoi(tareaSpliteada[3]); //SI NO LO HAGO ASI, proximaTarea->tiempo QUEDA IGUAL A 0 (NO SE POR QUÉ)
-		proximaTarea->nombre = tareaSpliteada[0];
-		proximaTarea->longNombre = strlen(proximaTarea->nombre) + 1;
+		proximaTarea->longNombre = strlen(tareaSpliteada[0]) + 1;
 		proximaTarea->parametro = -1;
 		proximaTarea->posicion.posX = atoi(tareaSpliteada[1]);
 		proximaTarea->posicion.posY = atoi(tareaSpliteada[2]);
 		proximaTarea->tiempo = tiempo;
 		proximaTarea->esDeEntradaSalida = false;
+		proximaTarea->nombre = malloc(strlen(tareaSpliteada[0]) + 1);
+		memcpy(proximaTarea->nombre,tareaSpliteada[0],strlen(tareaSpliteada[0]) + 1);
+
 		break;
 	default:
 		log_error(loggerDiscordiador,"HUBO UN ERROR AL RECIBIR LA TAREA");
@@ -259,9 +262,9 @@ Tarea* solitarProximaTarea(int socket_cliente_MIRAM){
 	proximaTarea->finalizada = false;
 	proximaTarea->yaInicio = false;
 
-	free(tareaSpliteada);
-	free(buffer);
+	liberarArray(tareaSpliteada);
 	free(stringCadena);
+	free(buffer);
 
 	return proximaTarea;
 }
