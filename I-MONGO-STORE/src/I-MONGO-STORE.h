@@ -13,6 +13,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <dirent.h>
+
 
 pthread_mutex_t mutexSincro;
 pthread_mutex_t mutexBlocks;
@@ -27,6 +29,15 @@ char* IP_DISCORDIADOR;
 char* PUERTO_DISCORDIADOR;
 char** POSICIONES_SABOTAJE;
 int TIEMPO_SINCRONIZACION;
+
+typedef enum
+{
+	SABOTAJE_EN_SUPERBLOQUE_CANTIDAD = 1,
+	SABOTAJE_EN_SUPERBLOQUE_BITMAP = 2,
+	SABOTAJE_EN_FILE_SIZE = 3,
+	SABOTAJE_EN_FILE_BLOCK_COUNT = 4,
+	SABOTAJE_EN_FILE_BLOCKS = 5
+}casoDeSabotaje;
 
 t_dictionary* caracterAsociadoATarea;
 t_config* configuracionMongo;
@@ -85,5 +96,9 @@ void escribirEnBlocks(int, char*);
 void rellenarEnBlocks(int, char*, int);
 void destruirConfig();
 void terminar_programa();
+
+//sabotajes
+bool verificarCantidadBlocks();
+bool verificarBitMap();
 
 #endif /* I_MONGO_STORE_H_ */
