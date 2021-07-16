@@ -16,7 +16,7 @@ int main(void){
 
 	inicializarVariables();
 	//escribirFile("Oxigeno", 39);
-	//bool unvalor = verificarSizeFile();
+	//bool unvalor = verificarMD5();
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -448,9 +448,10 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		{
 			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
-			uint32_t caracteresABorrar;
-			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
-			eliminarCaracterFile("Basura", caracteresABorrar);
+			char* direccionBasura = string_from_format("%s/Files/Basura.ims",PUNTO_MONTAJE);
+			log_info(loggerMongo,"Direccion basura :%s",direccionBasura);
+			remove(direccionBasura);
+			free(direccionBasura);
 			printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
 		}else
 		{

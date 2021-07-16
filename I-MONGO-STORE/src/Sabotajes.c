@@ -201,3 +201,56 @@ bool verificarSizeFile()
 	free(direccionFiles);
 	return resultado;
 }
+
+bool verificarMD5()
+{
+	struct dirent *dir;
+	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
+	char* ubicacion;
+	char** arrayBloques;
+	int contador;
+	t_config* configATrabajar;
+	char* stringAuxiliar;
+	char* recursoRecuperado;
+	char* valorMD5;
+	DIR* directorio= opendir(direccionFiles);
+	if(directorio == NULL)
+	{
+		log_info(loggerMongo,"Error en directorio FILES");
+		exit(-1);
+	}
+	while((dir = readdir(directorio))!= NULL)
+	{
+		ubicacion = string_from_format("%s/%s",direccionFiles,dir->d_name);
+		//archivo = fopen(ubicacion,"r");
+		if((!strcmp(dir->d_name,".") || !strcmp(dir->d_name,"..") || !strcmp(dir->d_name,"AuxiliarFile.txt")|| !strcmp(dir->d_name,"AuxiliarMD5.txt")|| !strcmp(dir->d_name,"Bitacoras")))
+		{
+
+		}else //suponiendo que se filtraron todo lo que no son recursos
+		{
+			recursoRecuperado = string_new();
+			configATrabajar = config_create(ubicacion);
+			arrayBloques = config_get_array_value(configATrabajar,"BLOCKS");
+			contador = 0;
+			while(arrayBloques[contador]!=NULL)
+			{
+				stringAuxiliar = bloqueRecuperado(atoi(arrayBloques[contador]));
+				string_append(&recursoRecuperado, stringAuxiliar);
+				contador++;
+				free(stringAuxiliar);
+			}
+			config_destroy(configATrabajar);
+			log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
+			free(recursoRecuperado);
+			liberarArray(arrayBloques);
+		}
+		free(ubicacion);
+
+
+	}
+	free(dir);
+	closedir(directorio);
+	free(direccionFiles);
+
+	return 1;
+}
