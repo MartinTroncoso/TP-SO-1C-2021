@@ -696,7 +696,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 
 	//SI EL TRIPULANTE ES EXPULSADO MIENTRAS EJECUTA, NO ENTRA ACÁ
 	if(!tripulante->expulsado){
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
+		log_debug(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
 		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
@@ -804,7 +804,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 
 	//SI EL TRIPULANTE ES EXPULSADO MIENTRAS EJECUTA, NO ENTRA ACÁ
 	if(!tripulante->expulsado){
-		log_info(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
+		log_debug(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
 		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
