@@ -15,6 +15,8 @@ int main(void){
 	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
+	//escribirFile("Oxigeno", 40);
+	bool unvalor = verificarBitMap();
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -406,7 +408,7 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 			printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d\n",id_tripulante,caracteresABorrar);
 		}else
 		{
-			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
 		}
 		break;
@@ -419,11 +421,19 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		break;
 	}
 	case CONSUMIR_COMIDA:{
-		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
-		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
-		uint32_t caracteresABorrar;
-		recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
-		printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Comidas.ims: %d\n",id_tripulante,caracteresABorrar);
+		if(existeArchivoRecurso("Comida"))
+		{
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+			uint32_t caracteresABorrar;
+			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
+			eliminarCaracterFile("Comida", caracteresABorrar);
+			printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Comidas.ims: %d\n",id_tripulante,caracteresABorrar);
+		}else
+		{
+			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		}
 		break;
 	}
 	case GENERAR_BASURA:{
@@ -434,9 +444,19 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		break;
 	}
 	case DESCARTAR_BASURA:{
-		tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
-		send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
-		printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
+		if(existeArchivoRecurso("Basura"))
+		{
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+			uint32_t caracteresABorrar;
+			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
+			eliminarCaracterFile("Basura", caracteresABorrar);
+			printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
+		}else
+		{
+			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
+			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
+		}
 		break;
 	}
 	default:
