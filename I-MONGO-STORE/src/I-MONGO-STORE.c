@@ -16,7 +16,8 @@ int main(void){
 
 	inicializarVariables();
 	//escribirFile("Oxigeno", 39);
-	//bool unvalor = verificarMD5();
+	//bool unvalor = verificarBlockCount();
+
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -1007,6 +1008,7 @@ void escribirFile(char* recurso, int cantidad)
 	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
 	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 	char* stringRecurso = string_repeat(recurso[0], cantidad);
+	char* recursosParaMD5 = string_repeat(' ',((tamanioFile+cantidad)/tamanioBlock + byteExcedente(tamanioFile+cantidad, tamanioBlock))*tamanioBlock);
 	log_info(loggerMongo,"Tamanio stringRecurso: %d",string_length(stringRecurso));
 	if(cantidadDeBloques==0)
 	{//si no tiene ningun bloque
@@ -1017,7 +1019,8 @@ void escribirFile(char* recurso, int cantidad)
 			char* posicionBit = string_from_format("[%d]",posicion);
 			char* tamanioRecurso = string_itoa(cantidad);
 			escribirEnBlocks(posicion, stringRecurso);
-			fileMD5 = obtenerMD5(stringRecurso);
+			memcpy(recursosParaMD5,stringRecurso,string_length(stringRecurso));
+			fileMD5 = obtenerMD5(recursosParaMD5);
 			forzarSincronizacionBlocks();
 
 			config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
@@ -1052,7 +1055,8 @@ void escribirFile(char* recurso, int cantidad)
 				free(stringPartido);
 				cantidadDeBloques++;
 			}
-			fileMD5 = obtenerMD5(stringRecurso);
+			memcpy(recursosParaMD5,stringRecurso,string_length(stringRecurso));
+			fileMD5 = obtenerMD5(recursosParaMD5);
 			forzarSincronizacionBlocks();
 			char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
 			config_set_value(configFile,"BLOCKS",bloquesConf);
@@ -1072,6 +1076,7 @@ void escribirFile(char* recurso, int cantidad)
 		int bloquePosicion = 0;
 		int contador = 0;
 		char* bloqueRecuperadoFile;
+		//char* recursosParaMD5 = string_repeat(' ', ((tamanioFile+cantidad)/tamanioBlock + byteExcedente(tamanioFile+cantidad, tamanioBlock))*tamanioBlock);
 		char* recursosEnFS = string_repeat(recurso[0], tamanioFile+cantidad);
 		char* bloques;
 		while(bloquesUtilizados[contador] != NULL)
@@ -1093,7 +1098,9 @@ void escribirFile(char* recurso, int cantidad)
 			contador++;
 		}
 		//string_append(&recursosEnFS, stringRecurso);
-		fileMD5 = obtenerMD5(recursosEnFS);
+		memcpy(recursosParaMD5,recursosEnFS,string_length(recursosEnFS));
+		log_info(loggerMongo,"Recursos para md5: %s",recursosParaMD5);
+		fileMD5 = obtenerMD5(recursosParaMD5);
 		liberarArray(bloquesUtilizados);
 		if(cantidad<=tamanioBlock)
 		{
@@ -1146,11 +1153,15 @@ void escribirFile(char* recurso, int cantidad)
 			int cantidadDeBloquesASolicitar;
 			int posicionString = 0;
 			char* stringPartido;
+			log_info(loggerMongo,"Resto: %d",tamanioFile%tamanioBlock);
+			//sleep(5);
 			if(tamanioFile%tamanioBlock!=0)
 			{
 				stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock - tamanioFile%tamanioBlock);
 				rellenarEnBlocks(bloquePosicion, stringPartido, tamanioFile);
 				int tamanioStringRestante = cantidad - string_length(stringPartido);
+				log_info(loggerMongo,"tamanio stringPartido en rellenar: %d",string_length(stringPartido));
+				posicionString += string_length(stringPartido);
 				cantidadDeBloquesASolicitar = tamanioStringRestante/tamanioBlock + byteExcedente(tamanioStringRestante, tamanioBlock);
 				int nuevoBloque;
 				free(stringPartido);
@@ -1158,7 +1169,7 @@ void escribirFile(char* recurso, int cantidad)
 				{
 					nuevoBloque = ocuparBitVacio();
 					stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock);
-					posicionString = string_length(stringPartido);
+					posicionString += string_length(stringPartido);
 					escribirEnBlocks(nuevoBloque, stringPartido);
 					string_append_with_format(&bloques, ",%d",nuevoBloque);
 					cantidadDeBloques++;
@@ -1203,6 +1214,7 @@ void escribirFile(char* recurso, int cantidad)
 			}
 		}
 	}
+	free(recursosParaMD5);
 	free(stringRecurso);
 	config_save(configFile);
 	config_destroy(configFile);
@@ -1254,7 +1266,8 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 		{
 			char* nuevoStringBloque = string_repeat(' ', tamanioBlock);
 			char* nuevoStringRecurso = string_repeat(recurso[0],nuevoSize%tamanioBlock);
-			memcpy(nuevoStringBloque,nuevoStringBloque,string_length(nuevoStringRecurso));
+			log_info(loggerMongo,"Tamanio string recurso:%d string recurso: %s",string_length(nuevoStringRecurso),nuevoStringRecurso);
+			memcpy(nuevoStringBloque,nuevoStringRecurso,string_length(nuevoStringRecurso));
 			escribirEnBlocks(atoi(bloquesUtilizados[cantidadDeBloques-1]), nuevoStringBloque);
 			free(nuevoStringBloque);
 			free(nuevoStringRecurso);
@@ -1264,17 +1277,20 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 		{
 			string_append_with_format(&nuevoArray, ",%s",bloquesUtilizados[i]);
 		}
+		char* recursoParaMD5 = string_repeat(' ',cantidadDeBloquesNecesarios*tamanioBlock);
 		char* recursoTotal = string_repeat(recurso[0],nuevoSize);
+		memcpy(recursoParaMD5,recursoTotal,string_length(recursoTotal));
 		char* bloquesConf = string_from_format("[%s]",nuevoArray);
 		char* sizeConf = string_itoa(nuevoSize);
 		char* contadorConf = string_itoa(cantidadDeBloquesNecesarios);
-		fileMD5 = obtenerMD5(recursoTotal);
+		fileMD5 = obtenerMD5(recursoParaMD5);
 		config_set_value(configFile,"SIZE",sizeConf);
 		config_set_value(configFile,"BLOCK_COUNT",contadorConf);
 		config_set_value(configFile,"BLOCKS",bloquesConf);
 		config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 		free(nuevoArray);
 		free(recursoTotal);
+		free(recursoParaMD5);
 		free(bloquesConf);
 		free(sizeConf);
 		free(contadorConf);

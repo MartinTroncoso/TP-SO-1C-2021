@@ -204,6 +204,7 @@ bool verificarSizeFile()
 
 bool verificarMD5()
 {
+	bool resultado = false;
 	struct dirent *dir;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
 	char* ubicacion;
@@ -212,6 +213,7 @@ bool verificarMD5()
 	t_config* configATrabajar;
 	char* stringAuxiliar;
 	char* recursoRecuperado;
+	char* md5Config;
 	char* valorMD5;
 	DIR* directorio= opendir(direccionFiles);
 	if(directorio == NULL)
@@ -234,15 +236,28 @@ bool verificarMD5()
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
+				log_info(loggerMongo,"Es un archivo :%s contador: %d",dir->d_name,atoi(arrayBloques[contador]));
 				stringAuxiliar = bloqueRecuperado(atoi(arrayBloques[contador]));
+				log_info(loggerMongo,"String Recuperado: %s",stringAuxiliar);
 				string_append(&recursoRecuperado, stringAuxiliar);
 				contador++;
 				free(stringAuxiliar);
 			}
-			config_destroy(configATrabajar);
 			log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
+			md5Config = config_get_string_value(configATrabajar,"MD5_ARCHIVO");
+			valorMD5 = obtenerMD5(recursoRecuperado);
+			log_info(loggerMongo,"%s",md5Config);
+			log_info(loggerMongo,"%s",valorMD5);
+			if(strcmp(md5Config,valorMD5))
+			{
+				log_info(loggerMongo,"Valores MD5 distintos");
+				resultado = true;
+			}
+			config_destroy(configATrabajar);
+
 			free(recursoRecuperado);
 			liberarArray(arrayBloques);
+
 		}
 		free(ubicacion);
 
@@ -252,5 +267,55 @@ bool verificarMD5()
 	closedir(directorio);
 	free(direccionFiles);
 
-	return 1;
+	return resultado;
+}
+
+bool verificarBlockCount()
+{
+	bool resultado = false;
+	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
+	struct dirent *dir;
+	char* ubicacion;
+	DIR* directorio= opendir(direccion);
+	t_config* configFile;
+	int cantidadDeBloques;
+	int contador;
+	char** bloquesUtilizados;
+	if(directorio == NULL)
+	{
+		log_info(loggerMongo,"Error en directorio FILES");
+		exit(-1);
+	}
+	while((dir = readdir(directorio))!= NULL)
+	{
+		ubicacion = string_from_format("%s/%s",direccion,dir->d_name);
+		//archivo = fopen(ubicacion,"r");
+		if((!strcmp(dir->d_name,".") || !strcmp(dir->d_name,"..") || !strcmp(dir->d_name,"AuxiliarFile.txt")|| !strcmp(dir->d_name,"AuxiliarMD5.txt")|| !strcmp(dir->d_name,"Bitacoras")))
+		{
+
+		}else
+		{
+			configFile = config_create(ubicacion);
+			bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
+			cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
+			contador = 0;
+			while(bloquesUtilizados[contador]!=NULL)
+			{
+				contador++;
+			}
+			if(contador!=cantidadDeBloques)
+			{
+				resultado = true;
+			}
+			config_destroy(configFile);
+			liberarArray(bloquesUtilizados);
+		}
+		free(ubicacion);
+	}
+	free(dir);
+	closedir(directorio);
+	free(direccion);
+	log_info(loggerMongo,"Valor bool: %d",resultado);
+
+	return resultado;
 }

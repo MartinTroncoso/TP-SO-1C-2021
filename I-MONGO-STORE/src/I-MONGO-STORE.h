@@ -103,5 +103,6 @@ bool verificarBitMap();
 t_bitarray* bitmapDesdeBloques();
 bool verificarSizeFile();
 bool verificarMD5();
+bool verificarBlockCount();
 
 #endif /* I_MONGO_STORE_H_ */
