@@ -743,23 +743,18 @@ void ejecutarFSCK(){
 	switch(sabotaje)
 	{
 	case SABOTAJE_EN_SUPERBLOQUE_CANTIDAD:
-		log_info(loggerMongo,"SE REPARA LA CANTIDAD DE BLOCKS1");
 		resolverSabotajeCantidadBlocks();
 		break;
 	case SABOTAJE_EN_SUPERBLOQUE_BITMAP:
-		log_info(loggerMongo,"SE REPARA EL BITMAP");
 		resolverSabotajeBitMap();
 		break;
 	case SABOTAJE_EN_FILE_SIZE:
-		log_info(loggerMongo,"SE REPARA LA CANTIDAD DE BLOCKS3");
 		resolverSabotajeSizeFile();
 		break;
 	case SABOTAJE_EN_FILE_BLOCK_COUNT:
-		log_info(loggerMongo,"SE REPARA LA CANTIDAD DE BLOCKS4");
 		resolverSabotajeBlockCount();
 		break;
 	case SABOTAJE_EN_FILE_BLOCKS:
-		log_info(loggerMongo,"SE REPARA LA CANTIDAD DE BLOCKS5");
 		resolverSabotajeMD5();
 		break;
 	case NO_HAY_SABOTAJES:
