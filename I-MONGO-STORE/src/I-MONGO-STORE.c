@@ -31,10 +31,14 @@ int main(void){
 //	resolverSabotajeCantidadBlocks();
 //	resolverSabotajeMD5();
 //	resolverSabotajeSizeFile();
+	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
+	ejecutarFSCK();
+	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
 	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
+
 
 	while(1){
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -779,7 +783,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 			int posicion = ocuparBitVacio();
 			escribirEnBlocks(posicion, string);//lo mismo que la linea de abajo pero con mutex para blocks
 			//memcpy(blocksMap+(posicion*tamanioBlock),string,cantidadDeBytes);
-			forzarSincronizacionBlocks();
+			//forzarSincronizacionBlocks();
 			//fin de semaforo
 			config_set_value(configuracionTripulante,"BLOCKS",string_from_format("[%d]",posicion));
 			tamanioString += config_get_int_value(configuracionTripulante,"SIZE");
@@ -819,7 +823,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 				}
 				//log_info(loggerMongo,"cantidad: %d",cantidad);
 				//log_info(loggerMongo,"String partido post FOR: %s posicion: %d", string_substring(string, cantidad, tamanioBlock),cantidad*tamanioBlock);
-				forzarSincronizacionBlocks();
+				//forzarSincronizacionBlocks();
 				//pthread_mutex_unlock(&mutexBitMap);//semaforo cierre
 				//log_info(loggerMongo,"Bloques pedidos: %s",bloquesSolicitados);
 				char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
@@ -886,7 +890,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 			if(tamanioBlock - tamanioBitacora%tamanioBlock >= tamanioString && tamanioBitacora%tamanioBlock != 0)
 			{
 				rellenarEnBlocks(bloquePosicion, string, tamanioBitacora);
-				forzarSincronizacionBlocks();//forzar la sincronizacion
+				//forzarSincronizacionBlocks();//forzar la sincronizacion
 				tamanioBitacora += tamanioString;
 				config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioBitacora));
 			}else
@@ -911,7 +915,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 					tamanioBitacora+=string_length(stringPartido);
 					free(stringPartido);
 				}
-				forzarSincronizacionBlocks();
+				//forzarSincronizacionBlocks();
 				char* nuevosBloquesBitacora = string_from_format("[%s]",bloques);
 				char* nuevoTamanioBitacora = string_from_format("%d",tamanioBitacora);
 				config_set_value(configuracionTripulante,"BLOCKS",nuevosBloquesBitacora);
@@ -1015,7 +1019,7 @@ void escribirEnBlocks(int posicion, char* string)
 	pthread_mutex_lock(&mutexBlocks);
 	int tamanioString = string_length(string);
 	memcpy(blocksMap+(posicion*tamanioBlock),string,tamanioString);
-	forzarSincronizacionBlocks();
+	//forzarSincronizacionBlocks();
 	pthread_mutex_unlock(&mutexBlocks);
 }
 
@@ -1063,7 +1067,7 @@ void escribirFile(char* recurso, int cantidad)
 			escribirEnBlocks(posicion, stringRecurso);
 			memcpy(recursosParaMD5,stringRecurso,string_length(stringRecurso));
 			fileMD5 = obtenerMD5(recursosParaMD5);
-			forzarSincronizacionBlocks();
+			//forzarSincronizacionBlocks();
 
 			config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 			config_set_value(configFile, "SIZE",tamanioRecurso);
@@ -1099,7 +1103,7 @@ void escribirFile(char* recurso, int cantidad)
 			}
 			memcpy(recursosParaMD5,stringRecurso,string_length(stringRecurso));
 			fileMD5 = obtenerMD5(recursosParaMD5);
-			forzarSincronizacionBlocks();
+			//forzarSincronizacionBlocks();
 			char* bloquesConf = string_from_format("[%s]",bloquesSolicitados);
 			config_set_value(configFile,"BLOCKS",bloquesConf);
 			char* tamanioRecurso = string_itoa(cantidad);
@@ -1149,7 +1153,7 @@ void escribirFile(char* recurso, int cantidad)
 			if(tamanioBlock - tamanioFile%tamanioBlock >= cantidad && tamanioFile%tamanioBlock != 0)
 			{
 				rellenarEnBlocks(bloquePosicion, stringRecurso, tamanioFile);
-				forzarSincronizacionBlocks();
+				//forzarSincronizacionBlocks();
 				tamanioFile += cantidad;
 				char* sizeConf = string_itoa(tamanioFile);
 				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
@@ -1178,7 +1182,7 @@ void escribirFile(char* recurso, int cantidad)
 					cantidadDeBloques++;
 					free(stringPartido);
 				}
-				forzarSincronizacionBlocks();
+				//forzarSincronizacionBlocks();
 				char* blocksConf = string_from_format("[%s]",bloques);
 				char* sizeConf = string_itoa(tamanioFile);
 				char* cantidadConf = string_itoa(cantidadDeBloques);
