@@ -739,21 +739,27 @@ void informarSabotaje(){
 
 void ejecutarFSCK(){
 	casoDeSabotaje sabotaje = casoSabotajeActual();
+	log_info(loggerMongo,"SE EJECUTA EL FSCK");
 	switch(sabotaje)
 	{
 	case SABOTAJE_EN_SUPERBLOQUE_CANTIDAD:
+		log_info(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS");
 		resolverSabotajeCantidadBlocks();
 		break;
 	case SABOTAJE_EN_SUPERBLOQUE_BITMAP:
+		log_info(loggerMongo,"FUE SABOTEADO EL BITMAP");
 		resolverSabotajeBitMap();
 		break;
 	case SABOTAJE_EN_FILE_SIZE:
+		log_info(loggerMongo,"FUE SABOTEADO EL TAMAÑO DE UN ARCHIVO");
 		resolverSabotajeSizeFile();
 		break;
 	case SABOTAJE_EN_FILE_BLOCK_COUNT:
+		log_info(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS DE UN ARCHIVO");
 		resolverSabotajeBlockCount();
 		break;
 	case SABOTAJE_EN_FILE_BLOCKS:
+		log_info(loggerMongo,"FUE SABOTEADO EL MD5 DE UN ARCHIVO");
 		resolverSabotajeMD5();
 		break;
 	case NO_HAY_SABOTAJES:
