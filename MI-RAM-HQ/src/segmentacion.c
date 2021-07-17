@@ -12,17 +12,6 @@ typedef struct {
 	seg_tabla* tabla_pid;
 } result_busqueda;
 
-//CONSTANTES <NO TOCAR>
-const uint32_t TAMANIO_PCB = 8;
-const uint32_t TAMANIO_TCB = 21;
-
-const uint32_t TCB_POS_TID = 0;
-const uint32_t TCB_POS_ESTADO = 4;
-const uint32_t TCB_POS_POSX = 5;
-const uint32_t TCB_POS_POSY = 9;
-const uint32_t TCB_POS_PROX_T = 13;
-const uint32_t TCB_POS_PUNT_PCB = 17;
-
 //GLOBALES IMPORTANTE!!!
 static t_list* tablas_segmentacion; //Aca van las tablas de segmentos
 static t_list* areas_libres_ordenadas; //Areas de memoria libres, ordenadas por posicion de inicio
@@ -313,7 +302,7 @@ void seg_actualizar_instruccion_tripulante(uint32_t tid) {
 		log_info(logger_admin, "[Actualizacion prox inst trip %d] Se avanza hacia el final", tid);
 	}
 
-	// Modifico el valor de prox_tarea (PCB)
+	// Modifico el valor de prox_tarea (TCB)
 
 	uint32_t nueva_prox_tarea = dir_logica_prox_tarea + avance_posiciones;
 	log_info(logger_admin, "[Actualizacion prox inst trip %d] Se avanza: dir_log_ant(%#010X) - dir_log_nueva(%#010X)", tid, dir_logica_prox_tarea, nueva_prox_tarea);
@@ -327,7 +316,7 @@ void seg_generar_dump_memoria(FILE* archivo) {
 		seg_tabla* tabla_patota = (seg_tabla*) _patota;
 		void escritura_por_segmento(void* _seg) {
 			segmento* seg = (segmento*) _seg;
-			char* linea = string_from_format("Proceso: %d\tSegmento: %d\tInicio: %#010X\tTam: %dB\n", tabla_patota->pid, seg->n_segmento, seg->inicio, seg->tamanio);
+			char* linea = string_from_format("Proceso: %d\t\tSegmento: %d\t\tInicio: %#06X\t\tTam: %dB\n", tabla_patota->pid, seg->n_segmento, seg->inicio, seg->tamanio);
 			txt_write_in_file(archivo, linea);
 			free(linea);
 		}
@@ -337,7 +326,7 @@ void seg_generar_dump_memoria(FILE* archivo) {
 
 	void escritura_por_libre(void* _libre) {
 		seg_area_libre* area = (seg_area_libre*) _libre;
-		char* linea = string_from_format("Area libre:\tInicio: %d\tTam: %dB\n", area->inicio, area->tamanio);
+		char* linea = string_from_format("Area libre:\t\tInicio: %d\t\tTam: %dB\n", area->inicio, area->tamanio);
 		txt_write_in_file(archivo, linea);
 	}
 	list_iterate(areas_libres_ordenadas, escritura_por_libre);

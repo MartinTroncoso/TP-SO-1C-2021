@@ -9,8 +9,6 @@
 
 static t_list* tripulantes;
 static t_list* patotas;
-static pthread_mutex_t mutex_lista_patotas;
-static pthread_mutex_t mutex_lista_tripulantes;
 
 static bas_patota* buscar_patota(uint32_t);
 static bas_tripulante* buscar_tripulante(uint32_t tid);
@@ -19,8 +17,6 @@ static void _bas_liberar_patota(bas_patota* patota);
 void bas_inicializacion() {
 	patotas = list_create();
 	tripulantes = list_create();
-	pthread_mutex_init(&mutex_lista_patotas,NULL);
-	pthread_mutex_init(&mutex_lista_tripulantes,NULL);
 	log_info(logger_admin, "Se inicia la administracion de memoria: BASICA");
 }
 
@@ -30,10 +26,7 @@ void bas_guardar_nueva_patota(datos_patota* d_nueva_patota) {
 	nueva_patota->cant_tripulantes = d_nueva_patota->tripulantes;
 	nueva_patota->tareas = string_duplicate(d_nueva_patota->tareas);
 	nueva_patota->tripulantes_activos = nueva_patota->cant_tripulantes;
-	pthread_mutex_init(&(nueva_patota->mutex_patota), NULL);
-	pthread_mutex_lock(&mutex_lista_patotas);
 	list_add(patotas, nueva_patota);
-	pthread_mutex_unlock(&mutex_lista_patotas);
 	log_info(logger_admin, "Se guarda la patota %d", d_nueva_patota->pid);
 }
 
@@ -48,9 +41,7 @@ void bas_guardar_nuevo_tripulante(datos_tripulante* d_nuevo_tripulante) {
 	bas_patota* patota = buscar_patota(d_nuevo_tripulante->pid);
 	nuevo_tripulante->patota = patota;
 	nuevo_tripulante->proxInstruccion = patota->tareas;
-	pthread_mutex_lock(&mutex_lista_tripulantes);
 	list_add(tripulantes, nuevo_tripulante);
-	pthread_mutex_unlock(&mutex_lista_tripulantes);
 	log_info(logger_admin, "Se guarda la patota %d", d_nuevo_tripulante->tid);
 }
 
@@ -152,9 +143,7 @@ void bas_liberar_tripulante(uint32_t tid) {
 		return trip == trip_a_eliminar;
 	}
 	//Quito de la lista al tripulante:
-	pthread_mutex_lock(&mutex_lista_tripulantes);
 	list_remove_by_condition(tripulantes, es_el_tripulante);
-	pthread_mutex_unlock(&mutex_lista_tripulantes);
 
 	//Disminuyo tripulantes activos de la patota:
 	pthread_mutex_lock(&(patota->mutex_patota));
@@ -193,9 +182,7 @@ void bas_generar_dump_memoria(FILE* archivo) {
 		pthread_mutex_unlock(&(patota->mutex_patota));
 		free(linea);
 	}
-	pthread_mutex_lock(&mutex_lista_patotas);
 	list_iterate(patotas, escritura_por_patota);
-	pthread_mutex_unlock(&mutex_lista_patotas);
 	free(detalle_patotas);
 	free(detalle_tripulantes);
 }
@@ -207,9 +194,7 @@ void _bas_liberar_patota(bas_patota* patota) {
 		return p == patota;
 	}
 	//Quito de la lista
-	pthread_mutex_lock(&mutex_lista_patotas);
 	list_remove_by_condition(patotas, es_la_patota);
-	pthread_mutex_unlock(&mutex_lista_patotas);
 	//Libero todoo de la patota
 	pthread_mutex_destroy(&(patota->mutex_patota));
 	free(patota->tareas);
@@ -222,9 +207,7 @@ static bas_patota* buscar_patota(uint32_t pid) {
 	bool patota_tiene_el_pid(void* patota) {
 		return ((bas_patota*) patota)->pid == pid;
 	}
-	pthread_mutex_lock(&mutex_lista_patotas);
 	bas_patota* patota_enc = list_find(patotas, patota_tiene_el_pid);
-	pthread_mutex_unlock(&mutex_lista_patotas);
 	if(patota_enc == NULL) {
 		log_error(logger_admin, "No se encuentra la patota %d", pid);
 	}
@@ -235,9 +218,7 @@ static bas_tripulante* buscar_tripulante(uint32_t tid) {
 	bool tripulante_tiene_el_tid(void* tripulante) {
 		return ((bas_tripulante*) tripulante)->tid == tid;
 	}
-	pthread_mutex_lock(&mutex_lista_tripulantes);
 	bas_tripulante* tripulante_enc = list_find(tripulantes, tripulante_tiene_el_tid);
-	pthread_mutex_unlock(&mutex_lista_tripulantes);
 	if(tripulante_enc == NULL) {
 		log_error(logger_admin, "No se encuentra el tripulante %d", tid);
 	}
