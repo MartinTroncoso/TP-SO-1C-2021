@@ -10,6 +10,16 @@
 static void reservar_memoria_principal();
 static void def_receptor_sigusr2();
 
+const uint32_t TAMANIO_PCB = 8;
+const uint32_t TAMANIO_TCB = 21;
+
+const uint32_t TCB_POS_TID = 0;
+const uint32_t TCB_POS_ESTADO = 4;
+const uint32_t TCB_POS_POSX = 5;
+const uint32_t TCB_POS_POSY = 9;
+const uint32_t TCB_POS_PROX_T = 13;
+const uint32_t TCB_POS_PUNT_PCB = 17;
+
 void inicializar_administrador(t_log* logger,
 		void (*f_inicializacion)(),
 		void (*f_g_n_patota)(datos_patota*),

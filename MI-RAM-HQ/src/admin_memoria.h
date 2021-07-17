@@ -30,6 +30,17 @@ typedef struct {
 	void* bloque;
 } memoria_principal;
 
+//CONSTANTES <NO TOCAR>
+const uint32_t TAMANIO_PCB;
+const uint32_t TAMANIO_TCB;
+
+const uint32_t TCB_POS_TID;
+const uint32_t TCB_POS_ESTADO;
+const uint32_t TCB_POS_POSX;
+const uint32_t TCB_POS_POSY;
+const uint32_t TCB_POS_PROX_T;
+const uint32_t TCB_POS_PUNT_PCB;
+
 int TAMANIO_MEMORIA;
 char* ESQUEMA_MEMORIA;
 int TAMANIO_PAGINA;

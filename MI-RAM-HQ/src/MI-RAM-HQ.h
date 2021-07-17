@@ -13,6 +13,7 @@
 #include "admin_memoria.h"
 #include "memoria_basica.h"
 #include "segmentacion.h"
+#include "paginacion.h"
 
 char* PUERTO_MI_RAM;
 

@@ -95,20 +95,35 @@ void inicializar_variables(){
 				seg_receptor_sigusr2,
 				seg_liberar_tripulante);
 	}
+	else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		inicializar_administrador(
+				logger_mi_ram,
+				pag_inicializacion,
+				pag_guardar_nueva_patota,
+				pag_guardar_nuevo_tripulante,
+				pag_obtener_estado_tripulante,
+				pag_obtener_prox_instruccion_tripulante,
+				pag_actualizar_estado_tripulante,
+				pag_actualizar_posicion_tripulante,
+				pag_actualizar_instruccion_tripulante,
+				pag_generar_dump_memoria,
+				NULL,
+				pag_liberar_tripulante);
+	}
 	else {
-	inicializar_administrador(
-			logger_mi_ram,
-			bas_inicializacion,
-			bas_guardar_nueva_patota,
-			bas_guardar_nuevo_tripulante,
-			bas_obtener_estado_tripulante,
-			bas_obtener_prox_instruccion_tripulante,
-			bas_actualizar_estado_tripulante,
-			bas_actualizar_posicion_tripulante,
-			bas_actualizar_instruccion_tripulante,
-			bas_generar_dump_memoria,
-			NULL,
-			bas_liberar_tripulante);
+		inicializar_administrador(
+				logger_mi_ram,
+				bas_inicializacion,
+				bas_guardar_nueva_patota,
+				bas_guardar_nuevo_tripulante,
+				bas_obtener_estado_tripulante,
+				bas_obtener_prox_instruccion_tripulante,
+				bas_actualizar_estado_tripulante,
+				bas_actualizar_posicion_tripulante,
+				bas_actualizar_instruccion_tripulante,
+				bas_generar_dump_memoria,
+				NULL,
+				bas_liberar_tripulante);
 	}
 }
 
