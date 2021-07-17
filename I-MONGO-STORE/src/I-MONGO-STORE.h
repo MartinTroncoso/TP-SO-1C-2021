@@ -32,6 +32,7 @@ int TIEMPO_SINCRONIZACION;
 
 typedef enum
 {
+	NO_HAY_SABOTAJES = 0,
 	SABOTAJE_EN_SUPERBLOQUE_CANTIDAD = 1,
 	SABOTAJE_EN_SUPERBLOQUE_BITMAP = 2,
 	SABOTAJE_EN_FILE_SIZE = 3,
@@ -104,5 +105,11 @@ t_bitarray* bitmapDesdeBloques();
 bool verificarSizeFile();
 bool verificarMD5();
 bool verificarBlockCount();
+casoDeSabotaje casoSabotajeActual();
+void resolverSabotajeBitMap();
+void resolverSabotajeSizeFile();
+void resolverSabotajeMD5();
+void resolverSabotajeBlockCount();
+void resolverSabotajeCantidadBlocks();
 
 #endif /* I_MONGO_STORE_H_ */

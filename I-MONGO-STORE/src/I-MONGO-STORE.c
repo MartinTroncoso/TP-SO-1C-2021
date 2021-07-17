@@ -16,8 +16,16 @@ int main(void){
 
 	inicializarVariables();
 	//escribirFile("Oxigeno", 39);
-	//bool unvalor = verificarBlockCount();
-
+//	t_bitarray* unArray = recuperarBitArray();
+//	bitarray_clean_bit(unArray,2);
+//	guardarBitArray(unArray);
+//	bitarray_destroy(unArray);
+	//bool unvalor = verificarSizeFile();
+	resolverSabotajeMD5();
+	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
+	log_info(loggerMongo,"%s",bloqueRecuperado(14));
+	log_info(loggerMongo,"%s",bloqueRecuperado(38));
+	log_info(loggerMongo,"%s",bloqueRecuperado(39));
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
