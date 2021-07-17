@@ -39,6 +39,9 @@ int main(void){
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
 	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
 
+	pthread_t hilo_sincro;
+	pthread_create(&hilo_sincro,NULL,(void*) asincronia,NULL);
+	pthread_detach(hilo_sincro);
 
 	while(1){
 		int socket_cliente = esperar_cliente(socket_escucha);
@@ -1434,6 +1437,15 @@ void eliminarArchivoYLiberar(char* recurso)
 	remove(direccion);
 	free(direccion);
 	liberarArray(bloquesUsados);
+}
+
+void asincronia()
+{
+	while(1)
+	{
+		sleep(TIEMPO_SINCRONIZACION);
+		forzarSincronizacionBlocks();
+	}
 }
 
 void destruirConfig(){

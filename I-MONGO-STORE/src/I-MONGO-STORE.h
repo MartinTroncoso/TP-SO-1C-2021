@@ -99,6 +99,7 @@ void rellenarEnBlocks(int, char*, int);
 void destruirConfig();
 void terminar_programa();
 void eliminarArchivoYLiberar(char*);
+void asincronia();
 
 //sabotajes
 bool verificarCantidadBlocks();
