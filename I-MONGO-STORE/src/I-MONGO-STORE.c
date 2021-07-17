@@ -70,6 +70,7 @@ void inicializarVariables(){
 	pthread_mutex_init(&mutexSincro,NULL);
 	pthread_mutex_init(&mutexMD5,NULL);
 	pthread_mutex_init(&mutexFile,NULL);
+	pthread_mutex_init(&mutexSabotaje,NULL);
 //	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
 //	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
 //	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
@@ -1297,13 +1298,9 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 
 	}else
 	{
-		log_info(loggerMongo,"[%s]",bloquesUtilizados[0]);
-		log_info(loggerMongo,"[%s]",bloquesUtilizados[1]);
 		int cantidadDeBloquesNecesarios = nuevoSize/tamanioBlock + byteExcedente(nuevoSize, tamanioBlock);
 		while(cantidadDeBloques != cantidadDeBloquesNecesarios)
 		{
-			log_info(loggerMongo,"CantidadDeBloques %d",cantidadDeBloques);
-			log_info(loggerMongo,"CantidadDeBloquesNecesarios %d",cantidadDeBloquesNecesarios);
 			liberarBloque(atoi(bloquesUtilizados[cantidadDeBloques-1]));
 			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[cantidadDeBloques-1]);
 			cantidadDeBloques--;

@@ -2,6 +2,7 @@
 
 bool verificarCantidadBlock() //true si hay un sabotaje
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	bool respuesta;
 	struct stat statCarpeta;
 	char* directorioSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
@@ -14,10 +15,12 @@ bool verificarCantidadBlock() //true si hay un sabotaje
 	free(directorioBlocks);
 	config_destroy(datosConfig);
 	return respuesta;
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 bool verificarBitMap()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	t_bitarray* bitMapDesdeArchivos = bitmapDesdeBloques();
 	//ahora  analiza los archivos tripulantes
@@ -36,6 +39,7 @@ bool verificarBitMap()
 	bitarray_destroy(bitMapDesdeArchivos);
 	bitarray_destroy(bitArraySistema);
 	return resultado;
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 t_bitarray* bitmapDesdeBloques()
@@ -122,6 +126,7 @@ t_bitarray* bitmapDesdeBloques()
 
 bool verificarSizeFile()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* ubicacion;
@@ -202,10 +207,12 @@ bool verificarSizeFile()
 
 	free(direccionFiles);
 	return resultado;
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 bool verificarMD5()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
@@ -271,10 +278,12 @@ bool verificarMD5()
 	free(direccionFiles);
 
 	return resultado;
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 bool verificarBlockCount()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
 	struct dirent *dir;
@@ -321,6 +330,7 @@ bool verificarBlockCount()
 	log_info(loggerMongo,"Valor bool: %d",resultado);
 
 	return resultado;
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 casoDeSabotaje casoSabotajeActual()
@@ -352,14 +362,17 @@ casoDeSabotaje casoSabotajeActual()
 
 void resolverSabotajeBitMap()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	t_bitarray* bitMapBloquesFiles = bitmapDesdeBloques();
 	guardarBitArray(bitMapBloquesFiles);
 	free(bitMapBloquesFiles->bitarray);
 	bitarray_destroy(bitMapBloquesFiles);
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 void resolverSabotajeSizeFile()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	struct dirent *dir;
 	char* ubicacion;
 	t_config* configuracionFile;
@@ -442,10 +455,12 @@ void resolverSabotajeSizeFile()
 
 
 	free(direccionFiles);
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 void resolverSabotajeBlockCount()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
 	struct dirent *dir;
 	char* ubicacion;
@@ -491,10 +506,12 @@ void resolverSabotajeBlockCount()
 	free(dir);
 	closedir(directorio);
 	free(direccion);
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 void resolverSabotajeMD5()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
 	struct dirent *dir;
 	char* ubicacion;
@@ -571,10 +588,12 @@ void resolverSabotajeMD5()
 	free(dir);
 	closedir(directorio);
 	free(direccion);
+	pthread_mutex_unlock(&mutexSabotaje);
 }
 
 void resolverSabotajeCantidadBlocks()
 {
+	pthread_mutex_lock(&mutexSabotaje);
 	struct stat statCarpeta;
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
 	char* directorioBlocks = string_from_format("%s/Blocks.ims",PUNTO_MONTAJE);
@@ -602,4 +621,5 @@ void resolverSabotajeCantidadBlocks()
 	free(arrayAGuardar->bitarray);
 	bitarray_destroy(arrayAGuardar);
 	free(nuevaData);
+	pthread_mutex_unlock(&mutexSabotaje);
 }

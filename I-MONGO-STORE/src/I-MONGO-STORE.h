@@ -21,6 +21,7 @@ pthread_mutex_t mutexBlocks;
 pthread_mutex_t mutexBitMap;
 pthread_mutex_t mutexFile;
 pthread_mutex_t mutexMD5;
+pthread_mutex_t mutexSabotaje;
 
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;
