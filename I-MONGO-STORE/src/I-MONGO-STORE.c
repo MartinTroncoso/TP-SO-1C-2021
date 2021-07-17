@@ -391,7 +391,6 @@ void atenderTripulante(void* _cliente)
 			loggearResolucionSabotaje(idTripulante);
 			break;
 		case INVOCAR_FSCK:
-			log_info(loggerMongo,"Se ejecuta el FSCK. Por ahora no hace nada :D");
 			ejecutarFSCK();
 			break;
 		case OBTENER_BITACORA:
