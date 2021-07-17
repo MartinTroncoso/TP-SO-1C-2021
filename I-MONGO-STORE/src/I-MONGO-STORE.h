@@ -97,6 +97,7 @@ void escribirEnBlocks(int, char*);
 void rellenarEnBlocks(int, char*, int);
 void destruirConfig();
 void terminar_programa();
+void eliminarArchivoYLiberar(char*);
 
 //sabotajes
 bool verificarCantidadBlocks();

@@ -21,7 +21,8 @@ int main(void){
 //	guardarBitArray(unArray);
 //	bitarray_destroy(unArray);
 	//bool unvalor = verificarSizeFile();
-	resolverSabotajeMD5();
+	//resolverSabotajeSizeFile();
+	//eliminarArchivoYLiberar("Oxigeno");
 	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
 	log_info(loggerMongo,"%s",bloqueRecuperado(14));
 	log_info(loggerMongo,"%s",bloqueRecuperado(38));
@@ -457,10 +458,10 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		{
 			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
-			char* direccionBasura = string_from_format("%s/Files/Basura.ims",PUNTO_MONTAJE);
-			log_info(loggerMongo,"Direccion basura :%s",direccionBasura);
-			remove(direccionBasura);
-			free(direccionBasura);
+			//char* direccionBasura = string_from_format("%s/Files/Basura.ims",PUNTO_MONTAJE);
+			//log_info(loggerMongo,"Direccion basura :%s",direccionBasura);
+			eliminarArchivoYLiberar("Basura");
+			//free(direccionBasura);
 			printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
 		}else
 		{
@@ -1378,6 +1379,23 @@ char* bloqueRecuperado(int posicionBloque)
 	char* recuperado = calloc(tamanioBlock,1);
 	memcpy(recuperado,blocksMap+posicionBloque*tamanioBlock,tamanioBlock);
 	return recuperado;
+}
+
+void eliminarArchivoYLiberar(char* recurso)
+{
+	char* direccion = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
+	t_config* configRecurso = config_create(direccion);
+	char** bloquesUsados = config_get_array_value(configRecurso,"BLOCKS");
+	int contador = 0;
+	while(bloquesUsados[contador] != NULL)
+	{
+		liberarBloque(atoi(bloquesUsados[contador]));
+		log_info(loggerMongo,"Bloque liberado: %s", bloquesUsados[contador]);
+		contador++;
+	}
+	remove(direccion);
+	free(direccion);
+	liberarArray(bloquesUsados);
 }
 
 void destruirConfig(){

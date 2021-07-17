@@ -361,68 +361,91 @@ void resolverSabotajeBitMap()
 
 void resolverSabotajeSizeFile()
 {
-//	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
-//	struct dirent *dir;
-//	char* ubicacion;
-//	DIR* directorio= opendir(direccion);
-//	t_config* configA;
-//	int tamanioFile;
-//	int contador;
-//	char** bloquesUtilizados;
-//	char* recursoRecuperado;
-//	char* stringDeLlenado;
-//	char caracterDeLlenado;
-//	char* bloqueRecuperadoFile;
-//	if(directorio == NULL)
-//	{
-//		log_info(loggerMongo,"Error en directorio FILES");
-//		exit(-1);
-//	}
-//	while((dir = readdir(directorio))!= NULL)
-//		{
-//			ubicacion = string_from_format("%s/%s",direccionFiles,dir->d_name);
-//			//archivo = fopen(ubicacion,"r");
-//			if((!strcmp(dir->d_name,".") || !strcmp(dir->d_name,"..") || !strcmp(dir->d_name,"AuxiliarFile.txt")|| !strcmp(dir->d_name,"AuxiliarMD5.txt")|| !strcmp(dir->d_name,"Bitacoras")))
-//			{
-//
-//			}else //suponiendo que se filtraron todo lo que no son recursos
-//			{
-//				recursoRecuperado = string_new();
-//				configATrabajar = config_create(ubicacion);
-//				arrayBloques = config_get_array_value(configATrabajar,"BLOCKS");
-//				contador = 0;
-//				while(arrayBloques[contador]!=NULL)
-//				{
-//					log_info(loggerMongo,"Es un archivo :%s contador: %d",dir->d_name,atoi(arrayBloques[contador]));
-//					stringAuxiliar = bloqueRecuperado(atoi(arrayBloques[contador]));
-//					log_info(loggerMongo,"String Recuperado: %s",stringAuxiliar);
-//					string_append(&recursoRecuperado, stringAuxiliar);
-//					contador++;
-//					free(stringAuxiliar);
-//				}
-//				log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
-//				md5Config = config_get_string_value(configATrabajar,"MD5_ARCHIVO");
-//				valorMD5 = obtenerMD5(recursoRecuperado);
-//				log_info(loggerMongo,"%s",md5Config);
-//				log_info(loggerMongo,"%s",valorMD5);
-//				if(strcmp(md5Config,valorMD5))
-//				{
-//					log_info(loggerMongo,"Valores MD5 distintos");
-//					resultado = true;
-//				}
-//				config_destroy(configATrabajar);
-//
-//				free(recursoRecuperado);
-//				liberarArray(arrayBloques);
-//
-//			}
-//			free(ubicacion);
-//
-//
-//		}
-//	free(dir);
-//	closedir(directorio);
-//	free(direccion);
+	bool resultado = false;
+	struct dirent *dir;
+	char* ubicacion;
+	t_config* configuracionFile;
+	char** arrayBloques;
+	int contador;
+	int marcador;
+	char* recursoRecuperado;
+	char* stringDeLlenado;
+	char* bloqueRecuperadoFile;
+	int tamanioFile;
+	char caracterDeLlenado;
+	int cantidadBloquesUsados;
+	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
+	DIR* directorio= opendir(direccionFiles);
+	if(directorio == NULL)
+	{
+		log_info(loggerMongo,"Error en directorio FILES");
+		exit(-1);
+	}
+	while((dir = readdir(directorio))!= NULL)
+	{
+		ubicacion = string_from_format("%s/%s",direccionFiles,dir->d_name);
+		if((!strcmp(dir->d_name,".") || !strcmp(dir->d_name,"..") || !strcmp(dir->d_name,"AuxiliarFile.txt")|| !strcmp(dir->d_name,"AuxiliarMD5.txt")|| !strcmp(dir->d_name,"Bitacoras")))
+		{
+
+		}else //suponiendo que se filtraron todo lo que no son recursos
+		{
+			recursoRecuperado = string_new();
+			configuracionFile = config_create(ubicacion);
+			arrayBloques = config_get_array_value(configuracionFile,"BLOCKS");
+			tamanioFile = config_get_int_value(configuracionFile,"SIZE");
+			cantidadBloquesUsados = config_get_int_value(configuracionFile,"BLOCK_COUNT");
+			log_info(loggerMongo,"Tamanio file: %d",tamanioFile);
+			stringDeLlenado = config_get_string_value(configuracionFile,"CARACTER_LLENADO");
+			caracterDeLlenado = stringDeLlenado[0];
+			log_info(loggerMongo,"caracter llenado: %c",caracterDeLlenado);
+			contador = 0;
+			while(arrayBloques[contador]!=NULL)
+			{
+				bloqueRecuperadoFile = bloqueRecuperado(atoi(arrayBloques[contador]));
+				string_append(&recursoRecuperado, bloqueRecuperadoFile);
+				contador++;
+				free(bloqueRecuperadoFile);
+			}
+
+			//
+			for(int i = 0; i<contador*tamanioBlock;i++)
+			{
+				printf("%d",i);
+				marcador = i;
+				if(recursoRecuperado[i]!=caracterDeLlenado)
+				{
+					marcador = i;
+					//resultado = true;
+					break;
+				}
+
+			}
+			resultado = (marcador!= tamanioFile);
+			if(marcador!=tamanioFile)
+			{
+				char* nuevoSize = string_itoa(marcador);
+				config_set_value(configuracionFile,"SIZE",nuevoSize);
+				config_save(configuracionFile);
+			}
+			log_info(loggerMongo,"Recuperado de los bloques: %s",recursoRecuperado);
+			log_info(loggerMongo,"Tamanio: %d",string_length(recursoRecuperado));
+			log_info(loggerMongo,"Resultado : %d",resultado);
+			free(stringDeLlenado);
+			free(recursoRecuperado);
+			liberarArray(arrayBloques);
+			//config_destroy(configuracionFile);
+		}
+		free(ubicacion);
+	}
+	log_info(loggerMongo,"Libero dir");
+	free(dir);
+	log_info(loggerMongo,"Se libero di y paso a closedir");
+	closedir(directorio);  //por alguna razon crashean
+	log_info(loggerMongo,"Se libero closedir");
+
+
+
+	free(direccionFiles);
 }
 
 void resolverSabotajeBlockCount()
