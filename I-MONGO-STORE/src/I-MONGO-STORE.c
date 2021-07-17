@@ -731,9 +731,29 @@ void informarSabotaje(){
 }
 
 void ejecutarFSCK(){
-	switch(casoSabotajeActual())
+	tipo_mensaje sabotaje= casoSabotajeActual();
+	switch(sabotaje)
 	{
-
+	case SABOTAJE_EN_SUPERBLOQUE_CANTIDAD:
+		resolverSabotajeCantidadBlocks();
+		break;
+	case SABOTAJE_EN_SUPERBLOQUE_BITMAP:
+		resolverSabotajeBitMap();
+		break;
+	case SABOTAJE_EN_FILE_SIZE:
+		resolverSabotajeSizeFile();
+		break;
+	case SABOTAJE_EN_FILE_BLOCK_COUNT:
+		resolverSabotajeBlockCount();
+		break;
+	case SABOTAJE_EN_FILE_BLOCKS:
+		resolverSabotajeMD5();
+		break;
+	case NO_HAY_SABOTAJES:
+		log_info(loggerMongo,"NO HAY SABOTAJES");
+		break;
+	default:
+		break;
 	}
 }
 
@@ -892,11 +912,11 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 				}
 				forzarSincronizacionBlocks();
 				char* nuevosBloquesBitacora = string_from_format("[%s]",bloques);
-				char* nuevoTamañoBitacora = string_from_format("%d",tamanioBitacora);
+				char* nuevoTamanioBitacora = string_from_format("%d",tamanioBitacora);
 				config_set_value(configuracionTripulante,"BLOCKS",nuevosBloquesBitacora);
-				config_set_value(configuracionTripulante,"SIZE",nuevoTamañoBitacora);
+				config_set_value(configuracionTripulante,"SIZE",nuevoTamanioBitacora);
 				free(nuevosBloquesBitacora);
-				free(nuevoTamañoBitacora);
+				free(nuevoTamanioBitacora);
 			}
 		}
 		else
@@ -1143,6 +1163,7 @@ void escribirFile(char* recurso, int cantidad)
 				{
 					escribirEnBlocks(nuevoBloque, stringRecurso);
 					tamanioFile += cantidad;
+					cantidadDeBloques++;
 				}else
 				{
 					char* stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock-tamanioFile%tamanioBlock);
@@ -1276,9 +1297,13 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 
 	}else
 	{
+		log_info(loggerMongo,"[%s]",bloquesUtilizados[0]);
+		log_info(loggerMongo,"[%s]",bloquesUtilizados[1]);
 		int cantidadDeBloquesNecesarios = nuevoSize/tamanioBlock + byteExcedente(nuevoSize, tamanioBlock);
 		while(cantidadDeBloques != cantidadDeBloquesNecesarios)
 		{
+			log_info(loggerMongo,"CantidadDeBloques %d",cantidadDeBloques);
+			log_info(loggerMongo,"CantidadDeBloquesNecesarios %d",cantidadDeBloquesNecesarios);
 			liberarBloque(atoi(bloquesUtilizados[cantidadDeBloques-1]));
 			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[cantidadDeBloques-1]);
 			cantidadDeBloques--;
