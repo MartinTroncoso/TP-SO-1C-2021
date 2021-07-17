@@ -23,10 +23,14 @@ int main(void){
 	//bool unvalor = verificarSizeFile();
 	//resolverSabotajeSizeFile();
 	//eliminarArchivoYLiberar("Oxigeno");
-	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
-	log_info(loggerMongo,"%s",bloqueRecuperado(14));
-	log_info(loggerMongo,"%s",bloqueRecuperado(38));
-	log_info(loggerMongo,"%s",bloqueRecuperado(39));
+//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
+//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
+//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
+//	resolverSabotajeBitMap();
+//	resolverSabotajeBlockCount();
+//	resolverSabotajeCantidadBlocks();
+//	resolverSabotajeMD5();
+//	resolverSabotajeSizeFile();
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
 	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
@@ -58,6 +62,8 @@ void inicializarVariables(){
 	PUERTO_DISCORDIADOR = config_get_string_value(configuracionMongo,"PUERTO_DISCORDIADOR");
 	POSICIONES_SABOTAJE = config_get_array_value(configuracionMongo,"POSICIONES_SABOTAJE");
 	posicionSabotajeActual = string_split(POSICIONES_SABOTAJE[0],"|");
+	tamanioBlock = config_get_int_value(configuracionMongo,"BLOCK_SIZE");
+	cantidadDeBlocks = config_get_int_value(configuracionMongo,"BLOCKS");
 	sabotajesResueltos = 0;
 
 	pthread_mutex_init(&mutexBitMap, NULL);
@@ -95,7 +101,7 @@ void inicializarFileSystem(){
 void inicializarSuperBloque(){
 
 	//calloc(cantidadDeBloques/8+cantidadDeBloques%8,1);
-	cantidadDeBlocks=1024;
+	//cantidadDeBlocks=1024;
 	struct stat statCarpeta;
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
 	if(stat(direccionSuperBloque,&statCarpeta)==-1)
@@ -115,7 +121,7 @@ void inicializarSuperBloque(){
 //		bitarray_set_bit(bitArray,50);
 		log_info(loggerMongo,"Tamanio struct post set: %d", sizeof(bitArray));
 		log_info(loggerMongo,"Tamanio bitarray: %d",string_length(bitArray->bitarray));
-		char* stringArchivo = string_from_format("BLOCK_SIZE=8\nBLOCKS=1024\nBITMAP=");
+		char* stringArchivo = string_from_format("BLOCK_SIZE=%d\nBLOCKS=%d\nBITMAP=",tamanioBlock,cantidadDeBlocks);
 		int archivo = open(direccionSuperBloque,O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 		ftruncate(archivo,string_length(stringArchivo)+bitArray->size);
 		struct stat caracteristicasArchivo;
@@ -195,11 +201,11 @@ t_bitarray* recuperarBitArray(){
 		memcpy((nuevoBitArray->bitarray),archivoEnMemoria+marcador,caracteristicasArchivo.st_size - marcador);
 	}
 	//free(punteroMemoria);
-	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
-	{
-		//bitarray_set_bit(bitArray,i);
-		printf("%d",bitarray_test_bit(nuevoBitArray,i));
-	}
+//	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
+//	{
+//		//bitarray_set_bit(bitArray,i);
+//		printf("%d",bitarray_test_bit(nuevoBitArray,i));
+//	}
 	free(direccionSuperBloque);
 	munmap(archivoEnMemoria,caracteristicasArchivo.st_size);
 	return nuevoBitArray;
@@ -725,8 +731,10 @@ void informarSabotaje(){
 }
 
 void ejecutarFSCK(){
-	//???
-	//???
+	switch(casoSabotajeActual())
+	{
+
+	}
 }
 
 void verificarSuperBloque()
@@ -835,7 +843,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 			}
 			else
 			{
-				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]);
+				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]); //VER DESPUES
 				//bloques = string_from_format("%s,%s",bloques,bloquesUtilizados[contador]);
 			}
 			bloquePosicion = atoi(bloquesUtilizados[contador]);
@@ -883,8 +891,12 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 					free(stringPartido);
 				}
 				forzarSincronizacionBlocks();
-				config_set_value(configuracionTripulante,"BLOCKS",string_from_format("[%s]",bloques));
-				config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioBitacora));
+				char* nuevosBloquesBitacora = string_from_format("[%s]",bloques);
+				char* nuevoTamañoBitacora = string_from_format("%d",tamanioBitacora);
+				config_set_value(configuracionTripulante,"BLOCKS",nuevosBloquesBitacora);
+				config_set_value(configuracionTripulante,"SIZE",nuevoTamañoBitacora);
+				free(nuevosBloquesBitacora);
+				free(nuevoTamañoBitacora);
 			}
 		}
 		else
@@ -958,8 +970,8 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 				free(sizeConf);
 			}
 			//free(stringPartido);
-			free(bloques);
 		}
+		free(bloques);
 	}
 	liberarArray(listaBloques);
 }

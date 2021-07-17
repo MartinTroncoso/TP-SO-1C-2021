@@ -31,6 +31,8 @@ bool verificarBitMap()
 			break;
 		}
 	}
+	free(bitMapDesdeArchivos->bitarray);
+	free(bitArraySistema->bitarray);
 	bitarray_destroy(bitMapDesdeArchivos);
 	bitarray_destroy(bitArraySistema);
 	return resultado;
@@ -132,7 +134,6 @@ bool verificarSizeFile()
 	char* bloqueRecuperadoFile;
 	int tamanioFile;
 	char caracterDeLlenado;
-	int cantidadBloquesUsados;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
 	DIR* directorio= opendir(direccionFiles);
 	if(directorio == NULL)
@@ -170,7 +171,6 @@ bool verificarSizeFile()
 
 			for(int i = 0; i<contador*tamanioBlock;i++)
 			{
-				printf("%d",i);
 				marcador = i;
 				if(recursoRecuperado[i]!=caracterDeLlenado)
 				{
@@ -185,9 +185,6 @@ bool verificarSizeFile()
 //			{
 //				resultado = true;
 //			}
-			log_info(loggerMongo,"Recuperado de los bloques: %s",recursoRecuperado);
-			log_info(loggerMongo,"Tamanio: %d",string_length(recursoRecuperado));
-			log_info(loggerMongo,"Resultado : %d",resultado);
 			free(stringDeLlenado);
 			free(recursoRecuperado);
 			liberarArray(arrayBloques);
@@ -241,25 +238,26 @@ bool verificarMD5()
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
-				log_info(loggerMongo,"Es un archivo :%s contador: %d",dir->d_name,atoi(arrayBloques[contador]));
+				//log_info(loggerMongo,"Es un archivo :%s contador: %d",dir->d_name,atoi(arrayBloques[contador]));
 				stringAuxiliar = bloqueRecuperado(atoi(arrayBloques[contador]));
-				log_info(loggerMongo,"String Recuperado: %s",stringAuxiliar);
+				//log_info(loggerMongo,"String Recuperado: %s",stringAuxiliar);
 				string_append(&recursoRecuperado, stringAuxiliar);
 				contador++;
 				free(stringAuxiliar);
 			}
-			log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
+			//log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
 			md5Config = config_get_string_value(configATrabajar,"MD5_ARCHIVO");
 			valorMD5 = obtenerMD5(recursoRecuperado);
-			log_info(loggerMongo,"%s",md5Config);
-			log_info(loggerMongo,"%s",valorMD5);
+			//log_info(loggerMongo,"%s",md5Config);
+			//log_info(loggerMongo,"%s",valorMD5);
 			if(strcmp(md5Config,valorMD5))
 			{
 				log_info(loggerMongo,"Valores MD5 distintos");
 				resultado = true;
 			}
 			config_destroy(configATrabajar);
-
+			free(valorMD5);
+			free(md5Config);
 			free(recursoRecuperado);
 			liberarArray(arrayBloques);
 
@@ -356,12 +354,12 @@ void resolverSabotajeBitMap()
 {
 	t_bitarray* bitMapBloquesFiles = bitmapDesdeBloques();
 	guardarBitArray(bitMapBloquesFiles);
+	free(bitMapBloquesFiles->bitarray);
 	bitarray_destroy(bitMapBloquesFiles);
 }
 
 void resolverSabotajeSizeFile()
 {
-	bool resultado = false;
 	struct dirent *dir;
 	char* ubicacion;
 	t_config* configuracionFile;
@@ -373,7 +371,6 @@ void resolverSabotajeSizeFile()
 	char* bloqueRecuperadoFile;
 	int tamanioFile;
 	char caracterDeLlenado;
-	int cantidadBloquesUsados;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
 	DIR* directorio= opendir(direccionFiles);
 	if(directorio == NULL)
@@ -393,11 +390,10 @@ void resolverSabotajeSizeFile()
 			configuracionFile = config_create(ubicacion);
 			arrayBloques = config_get_array_value(configuracionFile,"BLOCKS");
 			tamanioFile = config_get_int_value(configuracionFile,"SIZE");
-			cantidadBloquesUsados = config_get_int_value(configuracionFile,"BLOCK_COUNT");
-			log_info(loggerMongo,"Tamanio file: %d",tamanioFile);
+			//log_info(loggerMongo,"Tamanio file: %d",tamanioFile);
 			stringDeLlenado = config_get_string_value(configuracionFile,"CARACTER_LLENADO");
 			caracterDeLlenado = stringDeLlenado[0];
-			log_info(loggerMongo,"caracter llenado: %c",caracterDeLlenado);
+			//log_info(loggerMongo,"caracter llenado: %c",caracterDeLlenado);
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
@@ -420,16 +416,16 @@ void resolverSabotajeSizeFile()
 				}
 
 			}
-			resultado = (marcador!= tamanioFile);
+
 			if(marcador!=tamanioFile)
 			{
 				char* nuevoSize = string_itoa(marcador);
 				config_set_value(configuracionFile,"SIZE",nuevoSize);
 				config_save(configuracionFile);
 			}
-			log_info(loggerMongo,"Recuperado de los bloques: %s",recursoRecuperado);
-			log_info(loggerMongo,"Tamanio: %d",string_length(recursoRecuperado));
-			log_info(loggerMongo,"Resultado : %d",resultado);
+			//log_info(loggerMongo,"Recuperado de los bloques: %s",recursoRecuperado);
+			//log_info(loggerMongo,"Tamanio: %d",string_length(recursoRecuperado));
+			//log_info(loggerMongo,"Resultado : %d",resultado);
 			free(stringDeLlenado);
 			free(recursoRecuperado);
 			liberarArray(arrayBloques);
@@ -437,11 +433,11 @@ void resolverSabotajeSizeFile()
 		}
 		free(ubicacion);
 	}
-	log_info(loggerMongo,"Libero dir");
+	//log_info(loggerMongo,"Libero dir");
 	free(dir);
-	log_info(loggerMongo,"Se libero di y paso a closedir");
+	//log_info(loggerMongo,"Se libero di y paso a closedir");
 	closedir(directorio);  //por alguna razon crashean
-	log_info(loggerMongo,"Se libero closedir");
+	//log_info(loggerMongo,"Se libero closedir");
 
 
 
@@ -540,13 +536,13 @@ void resolverSabotajeMD5()
 				contador++;
 				free(stringAuxiliar);
 			}
-			log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
+			//log_info(loggerMongo,"string recuperado de file: %s",recursoRecuperado);
 			valorMD5 = obtenerMD5(recursoRecuperado);
-			log_info(loggerMongo,"%s",md5Config);
-			log_info(loggerMongo,"%s",valorMD5);
+			//log_info(loggerMongo,"%s",md5Config);
+			//log_info(loggerMongo,"%s",valorMD5);
 			if(strcmp(md5Config,valorMD5))
 			{
-				log_info(loggerMongo,"Valores MD5 distintos");
+				//log_info(loggerMongo,"Valores MD5 distintos");
 				char* stringRecurso = config_get_string_value(configATrabajar,"CARACTER_LLENADO");
 				int tamanioFile = config_get_int_value(configATrabajar,"SIZE");
 				char* stringParaBloques = string_repeat(' ', cantidadBloquesEnFile*tamanioBlock);
@@ -565,7 +561,8 @@ void resolverSabotajeMD5()
 				//resultado = true;
 			}
 			//config_destroy(configATrabajar);
-
+			free(valorMD5);
+			free(md5Config);
 			free(recursoRecuperado);
 			liberarArray(bloquesUtilizados);
 		}
@@ -574,4 +571,35 @@ void resolverSabotajeMD5()
 	free(dir);
 	closedir(directorio);
 	free(direccion);
+}
+
+void resolverSabotajeCantidadBlocks()
+{
+	struct stat statCarpeta;
+	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
+	char* directorioBlocks = string_from_format("%s/Blocks.ims",PUNTO_MONTAJE);
+	t_config* datosConfig = config_create(direccionSuperBloque);
+	stat(directorioBlocks,&statCarpeta);
+	//int cantidadBlocks = config_get_int_value(datosConfig,"BLOCKS");
+	//respuesta = statCarpeta.st_size/tamanioBlock != cantidadBlocks;
+	t_bitarray* arrayAGuardar = recuperarBitArray();
+	int cantidadDeBloquesReal = statCarpeta.st_size/tamanioBlock;
+	char* nuevaData = string_from_format("BLOCK_SIZE=%d\nBLOCKS=%d\nBITMAP=",tamanioBlock,cantidadDeBloquesReal);
+	stat(direccionSuperBloque,&statCarpeta);
+	int archivo = open(direccionSuperBloque,O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+	if(statCarpeta.st_size != string_length(nuevaData)+arrayAGuardar->size)
+	{
+		ftruncate(archivo,string_length(nuevaData)+arrayAGuardar->size);
+	}
+	char* mapeoArchivo = mmap(NULL,string_length(nuevaData)+arrayAGuardar->size,PROT_READ | PROT_WRITE, MAP_SHARED, archivo,0);
+	memcpy(mapeoArchivo,nuevaData,string_length(nuevaData));
+	memcpy(mapeoArchivo+string_length(nuevaData),arrayAGuardar->bitarray,arrayAGuardar->size);
+	msync(mapeoArchivo,string_length(nuevaData)+arrayAGuardar->size,MS_INVALIDATE);
+	munmap(mapeoArchivo,string_length(nuevaData)+arrayAGuardar->size);
+	free(direccionSuperBloque);
+	free(directorioBlocks);
+	config_destroy(datosConfig);
+	free(arrayAGuardar->bitarray);
+	bitarray_destroy(arrayAGuardar);
+	free(nuevaData);
 }
