@@ -10,11 +10,16 @@
 
 #include <utils.h>
 #include "admin_memoria.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 typedef struct {
 	uint32_t n_pagina;
 	uint32_t n_frame;
 	bool valido;
+	bool presente;
 	bool usada_solo_trip;
 	t_list* index_trip_ocupantes;
 } pagina;
