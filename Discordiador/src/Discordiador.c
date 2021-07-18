@@ -336,10 +336,11 @@ void terminarPrograma(){
 }
 
 int main(void){
-	signal(SIGINT,terminarPrograma); //ctrl + C
+//	signal(SIGINT,terminarPrograma); //ctrl + C
 
 	inicializarVariables();
 	log_info(loggerDiscordiador,"Inicia el Discordiador...");
+	log_info(loggerDiscordiador,"Algoritmo de planificación %s",ALGORITMO);
 
 	esperarSabotajes();
 

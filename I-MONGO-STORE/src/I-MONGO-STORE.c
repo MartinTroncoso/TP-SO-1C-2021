@@ -12,7 +12,7 @@
 
 int main(void){
 	signal(SIGUSR1,informarSabotaje);
-	signal(SIGINT,terminar_programa); //ctrl+C
+//	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
 	//escribirFile("Oxigeno", 39);

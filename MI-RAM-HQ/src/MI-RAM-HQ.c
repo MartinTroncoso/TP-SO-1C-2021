@@ -29,14 +29,14 @@ static char calcular_identificador(uint32_t);
 
 int main(void) {
 
-	signal(SIGINT, terminar_programa);
+//	signal(SIGINT, terminar_programa);
 	signal(SIGUSR1, iniciar_dump_memoria);
 	signal(SIGUSR2, iniciar_accion_sigusr2);
 
 	inicializar_variables();
 	log_info(logger_mi_ram,"PID MI-RAM HQ: %d", getpid());
 
-	int socket_escucha = iniciarServidor("127.0.0.1", PUERTO_MI_RAM);
+	int socket_escucha = iniciarServidor(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	log_info(logger_mi_ram, "MI-RAM-HQ Listo para atender a los Tripulantes!");
 
 	while(1) {
@@ -73,7 +73,8 @@ void inicializar_variables(){
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
-	PUERTO_MI_RAM = config_get_string_value(configuracionMiRam,"PUERTO");
+	IP_MI_RAM_HQ = config_get_string_value(configuracionMiRam,"IP_MI_RAM_HQ");
+	PUERTO_MI_RAM_HQ = config_get_string_value(configuracionMiRam,"PUERTO_MI_RAM_HQ");
 	ESQUEMA_MEMORIA = config_get_string_value(configuracionMiRam,"ESQUEMA_MEMORIA");
 	PATH_SWAP = config_get_string_value(configuracionMiRam,"PATH_SWAP");
 	ALGORITMO_REEMPLAZO = config_get_string_value(configuracionMiRam,"ALGORITMO_REEMPLAZO");
@@ -269,24 +270,24 @@ void enviar_proxima_tarea(int socket_tripulante, uint32_t tid) {
 		cod_tarea = COMUN;
 
 	//Preparo paquete para enviar
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(uint32_t) + size_instruccion;
-	buffer->stream = malloc(buffer->size);
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = cod_tarea;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = sizeof(uint32_t) + size_instruccion;
+	paquete->buffer->stream = malloc(paquete->buffer->size);
 
 	int desplazamiento = 0;
 
-	memcpy(buffer->stream + desplazamiento, &size_instruccion, sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + desplazamiento, &size_instruccion, sizeof(uint32_t));
 	desplazamiento += sizeof(uint32_t);
-	memcpy(buffer->stream + desplazamiento, prox_instruccion, size_instruccion);
+	memcpy(paquete->buffer->stream + desplazamiento, prox_instruccion, size_instruccion);
 
-	send(socket_tripulante,&cod_tarea,sizeof(int),0);
-	enviar_buffer(buffer, socket_tripulante);
+	enviar_paquete(paquete,socket_tripulante);
 
 	log_info(logger_mi_ram, "[TRIPULANTE %d] Se envio proxima tarea para el tripulante: %s", tid, prox_instruccion);
 
 	free(prox_instruccion);
-	free(buffer->stream);
-	free(buffer);
+	eliminar_paquete(paquete);
 }
 
 void recibir_movimiento_tripulante(int socket_tripulante, uint32_t tid) {

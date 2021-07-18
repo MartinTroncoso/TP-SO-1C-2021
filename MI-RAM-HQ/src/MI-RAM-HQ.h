@@ -15,7 +15,8 @@
 #include "segmentacion.h"
 #include "paginacion.h"
 
-char* PUERTO_MI_RAM;
+char* PUERTO_MI_RAM_HQ;
+char* IP_MI_RAM_HQ;
 
 void inicializar_variables();
 void inicializar_mapa();

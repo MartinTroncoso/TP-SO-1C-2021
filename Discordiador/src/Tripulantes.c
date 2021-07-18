@@ -638,8 +638,11 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante){
+	Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] RECIBIÓ SU PRIMERA TAREA",tripulante->tid);
+
 	pthread_mutex_lock(&mutexTripulantes);
-	tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	tripulante->proxTarea = proximaTarea;
 	pthread_mutex_unlock(&mutexTripulantes);
 
 	agregarAReady(tripulante);
@@ -684,10 +687,12 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		ejecutarTareaFIFO(tripulante);
 
 		if(tieneTareasPendientes(tripulante) && !tripulante->expulsado){
+			Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+
 			pthread_mutex_lock(&mutexTripulantes);
 			free(tripulante->proxTarea->nombre);
 			free(tripulante->proxTarea);
-			tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+			tripulante->proxTarea = proximaTarea;
 			pthread_mutex_unlock(&mutexTripulantes);
 
 			habilitarSiCorresponde(tripulante);
@@ -699,8 +704,8 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		log_debug(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
-		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
-		//send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
+		tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
 
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
@@ -714,14 +719,17 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
 
-//		close(tripulante->socket_MIRAM);
-//		close(tripulante->socket_MONGO);
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
 	}
 }
 
 void planificarTripulanteRR(t_tripulante* tripulante){
+	Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] RECIBIÓ SU PRIMERA TAREA",tripulante->tid);
+
 	pthread_mutex_lock(&mutexTripulantes);
-	tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+	tripulante->proxTarea = proximaTarea;
 	pthread_mutex_unlock(&mutexTripulantes);
 
 	agregarAReady(tripulante);
@@ -792,10 +800,12 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		}
 
 		if(tieneTareasPendientes(tripulante) && !tripulante->expulsado){
+			Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+
 			pthread_mutex_lock(&mutexTripulantes);
 			free(tripulante->proxTarea->nombre);
 			free(tripulante->proxTarea);
-			tripulante->proxTarea = solitarProximaTarea(tripulante->socket_MIRAM);
+			tripulante->proxTarea = proximaTarea;
 			pthread_mutex_unlock(&mutexTripulantes);
 
 			habilitarSiCorresponde(tripulante);
@@ -807,8 +817,8 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		log_debug(loggerDiscordiador,"[TRIPULANTE %d] TERMINÉ",tripulante->tid);
 		agregarAExit(tripulante);
 
-		//tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
-		//send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
+		tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
+		send(tripulante->socket_MONGO,&finalizar,sizeof(tipo_mensaje),0); //LE AVISO A I-MONGO QUE TERMINÉ
 
 		pthread_mutex_lock(&mutexTripulantes);
 		pthread_mutex_lock(&mutexColaExit);
@@ -822,8 +832,8 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 		pthread_mutex_unlock(&mutexColaExit);
 		pthread_mutex_unlock(&mutexTripulantes);
 
-//		close(tripulante->socket_MIRAM);
-//		close(tripulante->socket_MONGO);
+		close(tripulante->socket_MIRAM);
+		close(tripulante->socket_MONGO);
 	}
 }
 
@@ -846,9 +856,13 @@ void planificarTripulante(t_tripulante* tripulante){
 }
 
 void gestionarTripulante(t_tripulante* tripulante){
+	int socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
+	int socket_MONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
+
 	pthread_mutex_lock(&mutexTripulantes);
-	tripulante->socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
-	tripulante->socket_MONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
+	log_info(loggerDiscordiador,"[TRIPULANTE %d] SE CONECTÓ",tripulante->tid);
+	tripulante->socket_MIRAM = socket_MIRAM;
+	tripulante->socket_MONGO = socket_MONGO;
 	pthread_mutex_unlock(&mutexTripulantes);
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -955,9 +969,6 @@ void iniciarPatota(t_iniciar_patota* estructura){
 
 	list_destroy(estructura->coordenadasTripulantes);
 	free(estructura);
-
-	if(patota->pid == 1 || list_size(colaExit)==list_size(tripulantes))
-		log_info(loggerDiscordiador,"Discordiador LISTO PARA PLANIFICAR (%s)",ALGORITMO);
 }
 
 void listarTripulantes(){
@@ -1058,8 +1069,8 @@ void expulsarTripulante(int id_tripulante){
 	tipo_mensaje finalizar = EXPULSAR_TRIPULANTE;
 	send(tripulante->socket_MIRAM,&finalizar,sizeof(tipo_mensaje),0);
 
-//	close(tripulante->socket_MIRAM);
-//	close(tripulante->socket_MONGO);
+	close(tripulante->socket_MIRAM);
+	close(tripulante->socket_MONGO);
 }
 
 void iniciarPlanificacion(){
@@ -1102,12 +1113,17 @@ void obtenerBitacora(int id_tripulante){
 	t_tripulante* tripulante = (t_tripulante*) list_find(tripulantes,buscarTripulante);
 	pthread_mutex_unlock(&mutexTripulantes);
 
-	tipo_mensaje opCode = OBTENER_BITACORA;
-	send(tripulante->socket_MONGO,&opCode,sizeof(tipo_mensaje),0);
+	if(tripulante->estado == EXIT)
+		log_info(loggerDiscordiador,"¿SE PUEDE OBTENER LA BITÁCORA DE UN TRIPULANTE QUE YA TERMINÓ?");
+	else
+	{
+		tipo_mensaje opCode = OBTENER_BITACORA;
+		send(tripulante->socket_MONGO,&opCode,sizeof(tipo_mensaje),0);
 
-	uint32_t size;
-	char* bitacora = (char*) recibir_buffer(&size,tripulante->socket_MONGO);
+		uint32_t size;
+		char* bitacora = (char*) recibir_buffer(&size,tripulante->socket_MONGO);
 
-	log_info(loggerDiscordiador,bitacora);
-	free(bitacora);
+		log_info(loggerDiscordiador,bitacora);
+		free(bitacora);
+	}
 }
