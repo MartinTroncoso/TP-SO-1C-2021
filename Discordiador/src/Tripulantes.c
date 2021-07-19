@@ -980,15 +980,20 @@ void listarTripulantes(){
 	else
 	{
 		char* fecha = temporal_get_string_time("%d/%m/%y %H:%M:%S");
-		log_trace(loggerDiscordiador,"------------------------------------------------------");
+		log_trace(loggerDiscordiador,"----------------------------------------------------------------");
 		log_trace(loggerDiscordiador,"Estado de la Nave: %s",fecha);
 		pthread_mutex_lock(&mutexTripulantes);
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
-			log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Status: %s",tripulante->tid, tripulante->idPatota, getEstadoComoCadena(tripulante->estado));
+			log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: %d|%d    Status: %s",
+					  tripulante->tid,
+					  tripulante->idPatota,
+					  tripulante->posicion->posX,
+					  tripulante->posicion->posY,
+					  getEstadoComoCadena(tripulante->estado));
 		}
 		pthread_mutex_unlock(&mutexTripulantes);
-		log_trace(loggerDiscordiador,"------------------------------------------------------");
+		log_trace(loggerDiscordiador,"----------------------------------------------------------------");
 
 		free(fecha);
 	}
