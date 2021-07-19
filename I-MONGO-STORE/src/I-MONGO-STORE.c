@@ -15,14 +15,15 @@ int main(void){
 //	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-	//escribirFile("Oxigeno", 39);
+
+//	escribirFile("Oxigeno", 39);
 //	t_bitarray* unArray = recuperarBitArray();
 //	bitarray_clean_bit(unArray,2);
 //	guardarBitArray(unArray);
 //	bitarray_destroy(unArray);
-	//bool unvalor = verificarSizeFile();
-	//resolverSabotajeSizeFile();
-	//eliminarArchivoYLiberar("Oxigeno");
+//	bool unvalor = verificarSizeFile();
+//	resolverSabotajeSizeFile();
+//	eliminarArchivoYLiberar("Oxigeno");
 //	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
 //	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
 //	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
@@ -31,13 +32,11 @@ int main(void){
 //	resolverSabotajeCantidadBlocks();
 //	resolverSabotajeMD5();
 //	resolverSabotajeSizeFile();
+
 	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
 	ejecutarFSCK();
 	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
-
-	int socket_escucha = iniciarServidor(IP_I_MONGO,PUERTO_I_MONGO);
-	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
 
 	pthread_t hilo_sincro;
 	pthread_create(&hilo_sincro,NULL,(void*) asincronia,NULL);
@@ -52,15 +51,12 @@ int main(void){
 		pthread_detach(hilo_receptor);
 	}
 
-	close(socket_escucha);
-	terminar_programa();
-
 	return EXIT_SUCCESS;
 }
 
 void inicializarVariables(){
 	configuracionMongo = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.config");
-	loggerMongo = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.log", "I-MONGO-STORE", 1, LOG_LEVEL_INFO);
+	loggerMongo = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/I-MONGO-STORE/mongo.log", "I-MONGO-STORE", 1, LOG_LEVEL_TRACE);
 	TIEMPO_SINCRONIZACION = config_get_int_value(configuracionMongo,"TIEMPO_SINCRONIZACION");
 	PUNTO_MONTAJE = config_get_string_value(configuracionMongo,"PUNTO_MONTAJE");
 	IP_I_MONGO = config_get_string_value(configuracionMongo,"IP_I_MONGO");
@@ -73,22 +69,20 @@ void inicializarVariables(){
 	cantidadDeBlocks = config_get_int_value(configuracionMongo,"BLOCKS");
 	sabotajesResueltos = 0;
 
+	pthread_mutex_init(&mutexPosicionSabotaje,NULL);
 	pthread_mutex_init(&mutexBitMap, NULL);
 	pthread_mutex_init(&mutexSincro,NULL);
 	pthread_mutex_init(&mutexMD5,NULL);
 	pthread_mutex_init(&mutexFile,NULL);
 	pthread_mutex_init(&mutexSabotaje,NULL);
-//	actualizarBitacora(2, MOVIMIENTOTRIPULANTE, "1|2 3|4");
-//	actualizarBitacora(2, COMIENZOEJECUCIONDETAREA, "GENERAR_OXIGENO");
-//	actualizarBitacora(2, CORREENPANICOSABOTAJE, "");
+
 	inicializarCarpetas();
 	inicializarDiccionario();
 	inicializarFileSystem();
 	inicializarMapeoBlocks();
-//	socket_servidor = iniciarServidor("127.0.0.1",PUERTO);
-//	log_info(loggerMongo, "I-MONGO-STORE listo para recibir al Discordiador");
-//	socket_discordiador = esperar_cliente(socket_servidor);
-//	printf("SE CONECTÓ EL DISCORDIADOR!\n");
+
+	socket_escucha = iniciarServidor(IP_I_MONGO, PUERTO_I_MONGO);
+	log_info(loggerMongo,"I-MONGO Listo para atender a los Tripulantes!");
 }
 
 void inicializarDiccionario(){
@@ -107,48 +101,46 @@ void inicializarFileSystem(){
 }
 
 void inicializarSuperBloque(){
-
 	//calloc(cantidadDeBloques/8+cantidadDeBloques%8,1);
 	//cantidadDeBlocks=1024;
 	struct stat statCarpeta;
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
-	if(stat(direccionSuperBloque,&statCarpeta)==-1)
-	{
+	if(stat(direccionSuperBloque,&statCarpeta)==-1){
 
 		log_info(loggerMongo,"No existe SupreBloque");
 		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
 		log_info(loggerMongo,"Tamanio struct: %d", sizeof(bitArray));
 		log_info(loggerMongo,"Tamanio bitarray antes de poner en 1: %d",string_length(bitArray->bitarray));
-		for(int i = 0; i<bitarray_get_max_bit(bitArray);i++)
-		{
+		for(int i = 0; i<bitarray_get_max_bit(bitArray);i++){
 			bitarray_clean_bit(bitArray,i);
 		}
+
 //		bitarray_set_bit(bitArray,0);
 //		bitarray_set_bit(bitArray,11);
 //		bitarray_set_bit(bitArray,20);
 //		bitarray_set_bit(bitArray,50);
+
 		log_info(loggerMongo,"Tamanio struct post set: %d", sizeof(bitArray));
 		log_info(loggerMongo,"Tamanio bitarray: %d",string_length(bitArray->bitarray));
 		char* stringArchivo = string_from_format("BLOCK_SIZE=%d\nBLOCKS=%d\nBITMAP=",tamanioBlock,cantidadDeBlocks);
 		int archivo = open(direccionSuperBloque,O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 		ftruncate(archivo,string_length(stringArchivo)+bitArray->size);
 		struct stat caracteristicasArchivo;
-		if(fstat(archivo,&caracteristicasArchivo)== -1)
-		{
-			log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
+		if(fstat(archivo,&caracteristicasArchivo)== -1){
+			log_error(loggerMongo,"No se pudo tener el tamaño del archivo.");
 			exit(-4);
 		}
+
 		log_info(loggerMongo, "SuperBloque.ims creado");
 
-
-//		for(int i=0;i<bitarray_get_max_bit(bitArray);i++)
-//		{
+//		for(int i=0;i<bitarray_get_max_bit(bitArray);i++){
 //			//bitarray_set_bit(bitArray,i);
 //			printf("%d",bitarray_test_bit(bitArray,i));
 //		}
-	//	memcpy(paraArchivo,&stringArchivo,strlen(stringArchivo));
-	//	acumulador +=  strlen(stringArchivo);
-	//	memcpy(&paraArchivo+acumulador,bitArray,sizeof(t_bitarray));
+//		memcpy(paraArchivo,&stringArchivo,strlen(stringArchivo));
+//		acumulador +=  strlen(stringArchivo);
+//		memcpy(&paraArchivo+acumulador,bitArray,sizeof(t_bitarray));
+
 		char* mapeoArchivo = mmap(NULL,string_length(stringArchivo)+bitArray->size,PROT_READ | PROT_WRITE, MAP_SHARED, archivo,0);
 		memcpy(mapeoArchivo,stringArchivo,string_length(stringArchivo));
 		memcpy(mapeoArchivo+string_length(stringArchivo),bitArray->bitarray,bitArray->size);
@@ -158,7 +150,8 @@ void inicializarSuperBloque(){
 		free(stringArchivo);
 		free(bitArray->bitarray);
 		bitarray_destroy(bitArray);
-	}else
+	}
+	else
 	{
 		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
 		t_bitarray* recuperado = recuperarBitArray();
@@ -175,114 +168,105 @@ t_bitarray* recuperarBitArray(){
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
 	int archivo = open(direccionSuperBloque, O_RDWR, S_IRUSR | S_IWUSR);
 	struct stat caracteristicasArchivo;
-	if(fstat(archivo,&caracteristicasArchivo)== -1)
-	{
+	if(fstat(archivo,&caracteristicasArchivo)== -1){
 		log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
 	}
+
 	char* archivoEnMemoria = mmap(NULL, caracteristicasArchivo.st_size, PROT_READ | PROT_WRITE, MAP_SHARED,archivo,0);
 	int contador=0;
 	int marcador = 0;
-	while(contador <3)
-	{
-		if(archivoEnMemoria[marcador]=='=')
-		{
+	while(contador <3){
+		if(archivoEnMemoria[marcador]=='='){
 			contador++;
 		}
-			marcador++;
+
+		marcador++;
 	}
-	//	for(marcador; marcador<caracteristicasArchivo2.st_size;marcador++)
-	//	{
-	//		printf("%c",archivoEnMemoria[marcador]);
-	//	}
+
+//	for(marcador; marcador<caracteristicasArchivo2.st_size;marcador++){
+//		printf("%c",archivoEnMemoria[marcador]);
+//	}
+
 	void* punteroMemoria = calloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8),1);
 	t_bitarray* nuevoBitArray = bitarray_create_with_mode(punteroMemoria, cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
 	//char* charArray = malloc(caracteristicasArchivo2.st_size - marcador);
-	for(int i = 0; i<bitarray_get_max_bit(nuevoBitArray);i++)
-	{
+	for(int i = 0; i<bitarray_get_max_bit(nuevoBitArray);i++){
 		bitarray_clean_bit(nuevoBitArray,i);
 	}
+
 	if(caracteristicasArchivo.st_size == marcador)
-	{
 		log_info(loggerMongo,"BITARRAY VACIO");
-	}else
-	{
+	else
 		memcpy((nuevoBitArray->bitarray),archivoEnMemoria+marcador,caracteristicasArchivo.st_size - marcador);
-	}
-	//free(punteroMemoria);
+
+//	free(punteroMemoria);
 //	for(int i=0;i<bitarray_get_max_bit(nuevoBitArray);i++)
 //	{
 //		//bitarray_set_bit(bitArray,i);
 //		printf("%d",bitarray_test_bit(nuevoBitArray,i));
 //	}
+
 	free(direccionSuperBloque);
 	munmap(archivoEnMemoria,caracteristicasArchivo.st_size);
 	return nuevoBitArray;
 }
 
-void guardarBitArray(t_bitarray* arrayAGuardar)
-{
+void guardarBitArray(t_bitarray* arrayAGuardar){
 	//Buscar puntero siguiente al tercer '='
 	//si uso config_set_value y config_save cambia de posicion los valores dentro del archivo
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
 	int archivo = open(direccionSuperBloque, O_RDWR, S_IRUSR | S_IWUSR);
 	struct stat caracteristicasArchivo;
-	if(fstat(archivo,&caracteristicasArchivo)== -1)
-	{
+	if(fstat(archivo,&caracteristicasArchivo)== -1){
 		log_info(loggerMongo,"No se pudo tener el tamaño del archivo.");
 	}
+
 	char* archivoEnMemoria = mmap(NULL, caracteristicasArchivo.st_size, PROT_READ | PROT_WRITE, MAP_SHARED,archivo,0);
 	int contador=0;
 	int marcador = 0;
-	while(contador <3)
-	{
-		if(archivoEnMemoria[marcador]=='=')
-		{
+	while(contador <3){
+		if(archivoEnMemoria[marcador]=='='){
 			contador++;
 		}
-			marcador++;
-	}
-	if(caracteristicasArchivo.st_size == marcador)
-	{
-		log_info(loggerMongo,"BITARRAY VACIO en guardar");
-	}else
-	{
-		memcpy(archivoEnMemoria+marcador,arrayAGuardar->bitarray,caracteristicasArchivo.st_size - marcador);
+
+		marcador++;
 	}
 
+	if(caracteristicasArchivo.st_size == marcador)
+		log_info(loggerMongo,"BITARRAY VACIO en guardar");
+	else
+		memcpy(archivoEnMemoria+marcador,arrayAGuardar->bitarray,caracteristicasArchivo.st_size - marcador);
+
+
+	//TODO ESTÁ BIEN ESTO? SE ESTARÍA SINCRONIZANDO APARTE DEL HILO CREO
 	if(msync(archivoEnMemoria,caracteristicasArchivo.st_size,MS_INVALIDATE)==0)
-	{
 		printf("\nSe actualizo el archivo\n");
-	}
+
 	munmap(archivoEnMemoria,caracteristicasArchivo.st_size);
 	free(direccionSuperBloque);
 	close(archivo);
 }
 
-int posicionBlockLibre(t_bitarray* bitMap)
-{
+int posicionBlockLibre(t_bitarray* bitMap){
 	int posicion = 0;
 	log_info(loggerMongo,"Tamanio bitmap: %d",bitarray_get_max_bit(bitMap));
-	while(posicion < bitarray_get_max_bit(bitMap) )
-	{
+
+	while(posicion < bitarray_get_max_bit(bitMap)){
 		if(!bitarray_test_bit(bitMap,posicion))
-		{
 			return posicion;
-		}
 		else
-		{
 			posicion++;
-		}
 	}
-	if(posicion == bitarray_get_max_bit(bitMap))
-	{
+
+	if(posicion == bitarray_get_max_bit(bitMap)){
 		log_info(loggerMongo,"ARCHIVO BLOCKS LLENO, TERMINANDO PROGRAMA");
 		exit(-6);
 	}
+
 	return posicion;
 }
 
-void inicializarBlocks()
-{
+void inicializarBlocks(){
 	char* direccionSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
 	char* direccionBlocks = string_from_format("%s/Blocks.ims",PUNTO_MONTAJE);
 	t_config* configuracionBlocks = config_create(direccionSuperBloque);
@@ -292,18 +276,17 @@ void inicializarBlocks()
 
 	fdArchivoBlocks = open(direccionBlocks, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 	struct stat infoBlocks;
-	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
-	{
+	if(fstat(fdArchivoBlocks,&infoBlocks)== -1){
 		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 	}
-	if(infoBlocks.st_size != tamanioBlock*cantidadDeBlocks)
-	{
+
+	if(infoBlocks.st_size != tamanioBlock*cantidadDeBlocks){
 		char* repeatVacio = string_repeat(' ', tamanioBlock*cantidadDeBlocks);
-		if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1)
-		{
+		if(ftruncate(fdArchivoBlocks,tamanioBlock*cantidadDeBlocks)==-1){
 			log_info(loggerMongo, "No se pudo crear archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
 			write(fdArchivoBlocks,repeatVacio,tamanioBlock*cantidadDeBlocks);
 		}
+
 		write(fdArchivoBlocks,repeatVacio,tamanioBlock*cantidadDeBlocks);
 		log_info(loggerMongo, "Se creo el archivo con el tamaño %dx%d",tamanioBlock,cantidadDeBlocks);
 		free(repeatVacio);
@@ -316,11 +299,10 @@ void inicializarBlocks()
 	//log_info(loggerMongo,"%d",strlen(string_repeat(' ', tamanioBlock*cantidadDeBlocks)));
 
 	if(fstat(fdArchivoBlocks,&infoBlocks)== -1)
-	{
-			log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
-	}
+		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
+
 	log_info(loggerMongo, "Tamaño del archivo total es %d",infoBlocks.st_size);
-	//
+
 	free(direccionBlocks);
 	free(direccionSuperBloque);
 }
@@ -329,7 +311,7 @@ void inicializarMapeoBlocks(){
 	struct stat infoBlocks;
 
 	if(fstat(fdArchivoBlocks,&infoBlocks)== -1){
-		log_info(loggerMongo, "No se pudo obtener stat de Blocks.ims");
+		log_error(loggerMongo, "No se pudo obtener stat de Blocks.ims");
 		exit(-3);
 	}
 
@@ -344,13 +326,15 @@ void inicializarMapeoBlocks(){
 }
 
 void forzarSincronizacionBlocks(){
+	pthread_mutex_lock(&mutexBlocks);
 	memcpy(blocksMapOriginal, blocksMap, cantidadDeBlocks * tamanioBlock);
+	pthread_mutex_unlock(&mutexBlocks);
+
 	if(msync(blocksMapOriginal,(cantidadDeBlocks*tamanioBlock),MS_SYNC)==0)
-	log_info(loggerMongo, "BLOCK SINCRONIZADO");
+		log_info(loggerMongo, "BLOCK SINCRONIZADO");
 }
 
-void atenderTripulante(void* _cliente)
-{
+void atenderTripulante(void* _cliente){
 	int socket_tripulante = (int) _cliente;
 
 	uint32_t idTripulante;
@@ -358,19 +342,17 @@ void atenderTripulante(void* _cliente)
 
 	struct stat statCarpeta;
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,idTripulante);
-	if(stat(directorioTripulante,&statCarpeta)==-1)
-	{
+	if(stat(directorioTripulante,&statCarpeta)==-1){
 		FILE* archivoBitacora = fopen(directorioTripulante,"w");
 		txt_write_in_file(archivoBitacora, "SIZE=0\nBLOCKS=[]");
 		log_info(loggerMongo, "Archivo Tripulante%d.ims creado",idTripulante);
 	}
 	free(directorioTripulante);
-	//pthread_t idHilo = pthread_self();
+
 	while(1){
 		int op_code = recibir_operacion(socket_tripulante);
 
-		switch(op_code)
-		{
+		switch(op_code){
 		case INFORMAR_DESPLAZAMIENTO_FS:
 			recibirInformeDeDesplazamiento(socket_tripulante,idTripulante);
 			break;
@@ -417,19 +399,19 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
 		escribirFile("Oxigeno", caracteresAGenerar);
-		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Oxigeno.ims: %d\n",id_tripulante,caracteresAGenerar);
+		log_debug(loggerMongo,"[TRIPULANTE %d] SE GENERAN %d OXIGENOS", id_tripulante, caracteresAGenerar);
 		break;
 	}
 	case CONSUMIR_OXIGENO:{
-		if(existeArchivoRecurso("Oxigeno"))
-		{
-			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		if(existeArchivoRecurso("Oxigeno")){
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
 			uint32_t caracteresABorrar;
 			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
 			eliminarCaracterFile("Oxigeno", caracteresABorrar);
-			printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d\n",id_tripulante,caracteresABorrar);
-		}else
+			log_debug(loggerMongo,"[TRIPULANTE %d] CARACTERES A BORRAR DE Oxigeno.ims: %d", id_tripulante, caracteresABorrar);
+		}
+		else
 		{
 			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
@@ -440,19 +422,19 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
 		escribirFile("Comida", caracteresAGenerar);
-		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Comida.ims: %d\n",id_tripulante,caracteresAGenerar);
+		log_debug(loggerMongo,"[TRIPULANTE %d] SE GENERAN %d COMIDAS", id_tripulante, caracteresAGenerar);
 		break;
 	}
 	case CONSUMIR_COMIDA:{
-		if(existeArchivoRecurso("Comida"))
-		{
-			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		if(existeArchivoRecurso("Comida")){
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
 			uint32_t caracteresABorrar;
 			recv(socket_tripulante,&caracteresABorrar,sizeof(uint32_t),0);
 			eliminarCaracterFile("Comida", caracteresABorrar);
-			printf("[TRIPULANTE %d] CARACTERES A BORRAR DE Comidas.ims: %d\n",id_tripulante,caracteresABorrar);
-		}else
+			log_debug(loggerMongo,"[TRIPULANTE %d] CARACTERES A BORRAR DE Comidas.ims: %d",id_tripulante,caracteresABorrar);
+		}
+		else
 		{
 			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
@@ -463,20 +445,20 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 		uint32_t caracteresAGenerar;
 		recv(socket_tripulante,&caracteresAGenerar,sizeof(uint32_t),0);
 		escribirFile("Basura", caracteresAGenerar);
-		printf("[TRIPULANTE %d] CARACTERES A GENERAR EN Basura.ims: %d\n",id_tripulante,caracteresAGenerar);
+		log_debug(loggerMongo,"[TRIPULANTE %d] SE GENERAN %d BASURAS",id_tripulante,caracteresAGenerar);
 		break;
 	}
 	case DESCARTAR_BASURA:{
-		if(existeArchivoRecurso("Basura"))
-		{
-			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO; //HASTA TENER BIEN DEFINIDO LO DE LOS ARCHIVOS
+		if(existeArchivoRecurso("Basura")){
+			tipo_mensaje respuesta = EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
 			//char* direccionBasura = string_from_format("%s/Files/Basura.ims",PUNTO_MONTAJE);
 			//log_info(loggerMongo,"Direccion basura :%s",direccionBasura);
 			eliminarArchivoYLiberar("Basura");
 			//free(direccionBasura);
-			printf("[TRIPULANTE %d] Se borra Basura.ims\n",id_tripulante);
-		}else
+			log_debug(loggerMongo,"[TRIPULANTE %d] Se borra Basura.ims",id_tripulante);
+		}
+		else
 		{
 			tipo_mensaje respuesta = NO_EXISTE_EL_ARCHIVO;
 			send(socket_tripulante,&respuesta,sizeof(tipo_mensaje),0);
@@ -488,8 +470,7 @@ void realizarTareaIO(int socket_tripulante, uint32_t id_tripulante){
 	}
 }
 
-void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulante)
-{
+void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulante){
 	void* buffer;
 	uint32_t sizeBuffer;
 	uint32_t coorXAnterior;
@@ -520,8 +501,7 @@ void recibirInformeDeDesplazamiento(int socket_tripulante, uint32_t id_tripulant
 	free(buffer);
 }
 
-void recibirInicioDeTarea(int socket_tripulante, uint32_t id_tripulante)
-{
+void recibirInicioDeTarea(int socket_tripulante, uint32_t id_tripulante){
 	void* buffer;
 	uint32_t sizeBuffer;
 	uint32_t sizeTarea;
@@ -581,7 +561,7 @@ void recibirFinalizaTarea(int socket_tripulante, uint32_t id_tripulante){
 }
 
 void loggearAtencionSabotaje(uint32_t id_tripulante){
-	log_info(loggerMongo,"[TRIPULANTE %d] ATIENDE EL SABOTAJE",id_tripulante);
+	log_debug(loggerMongo,"[TRIPULANTE %d] ATIENDE EL SABOTAJE",id_tripulante);
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
@@ -595,7 +575,7 @@ void loggearAtencionSabotaje(uint32_t id_tripulante){
 }
 
 void loggearResolucionSabotaje(uint32_t id_tripulante){
-	log_info(loggerMongo,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",id_tripulante);
+	log_debug(loggerMongo,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",id_tripulante);
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
@@ -605,7 +585,10 @@ void loggearResolucionSabotaje(uint32_t id_tripulante){
 	config_destroy(configuracionTripulante);
 
 	liberarArray(posicionSabotajeActual);
+
+	pthread_mutex_lock(&mutexPosicionSabotaje);
 	posicionSabotajeActual = getSiguientePosicionSabotaje();
+	pthread_mutex_unlock(&mutexPosicionSabotaje);
 
 	free(directorioTripulante);
 	free(stringBitacora);
@@ -626,61 +609,55 @@ void enviarBitacora(int socket_tripulante, uint32_t id_tripulante){
 char* recuperarBitacora(uint32_t id_tripulante){
 	struct stat statCarpeta;
 	char* direccionBitacora = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
-	if(stat(direccionBitacora,&statCarpeta)==-1)
-	{
+	if(stat(direccionBitacora,&statCarpeta)==-1){
 		log_info(loggerMongo,"NO EXISTE LA BITACORA");
 		return "NO EXISTE LA BITACORA";
 	}
-	t_config* configuracionTripulante = config_create(direccionBitacora);
 	free(direccionBitacora);
+
+	t_config* configuracionTripulante = config_create(direccionBitacora);
 	char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
 	int tamanioBitacora = config_get_int_value(configuracionTripulante,"SIZE");
 	config_destroy(configuracionTripulante);
-	if(bloquesUtilizados[0]==NULL)
-	{
+
+	if(bloquesUtilizados[0]==NULL){
 		log_info(loggerMongo,"LA BITACORA ESTA VACIA");
 		return "BITACORA VACIA";
 	}
+
 	char* bitacora;
 	char* bloqueRecuperado = calloc(tamanioBlock,1);
 	int contador = 0;
 	memcpy(bloqueRecuperado,blocksMap+atoi(bloquesUtilizados[contador])*tamanioBlock,tamanioBlock);
 	bitacora = string_from_format("%s",bloqueRecuperado);
 	contador++;
-	tamanioBitacora-=tamanioBlock;
-	while(bloquesUtilizados[contador]!=NULL)
-	{
+	tamanioBitacora -= tamanioBlock;
+
+	while(bloquesUtilizados[contador]!=NULL){
 		memcpy(bloqueRecuperado,blocksMap+atoi(bloquesUtilizados[contador])*tamanioBlock,tamanioBlock);
 		string_append_with_format(&bitacora, "%s",bloqueRecuperado);
 		//bitacora = string_from_format("%s%s",bitacora,bloqueRecuperado);
 		contador++;
 	}
-	for(int i = 0; i<string_length(bitacora);i++)
-	{
+
+	for(int i = 0; i<string_length(bitacora);i++){
 		if(bitacora[i]==';')
-		{
 			bitacora[i]='\n';
-		}
 	}
+
 	log_info(loggerMongo,"%s",bitacora);
+
 	free(bloqueRecuperado);
-	int i = 0;
-	while(bloquesUtilizados[i]!=NULL)
-	{
-		free(bloquesUtilizados[i]);
-		i++;
-	}
-	free(bloquesUtilizados);
+	liberarArray(bloquesUtilizados);
 
 	return bitacora;
 }
 
 int byteExcedente(int cantidadDeBits, int tamanio){
-	return (cantidadDeBits%tamanio)>0;
+	return (cantidadDeBits % tamanio)>0;
 }
 
-void inicializarCarpetas()
-{
+void inicializarCarpetas(){
 	char* directorioFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
 	char* directorioBitacoras = string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE);
 	struct stat statCarpeta;
@@ -718,7 +695,7 @@ char** getSiguientePosicionSabotaje(){
 		return string_split(POSICIONES_SABOTAJE[sabotajesResueltos],"|");
 	}
 	else
-		log_info(loggerMongo,"YA SE RESOLVIERON TODOS LOS SABOTAJES!");
+		log_trace(loggerMongo,"YA SE RESOLVIERON TODOS LOS SABOTAJES!");
 
 	return posicionSabotajeActual;
 }
@@ -726,13 +703,27 @@ char** getSiguientePosicionSabotaje(){
 void informarSabotaje(){
 	int socket_cliente_discordiador = crearConexionCliente(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
 
+	pthread_mutex_lock(&mutexPosicionSabotaje);
 	uint32_t posSabotajeX = atoi(posicionSabotajeActual[0]);
 	uint32_t posSabotajeY = atoi(posicionSabotajeActual[1]);
+	pthread_mutex_unlock(&mutexPosicionSabotaje);
 
-	log_info(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!",posSabotajeX,posSabotajeY);
+	log_debug(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!",posSabotajeX,posSabotajeY);
 
-	send(socket_cliente_discordiador,&posSabotajeX,sizeof(uint32_t),0);
-	send(socket_cliente_discordiador,&posSabotajeY,sizeof(uint32_t),0);
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = 2*sizeof(uint32_t);
+	buffer->stream = malloc(buffer->size);
+
+	int desplazamiento = 0;
+
+	memcpy(buffer->stream + desplazamiento, &posSabotajeX, sizeof(uint32_t));
+	desplazamiento += sizeof(uint32_t);
+	memcpy(buffer->stream + desplazamiento, &posSabotajeY, sizeof(uint32_t));
+
+	enviar_buffer(buffer,socket_cliente_discordiador);
+
+	free(buffer->stream);
+	free(buffer);
 
 	close(socket_cliente_discordiador);
 }
@@ -740,45 +731,43 @@ void informarSabotaje(){
 void ejecutarFSCK(){
 	casoDeSabotaje sabotaje = casoSabotajeActual();
 	log_info(loggerMongo,"SE EJECUTA EL FSCK");
-	switch(sabotaje)
-	{
+	switch(sabotaje){
 	case SABOTAJE_EN_SUPERBLOQUE_CANTIDAD:
-		log_info(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS");
+		log_warning(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS");
 		resolverSabotajeCantidadBlocks();
 		break;
 	case SABOTAJE_EN_SUPERBLOQUE_BITMAP:
-		log_info(loggerMongo,"FUE SABOTEADO EL BITMAP");
+		log_warning(loggerMongo,"FUE SABOTEADO EL BITMAP");
 		resolverSabotajeBitMap();
 		break;
 	case SABOTAJE_EN_FILE_SIZE:
-		log_info(loggerMongo,"FUE SABOTEADO EL TAMAÑO DE UN ARCHIVO");
+		log_warning(loggerMongo,"FUE SABOTEADO EL TAMAÑO DE UN ARCHIVO");
 		resolverSabotajeSizeFile();
 		break;
 	case SABOTAJE_EN_FILE_BLOCK_COUNT:
-		log_info(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS DE UN ARCHIVO");
+		log_warning(loggerMongo,"FUE SABOTEADA LA CANTIDAD DE BLOCKS DE UN ARCHIVO");
 		resolverSabotajeBlockCount();
 		break;
 	case SABOTAJE_EN_FILE_BLOCKS:
-		log_info(loggerMongo,"FUE SABOTEADO EL MD5 DE UN ARCHIVO");
+		log_warning(loggerMongo,"FUE SABOTEADO EL MD5 DE UN ARCHIVO");
 		resolverSabotajeMD5();
 		break;
 	case NO_HAY_SABOTAJES:
-		log_info(loggerMongo,"NO HAY SABOTAJES");
+		log_debug(loggerMongo,"NO HAY SABOTAJES");
 		break;
 	default:
 		break;
 	}
 }
 
-void verificarSuperBloque()
-{
+void verificarSuperBloque(){
 	t_config* configuracionSuperBloque = config_create(string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE));
 	int cantidadDeSupuestosBloques = config_get_int_value(configuracionSuperBloque,"BLOCKS");
+
 	if(cantidadDeSupuestosBloques == string_length(blocksMap)/tamanioBlock)
-	{
 		log_info(loggerMongo,"SUPERBLOQUE NO AFECTADO POR SABOTAJE");
-	}
 }
+
 void escribirBitacora(char* string, t_config* configuracionTripulante){
 	int tamanioString = string_length(string);
 	char** listaBloques = config_get_array_value(configuracionTripulante,"BLOCKS");
@@ -868,8 +857,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 		int bloquePosicion=0;
 		int contador = 0;
 		char* bloques;
-		while(bloquesUtilizados[contador]!=NULL)
-		{
+		while(bloquesUtilizados[contador]!=NULL){
 			if(contador==0)
 			{
 				bloques = string_from_format("%s",bloquesUtilizados[0]);
@@ -893,22 +881,20 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 		//log_info(loggerMongo,"Tamanio en bytes del recuperado: %d",tamanioBitacora%tamanioBlock);
 		//log_info(loggerMongo,"Contenido del ultimo Bloque utilizado: %s",string_substring(bloqueRecuperado,0,tamanioBitacora%tamanioBlock));
 
-		if(tamanioString<=tamanioBlock)
-		{
-			if(tamanioBlock - tamanioBitacora%tamanioBlock >= tamanioString && tamanioBitacora%tamanioBlock != 0)
-			{
+		if(tamanioString<=tamanioBlock){
+			if(tamanioBlock - tamanioBitacora%tamanioBlock >= tamanioString && tamanioBitacora%tamanioBlock != 0){
 				rellenarEnBlocks(bloquePosicion, string, tamanioBitacora);
 				//forzarSincronizacionBlocks();//forzar la sincronizacion
 				tamanioBitacora += tamanioString;
 				config_set_value(configuracionTripulante,"SIZE",string_from_format("%d",tamanioBitacora));
-			}else
+			}
+			else
 			{
 				int posicionString = 0;
 				int nuevoBloque = ocuparBitVacio();
 				int tamanioBitacoraBlock =tamanioBitacora;
 				bloques = string_from_format("%s,%d",bloques,nuevoBloque);
-				if(tamanioBitacora%tamanioBlock == 0)
-				{
+				if(tamanioBitacora%tamanioBlock == 0){
 					escribirEnBlocks(nuevoBloque, string);
 					tamanioBitacora += string_length(string);
 				}
@@ -936,6 +922,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 		{
 			int tamanioTotal = string_length(string);
 			int cantidadDeBloquesASolicitar;// = tamanioTotal/tamanioBlock + byteExcedente(tamanioTotal, tamanioBlock);
+
 //			while(bloquesUtilizados[contador]!=NULL)
 //			{
 //				if(contador==0)
@@ -949,13 +936,14 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 //				bloquePosicion = atoi(bloquesUtilizados[contador]);
 //				contador++;
 //			}
-			//char* bloqueRecuperado = calloc(tamanioBlock,1);
-			//memcpy(bloqueRecuperado,blocksMap+(bloquePosicion*tamanioBlock),tamanioBlock);
-			//int tamanioBitacora = config_get_int_value(configuracionTripulante,"SIZE");
+//			char* bloqueRecuperado = calloc(tamanioBlock,1);
+//			memcpy(bloqueRecuperado,blocksMap+(bloquePosicion*tamanioBlock),tamanioBlock);
+//			int tamanioBitacora = config_get_int_value(configuracionTripulante,"SIZE");
+
 			int posicionString = 0;
 			char* stringPartido;
-			if(tamanioBitacora%tamanioBlock!=0)
-			{//Si hay q rellenar un bloque previamente utilizado
+			if(tamanioBitacora%tamanioBlock!=0){
+				//Si hay q rellenar un bloque previamente utilizado
 				stringPartido = string_substring(string,posicionString,tamanioBlock-tamanioBitacora%tamanioBlock);
 				rellenarEnBlocks(bloquePosicion, stringPartido, tamanioBitacora);
 				posicionString += string_length(stringPartido);
@@ -963,8 +951,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 				cantidadDeBloquesASolicitar = tamanioStringRestante/tamanioBlock + byteExcedente(tamanioStringRestante, tamanioBlock);
 				int nuevoBloque;
 				free(stringPartido);
-				for(int i = 0; i<cantidadDeBloquesASolicitar;i++)
-				{
+				for(int i = 0; i<cantidadDeBloquesASolicitar;i++){
 					nuevoBloque = ocuparBitVacio();
 					stringPartido = string_substring(string, posicionString, tamanioBlock);
 					posicionString += string_length(stringPartido);
@@ -973,6 +960,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 					free(stringPartido);
 					//bloques = string_from_format("%s,%d",bloques,nuevoBloque);
 				}
+
 				tamanioBitacora += string_length(string);
 				char* bloquesConf = string_from_format("[%s]",bloques);
 				char* sizeConf = string_from_format("%d",tamanioBitacora);
@@ -980,12 +968,13 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 				config_set_value(configuracionTripulante,"SIZE",sizeConf);
 				free(bloquesConf);
 				free(sizeConf);
-			}else
-			{//si no hay q rellenar un bloque previamente utilizado
+			}
+			else
+			{
+				//si no hay q rellenar un bloque previamente utilizado
 				cantidadDeBloquesASolicitar = tamanioTotal/tamanioBlock + byteExcedente(tamanioTotal, tamanioBlock);
 				int nuevoBloque;
-				for(int i=0;i<cantidadDeBloquesASolicitar;i++)
-				{
+				for(int i=0;i<cantidadDeBloquesASolicitar;i++){
 					nuevoBloque = ocuparBitVacio();
 					stringPartido = string_substring(string, posicionString, tamanioBlock);
 					posicionString += string_length(stringPartido);
@@ -1009,8 +998,7 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 	liberarArray(listaBloques);
 }
 
-int ocuparBitVacio()
-{
+int ocuparBitVacio(){
 	pthread_mutex_lock(&mutexBitMap);
 	t_bitarray* bitMap = recuperarBitArray();
 	int posicion = posicionBlockLibre(bitMap);
@@ -1019,34 +1007,33 @@ int ocuparBitVacio()
 	free(bitMap->bitarray);
 	bitarray_destroy(bitMap);
 	pthread_mutex_unlock(&mutexBitMap);
+
 	return posicion;
 }
 
-void escribirEnBlocks(int posicion, char* string)
-{
-	pthread_mutex_lock(&mutexBlocks);
+void escribirEnBlocks(int posicion, char* string){
 	int tamanioString = string_length(string);
+
+	pthread_mutex_lock(&mutexBlocks);
 	memcpy(blocksMap+(posicion*tamanioBlock),string,tamanioString);
-	//forzarSincronizacionBlocks();
 	pthread_mutex_unlock(&mutexBlocks);
 }
 
-void rellenarEnBlocks(int posicion, char* string, int tamanioBitacora)
-{
-	pthread_mutex_lock(&mutexBlocks);
+void rellenarEnBlocks(int posicion, char* string, int tamanioBitacora){
 	int tamanioString = string_length(string);
-	memcpy(blocksMap+(posicion*tamanioBlock)+tamanioBitacora%tamanioBlock,string,tamanioString);
+	int desplazamiento = (posicion*tamanioBlock) + tamanioBitacora%tamanioBlock;
+
+	pthread_mutex_lock(&mutexBlocks);
+	memcpy(blocksMap + desplazamiento, string , tamanioString);
 	pthread_mutex_unlock(&mutexBlocks);
 }
 
-void escribirFile(char* recurso, int cantidad)
-{
+void escribirFile(char* recurso, int cantidad){
 	struct stat statCarpeta;
 	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
-	//mutexFile lock
+
 	pthread_mutex_lock(&mutexFile);
-	if(stat(direccionArchivo,&statCarpeta)==-1)
-	{
+	if(stat(direccionArchivo,&statCarpeta)==-1){
 		FILE* archivoBitacora = fopen(string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso),"w");
 		char* textoAEscribir = string_from_format("SIZE=0\nBLOCK_COUNT=0\nBLOCKS=[]\nCARACTER_LLENADO=%c\nMD5_ARCHIVO=",recurso[0]);
 		txt_write_in_file(archivoBitacora, textoAEscribir);
@@ -1055,6 +1042,7 @@ void escribirFile(char* recurso, int cantidad)
 		free(textoAEscribir);
 
 	}
+
 	t_config* configFile = config_create(direccionArchivo);
 	char* fileCompleto = string_new();
 	char* fileMD5;
@@ -1064,10 +1052,11 @@ void escribirFile(char* recurso, int cantidad)
 	char* stringRecurso = string_repeat(recurso[0], cantidad);
 	char* recursosParaMD5 = string_repeat(' ',((tamanioFile+cantidad)/tamanioBlock + byteExcedente(tamanioFile+cantidad, tamanioBlock))*tamanioBlock);
 	log_info(loggerMongo,"Tamanio stringRecurso: %d",string_length(stringRecurso));
-	if(cantidadDeBloques==0)
-	{//si no tiene ningun bloque
-		if(cantidad<=tamanioBlock)
-		{//si la cantidad es menor que un bloque de tamanio
+
+	if(cantidadDeBloques==0){
+		//si no tiene ningun bloque
+		if(cantidad<=tamanioBlock){
+			//si la cantidad es menor que un bloque de tamanio
 			int posicion = ocuparBitVacio();
 			//string_append(&fileCompleto, stringRecurso);
 			char* posicionBit = string_from_format("[%d]",posicion);
@@ -1086,9 +1075,11 @@ void escribirFile(char* recurso, int cantidad)
 //			config_destroy(configFile);
 			free(posicionBit);
 			free(tamanioRecurso);
-			//hashear en md5 y configsetvalue MD5
-		}else
-		{//si la cantidad es mayor a un bloque
+//			hashear en md5 y configsetvalue MD5
+		}
+		else
+		{
+			//si la cantidad es mayor a un bloque
 			int cantidadDeBloquesASolicitar = cantidad/tamanioBlock + byteExcedente(cantidad, tamanioBlock);
 			//log_info(loggerMongo,"Cantidad de bloques a solicitar %d",cantidadDeBloquesASolicitar);
 			int contador = 0;
@@ -1099,8 +1090,7 @@ void escribirFile(char* recurso, int cantidad)
 			contador++;
 			free(stringPartido);
 			cantidadDeBloques++;
-			for(;contador<cantidadDeBloquesASolicitar;contador++)
-			{
+			for(;contador<cantidadDeBloquesASolicitar;contador++){
 				posicionBloque = ocuparBitVacio();
 				stringPartido = string_substring(stringRecurso, contador*tamanioBlock, tamanioBlock);
 				//log_info(loggerMongo, "string_partido %s",stringPartido);
@@ -1109,6 +1099,7 @@ void escribirFile(char* recurso, int cantidad)
 				free(stringPartido);
 				cantidadDeBloques++;
 			}
+
 			memcpy(recursosParaMD5,stringRecurso,string_length(stringRecurso));
 			fileMD5 = obtenerMD5(recursosParaMD5);
 			//forzarSincronizacionBlocks();
@@ -1124,8 +1115,10 @@ void escribirFile(char* recurso, int cantidad)
 			free(tamanioRecurso);
 			free(cantidadBloquesConf);
 		}
-	}else
-	{//si ya uso bloques, buscar y completar
+	}
+	else
+	{
+		//si ya uso bloques, buscar y completar
 		//char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 		int bloquePosicion = 0;
 		int contador = 0;
@@ -1133,15 +1126,14 @@ void escribirFile(char* recurso, int cantidad)
 		//char* recursosParaMD5 = string_repeat(' ', ((tamanioFile+cantidad)/tamanioBlock + byteExcedente(tamanioFile+cantidad, tamanioBlock))*tamanioBlock);
 		char* recursosEnFS = string_repeat(recurso[0], tamanioFile+cantidad);
 		char* bloques;
-		while(bloquesUtilizados[contador] != NULL)
-		{
-			if(contador == 0)
-			{
+		while(bloquesUtilizados[contador] != NULL){
+			if(contador == 0){
 				bloques = string_from_format("%s",bloquesUtilizados[contador]);
 				bloqueRecuperadoFile = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
 				string_append(&fileCompleto, bloqueRecuperadoFile);
 				free(bloqueRecuperadoFile);
-			}else
+			}
+			else
 			{
 				string_append_with_format(&bloques, ",%s",bloquesUtilizados[contador]);
 				bloqueRecuperadoFile = bloqueRecuperado(atoi(bloquesUtilizados[contador]));
@@ -1156,10 +1148,8 @@ void escribirFile(char* recurso, int cantidad)
 		log_info(loggerMongo,"Recursos para md5: %s",recursosParaMD5);
 		fileMD5 = obtenerMD5(recursosParaMD5);
 		liberarArray(bloquesUtilizados);
-		if(cantidad<=tamanioBlock)
-		{
-			if(tamanioBlock - tamanioFile%tamanioBlock >= cantidad && tamanioFile%tamanioBlock != 0)
-			{
+		if(cantidad<=tamanioBlock){
+			if(tamanioBlock - tamanioFile%tamanioBlock >= cantidad && tamanioFile%tamanioBlock != 0){
 				rellenarEnBlocks(bloquePosicion, stringRecurso, tamanioFile);
 				//forzarSincronizacionBlocks();
 				tamanioFile += cantidad;
@@ -1167,17 +1157,18 @@ void escribirFile(char* recurso, int cantidad)
 				config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
 				config_set_value(configFile,"SIZE",sizeConf);
 				free(sizeConf);
-			}else
+			}
+			else
 			{
 				int posicionString = 0;
 				int nuevoBloque = ocuparBitVacio();
 				string_append_with_format(&bloques, ",%d",nuevoBloque);
-				if(tamanioFile%tamanioBlock == 0)
-				{
+				if(tamanioFile%tamanioBlock == 0){
 					escribirEnBlocks(nuevoBloque, stringRecurso);
 					tamanioFile += cantidad;
 					cantidadDeBloques++;
-				}else
+				}
+				else
 				{
 					char* stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock-tamanioFile%tamanioBlock);
 					rellenarEnBlocks(bloquePosicion,stringPartido,tamanioFile);
@@ -1190,6 +1181,7 @@ void escribirFile(char* recurso, int cantidad)
 					cantidadDeBloques++;
 					free(stringPartido);
 				}
+
 				//forzarSincronizacionBlocks();
 				char* blocksConf = string_from_format("[%s]",bloques);
 				char* sizeConf = string_itoa(tamanioFile);
@@ -1202,7 +1194,8 @@ void escribirFile(char* recurso, int cantidad)
 				free(sizeConf);
 				free(cantidadConf);
 			}
-		}else
+		}
+		else
 		{
 			//int tamanioTolta = string_length(stringRecurso);
 			int cantidadDeBloquesASolicitar;
@@ -1210,8 +1203,7 @@ void escribirFile(char* recurso, int cantidad)
 			char* stringPartido;
 			log_info(loggerMongo,"Resto: %d",tamanioFile%tamanioBlock);
 			//sleep(5);
-			if(tamanioFile%tamanioBlock!=0)
-			{
+			if(tamanioFile%tamanioBlock!=0){
 				stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock - tamanioFile%tamanioBlock);
 				rellenarEnBlocks(bloquePosicion, stringPartido, tamanioFile);
 				int tamanioStringRestante = cantidad - string_length(stringPartido);
@@ -1220,8 +1212,7 @@ void escribirFile(char* recurso, int cantidad)
 				cantidadDeBloquesASolicitar = tamanioStringRestante/tamanioBlock + byteExcedente(tamanioStringRestante, tamanioBlock);
 				int nuevoBloque;
 				free(stringPartido);
-				for(int i = 0; i<cantidadDeBloquesASolicitar;i++)
-				{
+				for(int i = 0; i<cantidadDeBloquesASolicitar;i++){
 					nuevoBloque = ocuparBitVacio();
 					stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock);
 					posicionString += string_length(stringPartido);
@@ -1230,6 +1221,7 @@ void escribirFile(char* recurso, int cantidad)
 					cantidadDeBloques++;
 					free(stringPartido);
 				}
+
 				tamanioFile += cantidad;
 				char* blocksConf = string_from_format("[%s]",bloques);
 				char* sizeConf = string_itoa(tamanioFile);
@@ -1241,12 +1233,12 @@ void escribirFile(char* recurso, int cantidad)
 				free(blocksConf);
 				free(sizeConf);
 				free(cantidadConf);
-			}else
+			}
+			else
 			{
 				cantidadDeBloquesASolicitar = cantidad/tamanioBlock + byteExcedente(cantidad, tamanioBlock);
 				int nuevoBloque;
-				for(int i = 0; i<cantidadDeBloquesASolicitar;i++)
-				{
+				for(int i = 0; i<cantidadDeBloquesASolicitar;i++){
 					nuevoBloque = ocuparBitVacio();
 					stringPartido = string_substring(stringRecurso, posicionString, tamanioBlock);
 					posicionString += string_length(stringPartido);
@@ -1276,9 +1268,9 @@ void escribirFile(char* recurso, int cantidad)
 	pthread_mutex_unlock(&mutexFile);
 }
 
-void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo que existe el archivo
-{
-	//struct stat statCarpeta;
+void eliminarCaracterFile(char* recurso, int cantidad){
+//	se trabaja suponiendo que existe el archivo
+//	struct stat statCarpeta;
 	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
 
 	pthread_mutex_lock(&mutexFile);
@@ -1288,37 +1280,34 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 	int cantidadDeBloques = config_get_int_value(configFile,"BLOCK_COUNT");
 	char** bloquesUtilizados = config_get_array_value(configFile,"BLOCKS");
 	int nuevoSize = tamanioFile - cantidad;
-	//mutexFile lock
-	if(cantidad >= tamanioFile)
-	{
+
+	if(cantidad >= tamanioFile){
 		int contador = 0;
-		while(bloquesUtilizados[contador] != NULL)
-		{
+		while(bloquesUtilizados[contador] != NULL){
 			liberarBloque(atoi(bloquesUtilizados[contador]));
 			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[contador]);
 			contador++;
 		}
+
 		fileMD5 = obtenerMD5("");
 		config_set_value(configFile,"SIZE","0");
 		config_set_value(configFile,"BLOCK_COUNT","0");
 		config_set_value(configFile,"BLOCKS","[]");
 		config_set_value(configFile,"MD5_ARCHIVO",fileMD5);
-		if(cantidad==tamanioFile)
-		{
-			log_info(loggerMongo,"Se quisieron eliminar mas caracteres de los existentes de %s",recurso);
-		}
 
-	}else
+		if(cantidad==tamanioFile)
+			log_info(loggerMongo,"Se quisieron eliminar mas caracteres de los existentes de %s",recurso);
+	}
+	else
 	{
 		int cantidadDeBloquesNecesarios = nuevoSize/tamanioBlock + byteExcedente(nuevoSize, tamanioBlock);
-		while(cantidadDeBloques != cantidadDeBloquesNecesarios)
-		{
+		while(cantidadDeBloques != cantidadDeBloquesNecesarios){
 			liberarBloque(atoi(bloquesUtilizados[cantidadDeBloques-1]));
 			log_info(loggerMongo,"Bloque liberado: %s", bloquesUtilizados[cantidadDeBloques-1]);
 			cantidadDeBloques--;
 		}
-		if(nuevoSize%tamanioBlock != 0)
-		{
+
+		if(nuevoSize%tamanioBlock != 0){
 			char* nuevoStringBloque = string_repeat(' ', tamanioBlock);
 			char* nuevoStringRecurso = string_repeat(recurso[0],nuevoSize%tamanioBlock);
 			log_info(loggerMongo,"Tamanio string recurso:%d string recurso: %s",string_length(nuevoStringRecurso),nuevoStringRecurso);
@@ -1327,11 +1316,12 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 			free(nuevoStringBloque);
 			free(nuevoStringRecurso);
 		}
+
 		char* nuevoArray = bloquesUtilizados[0];
-		for(int i = 1 ; i<cantidadDeBloquesNecesarios;i++)
-		{
+		for(int i = 1 ; i<cantidadDeBloquesNecesarios;i++){
 			string_append_with_format(&nuevoArray, ",%s",bloquesUtilizados[i]);
 		}
+
 		char* recursoParaMD5 = string_repeat(' ',cantidadDeBloquesNecesarios*tamanioBlock);
 		char* recursoTotal = string_repeat(recurso[0],nuevoSize);
 		memcpy(recursoParaMD5,recursoTotal,string_length(recursoTotal));
@@ -1350,30 +1340,28 @@ void eliminarCaracterFile(char* recurso, int cantidad) //se trabaja suponiendo q
 		free(sizeConf);
 		free(contadorConf);
 	}
+
 	config_save(configFile);
 	pthread_mutex_unlock(&mutexFile);
 	config_destroy(configFile);
 	free(fileMD5);
-	//liberarArray(bloquesUtilizados);
+//	liberarArray(bloquesUtilizados);
 }
 
-bool existeArchivoRecurso(char* recurso)
-{
+bool existeArchivoRecurso(char* recurso){
 	struct stat statCarpeta;
 	char* direccionArchivo = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
 	return !(stat(direccionArchivo,&statCarpeta)==-1);
 }
 
-void liberarBloque(int bloqueALiberar)
-{
+void liberarBloque(int bloqueALiberar){
 	char* stringBloqueVacio = string_repeat(' ', tamanioBlock);
 	escribirEnBlocks(bloqueALiberar, stringBloqueVacio);
 	liberarBit(bloqueALiberar);
 	free(stringBloqueVacio);
 }
 
-void liberarBit(int bit)
-{
+void liberarBit(int bit){
 	pthread_mutex_lock(&mutexBitMap);
 	t_bitarray* bitMap = recuperarBitArray();
 	//int posicion = posicionBlockLibre(bitMap);
@@ -1398,17 +1386,17 @@ char* obtenerMD5(char* bloquesRecuperados)
 	int archivoMD5 = open(directorioMD5, O_RDWR, S_IRUSR | S_IWUSR);
 	int contadorPosicion = 0;
 	struct stat caracteristicasMD5;
+
 	if(fstat(archivoMD5,&caracteristicasMD5)== -1)
-	{
 		log_info(loggerMongo, "No se pudo obtener stat de MD5");
-	}
+
 	//blocksMapOriginal = mmap(NULL, cantidadDeBlocks * tamanioBlock,PROT_READ | PROT_WRITE, MAP_SHARED,fdArchivoBlocks,0);
 
 	char* mapeadoMD5 = mmap(NULL, caracteristicasMD5.st_size,PROT_READ | PROT_WRITE, MAP_SHARED,archivoMD5,0);
-	while(mapeadoMD5[contadorPosicion]!=' ')
-	{
+	while(mapeadoMD5[contadorPosicion]!=' '){
 		contadorPosicion++;
 	}
+
 	char* salidaMD5 = calloc(contadorPosicion,1);
 	memcpy(salidaMD5,mapeadoMD5,contadorPosicion);
 	munmap(mapeadoMD5,caracteristicasMD5.st_size);
@@ -1417,37 +1405,34 @@ char* obtenerMD5(char* bloquesRecuperados)
 	free(comando);
 	close(archivoMD5);
 	pthread_mutex_unlock(&mutexMD5);
+
 	return salidaMD5;
 }
 
-char* bloqueRecuperado(int posicionBloque)
-{
+char* bloqueRecuperado(int posicionBloque){
 	char* recuperado = calloc(tamanioBlock,1);
 	memcpy(recuperado,blocksMap+posicionBloque*tamanioBlock,tamanioBlock);
 	return recuperado;
 }
 
-void eliminarArchivoYLiberar(char* recurso)
-{
+void eliminarArchivoYLiberar(char* recurso){
 	char* direccion = string_from_format("%s/Files/%s.ims",PUNTO_MONTAJE,recurso);
 	t_config* configRecurso = config_create(direccion);
 	char** bloquesUsados = config_get_array_value(configRecurso,"BLOCKS");
 	int contador = 0;
-	while(bloquesUsados[contador] != NULL)
-	{
+	while(bloquesUsados[contador] != NULL){
 		liberarBloque(atoi(bloquesUsados[contador]));
 		log_info(loggerMongo,"Bloque liberado: %s", bloquesUsados[contador]);
 		contador++;
 	}
+
 	remove(direccion);
 	free(direccion);
 	liberarArray(bloquesUsados);
 }
 
-void asincronia()
-{
-	while(1)
-	{
+void asincronia(){
+	while(1){
 		sleep(TIEMPO_SINCRONIZACION);
 		forzarSincronizacionBlocks();
 	}

@@ -215,7 +215,6 @@ void habilitarProximoAEjecutar(){
 
 	pthread_mutex_lock(&mutexColaReady);
 	t_tripulante* tripulante = (t_tripulante*) list_find(colaReady,primerTripulanteDeshabilitado);
-	pthread_mutex_unlock(&mutexColaReady);
 
 	//AGARRO AL PRIMER TRIPULANTE DE LA COLA DE READY QUE ESTÉ DESHABILITADO (QUE DEBERÍA SER SIEMPRE EL PRIMERO)
 	//PERO PUEDE HABER PROBLEMAS DE CONCURRENCIA, VER MEJOR ESTO
@@ -228,6 +227,7 @@ void habilitarProximoAEjecutar(){
 		sem_post(&(tripulante->puedeEjecutar));
 	}
 	pthread_mutex_unlock(&mutexColaExec);
+	pthread_mutex_unlock(&mutexColaReady);
 }
 
 void habilitarSiCorresponde(t_tripulante* tripulante){
@@ -237,7 +237,6 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 
 	pthread_mutex_lock(&mutexColaReady);
 	t_list* tripulantesParaEjecutar = list_take(colaReady,GRADO_MULTITAREA);
-	pthread_mutex_unlock(&mutexColaReady);
 
 	pthread_mutex_lock(&mutexColaExec);
 	if(list_any_satisfy(tripulantesParaEjecutar,buscarTripulante) && list_size(colaExec)<GRADO_MULTITAREA && !tripulante->habilitado){
@@ -248,6 +247,7 @@ void habilitarSiCorresponde(t_tripulante* tripulante){
 		sem_post(&(tripulante->puedeEjecutar));
 	}
 	pthread_mutex_unlock(&mutexColaExec);
+	pthread_mutex_unlock(&mutexColaReady);
 
 	list_destroy(tripulantesParaEjecutar);
 }
@@ -377,11 +377,11 @@ void ejecutarTareaFIFO(t_tripulante* tripulante){
 
 			agregarABlockIO(tripulante);
 
+			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
+
 			habilitarProximoAEjecutar();
 
 			notificarInicioDeTarea(tripulante);
-
-			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 		}
 
 		pthread_mutex_lock(&mutexEjecutarIO);
@@ -483,11 +483,11 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 			agregarABlockIO(tripulante);
 
+			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
+
 			habilitarProximoAEjecutar();
 
 			notificarInicioDeTarea(tripulante);
-
-			log_trace(loggerSecundario,"[TRIPULANTE %d] ME BLOQUEO POR I/O",tripulante->tid);
 		}
 
 		pthread_mutex_lock(&mutexEjecutarIO);
@@ -638,6 +638,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 }
 
 void planificarTripulanteFIFO(t_tripulante* tripulante){
+	//TODO ACÁ ES DONDE SE BLOQUEABA PORQUE LE ASIGNABA DE UNA LA TAREA. AHORA PRIMERO DEFINO LA VARIABLE Y DESPUÉS SE LA ASIGNO ENTRE EL MUTEX
 	Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
 	log_info(loggerDiscordiador,"[TRIPULANTE %d] RECIBIÓ SU PRIMERA TAREA",tripulante->tid);
 
@@ -725,6 +726,7 @@ void planificarTripulanteFIFO(t_tripulante* tripulante){
 }
 
 void planificarTripulanteRR(t_tripulante* tripulante){
+	//TODO ACÁ ES DONDE SE BLOQUEABA PORQUE LE ASIGNABA DE UNA LA TAREA. AHORA PRIMERO DEFINO LA VARIABLE Y DESPUÉS SE LA ASIGNO ENTRE EL MUTEX
 	Tarea* proximaTarea = solitarProximaTarea(tripulante->socket_MIRAM);
 	log_info(loggerDiscordiador,"[TRIPULANTE %d] RECIBIÓ SU PRIMERA TAREA",tripulante->tid);
 

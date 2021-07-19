@@ -15,14 +15,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 
-
-pthread_mutex_t mutexSincro;
-pthread_mutex_t mutexBlocks;
-pthread_mutex_t mutexBitMap;
-pthread_mutex_t mutexFile;
-pthread_mutex_t mutexMD5;
-pthread_mutex_t mutexSabotaje;
-
 char* PUNTO_MONTAJE;
 char* IP_I_MONGO;
 char* PUERTO_I_MONGO;
@@ -31,8 +23,7 @@ char* PUERTO_DISCORDIADOR;
 char** POSICIONES_SABOTAJE;
 int TIEMPO_SINCRONIZACION;
 
-typedef enum
-{
+typedef enum{
 	SABOTAJE_EN_SUPERBLOQUE_CANTIDAD = 1,
 	SABOTAJE_EN_SUPERBLOQUE_BITMAP = 2,
 	SABOTAJE_EN_FILE_SIZE = 3,
@@ -45,8 +36,7 @@ t_dictionary* caracterAsociadoATarea;
 t_config* configuracionMongo;
 t_log* loggerMongo;
 
-int socket_servidor;
-int socket_discordiador;
+int socket_escucha;
 
 char** posicionSabotajeActual;
 int sabotajesResueltos;
@@ -57,6 +47,14 @@ int fdArchivoBlocks;
 
 uint32_t tamanioBlock;
 uint32_t  cantidadDeBlocks;
+
+pthread_mutex_t mutexSincro;
+pthread_mutex_t mutexBlocks;
+pthread_mutex_t mutexBitMap;
+pthread_mutex_t mutexFile;
+pthread_mutex_t mutexMD5;
+pthread_mutex_t mutexSabotaje;
+pthread_mutex_t mutexPosicionSabotaje;
 
 void inicializarVariables();
 void inicializarFileSystem();

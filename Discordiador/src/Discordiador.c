@@ -221,9 +221,15 @@ void atenderSabotajes(){
 	while(1){
 		int socket_cliente_mongo = esperar_cliente(socket_escucha_iMongo);
 
-		uint32_t posSabotajeX, posSabotajeY;
-		recv(socket_cliente_mongo,&posSabotajeX,sizeof(uint32_t),0);
-		recv(socket_cliente_mongo,&posSabotajeY,sizeof(uint32_t),0);
+		uint32_t posSabotajeX, posSabotajeY, sizeBuffer;
+		void* buffer = recibir_buffer(&sizeBuffer,socket_cliente_mongo);
+
+		int desplazamiento = 0;
+		memcpy(&posSabotajeX, buffer + desplazamiento, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+		memcpy(&posSabotajeY, buffer + desplazamiento, sizeof(uint32_t));
+
+		free(buffer);
 
 		pthread_mutex_lock(&mutexColaReady);
 		pthread_mutex_lock(&mutexColaExec);
