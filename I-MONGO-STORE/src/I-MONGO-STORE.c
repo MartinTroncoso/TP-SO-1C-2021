@@ -613,7 +613,7 @@ char* recuperarBitacora(uint32_t id_tripulante){
 		log_info(loggerMongo,"NO EXISTE LA BITACORA");
 		return "NO EXISTE LA BITACORA";
 	}
-	free(direccionBitacora);
+	//free(direccionBitacora);
 
 	t_config* configuracionTripulante = config_create(direccionBitacora);
 	char** bloquesUtilizados = config_get_array_value(configuracionTripulante,"BLOCKS");
