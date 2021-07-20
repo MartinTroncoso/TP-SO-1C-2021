@@ -985,12 +985,21 @@ void listarTripulantes(){
 		pthread_mutex_lock(&mutexTripulantes);
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
-			log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: %d|%d    Status: %s",
-					  tripulante->tid,
-					  tripulante->idPatota,
-					  tripulante->posicion->posX,
-					  tripulante->posicion->posY,
-					  getEstadoComoCadena(tripulante->estado));
+			if(tripulante->estado == EXIT){
+				log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: -    Status: %s",
+						  tripulante->tid,
+						  tripulante->idPatota,
+						  getEstadoComoCadena(tripulante->estado));
+			}
+			else
+			{
+				log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: %d|%d    Status: %s",
+						  tripulante->tid,
+						  tripulante->idPatota,
+						  tripulante->posicion->posX,
+						  tripulante->posicion->posY,
+						  getEstadoComoCadena(tripulante->estado));
+			}
 		}
 		pthread_mutex_unlock(&mutexTripulantes);
 		log_trace(loggerDiscordiador,"----------------------------------------------------------------");
