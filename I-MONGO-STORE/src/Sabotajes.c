@@ -2,7 +2,8 @@
 
 bool verificarCantidadBlock() //true si hay un sabotaje
 {//
-	//pthread_mutex_lock(&mutexSabotaje);
+	//
+	pthread_mutex_lock(&mutexSabotaje);
 	bool respuesta;
 	struct stat statCarpeta;
 	char* directorioSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
@@ -14,22 +15,30 @@ bool verificarCantidadBlock() //true si hay un sabotaje
 	free(directorioSuperBloque);
 	free(directorioBlocks);
 	config_destroy(datosConfig);
+	pthread_mutex_unlock(&mutexSabotaje);
 	return respuesta;
-	//pthread_mutex_unlock(&mutexSabotaje);
+	//
 }
 
 bool verificarBitMap()
 {
-	//pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexBitMap);
 	bool resultado = false;
 	t_bitarray* bitMapDesdeArchivos = bitmapDesdeBloques();
 	//ahora  analiza los archivos tripulantes
 	t_bitarray* bitArraySistema = recuperarBitArray();
-	for(int i=0;i<bitarray_get_max_bit(bitMapDesdeArchivos);i++)
+	for(int i=0;i<cantidadDeBlocks;i++)
 	{
 		if(bitarray_test_bit(bitMapDesdeArchivos,i) != bitarray_test_bit(bitArraySistema,i))
 		{
 			log_info(loggerMongo,"BitArray en mal estado");
+			resultado = true;
+			break;
+		}
+		if(bitarray_test_bit(bitMapDesdeArchivos,i) != bitarray_test_bit(bitMapEnMemoria,i))
+		{
+			log_info(loggerMongo,"BitArray en memoria en mal estado");
 			resultado = true;
 			break;
 		}
@@ -38,12 +47,15 @@ bool verificarBitMap()
 	free(bitArraySistema->bitarray);
 	bitarray_destroy(bitMapDesdeArchivos);
 	bitarray_destroy(bitArraySistema);
+	pthread_mutex_unlock(&mutexBitMap);
+	pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
-	//pthread_mutex_unlock(&mutexSabotaje);
+
 }
 
 t_bitarray* bitmapDesdeBloques()
 {
+
 	struct dirent *dir;
 	char* direccionTripulantes = string_from_format("%s/Files/Bitacoras",PUNTO_MONTAJE);
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
@@ -53,7 +65,7 @@ t_bitarray* bitmapDesdeBloques()
 	t_config* configATrabajar;
 	//stat(directorioBlocks,&statCarpeta);
 
-	t_bitarray* bitMapRecuperadoDeArchivos = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
+	t_bitarray* bitMapRecuperadoDeArchivos = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+byteExcedente(cantidadDeBlocks, 8)), (cantidadDeBlocks/8)+byteExcedente(cantidadDeBlocks, 8), LSB_FIRST);
 	for(int i = 0; i<bitarray_get_max_bit(bitMapRecuperadoDeArchivos);i++)
 	{
 		bitarray_clean_bit(bitMapRecuperadoDeArchivos,i);
@@ -78,6 +90,10 @@ t_bitarray* bitmapDesdeBloques()
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
+				if(bitarray_test_bit(bitMapRecuperadoDeArchivos,atoi(arrayBloques[contador])))
+				{
+					log_warning(loggerMongo, "BIT OCUPADO ANTES DE SETEARLO");
+				}
 				bitarray_set_bit(bitMapRecuperadoDeArchivos,atoi(arrayBloques[contador]));
 				//log_info(loggerMongo, "Posicion bit ocupado: %d",atoi(arrayBloques[contador]));
 				contador++;
@@ -107,6 +123,10 @@ t_bitarray* bitmapDesdeBloques()
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
+				if(bitarray_test_bit(bitMapRecuperadoDeArchivos,atoi(arrayBloques[contador])))
+				{
+					log_warning(loggerMongo, "BIT OCUPADO ANTES DE SETEARLO");
+				}
 				bitarray_set_bit(bitMapRecuperadoDeArchivos,atoi(arrayBloques[contador]));
 				//log_info(loggerMongo, "Posicion bit ocupado: %d %d",atoi(arrayBloques[contador]),contador);
 				contador++;
@@ -126,7 +146,7 @@ t_bitarray* bitmapDesdeBloques()
 
 bool verificarSizeFile()
 {
-	//pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* ubicacion;
@@ -206,13 +226,13 @@ bool verificarSizeFile()
 
 
 	free(direccionFiles);
+	pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
-	//pthread_mutex_unlock(&mutexSabotaje);
 }
 
 bool verificarMD5()
 {
-	//pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
@@ -277,13 +297,14 @@ bool verificarMD5()
 	closedir(directorio);
 	free(direccionFiles);
 
+
+	pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
-	//pthread_mutex_unlock(&mutexSabotaje);
 }
 
 bool verificarBlockCount()
 {
-	//pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
 	struct dirent *dir;
@@ -329,8 +350,9 @@ bool verificarBlockCount()
 	free(direccion);
 	log_info(loggerMongo,"Valor bool: %d",resultado);
 
+
+	pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
-	//pthread_mutex_unlock(&mutexSabotaje);
 }
 
 casoDeSabotaje casoSabotajeActual()
@@ -362,7 +384,7 @@ casoDeSabotaje casoSabotajeActual()
 
 void resolverSabotajeBitMap()
 {
-	//pthread_mutex_lock(&mutexSabotaje);
+	pthread_mutex_lock(&mutexBitMap);
 	t_bitarray* bitMapBloquesFiles = bitmapDesdeBloques();
 	t_bitarray* bitMapSistema = recuperarBitArray();
 	for(int i = 0; i < bitarray_get_max_bit(bitMapSistema);i++)
@@ -377,13 +399,23 @@ void resolverSabotajeBitMap()
 				bitarray_set_bit(bitMapSistema,i);
 			}
 		}
+		if(bitarray_test_bit(bitMapBloquesFiles,i)!=bitarray_test_bit(bitMapEnMemoria,i))
+		{
+			if(bitarray_test_bit(bitMapBloquesFiles,i)==0)
+			{
+				bitarray_clean_bit(bitMapEnMemoria,i);
+			}else
+			{
+				bitarray_set_bit(bitMapEnMemoria,i);
+			}
+		}
 	}
-	guardarBitArray(bitMapSistema);
+	guardarBitArray(bitMapBloquesFiles);
 	free(bitMapSistema->bitarray);
 	free(bitMapBloquesFiles->bitarray);
 	bitarray_destroy(bitMapBloquesFiles);
 	bitarray_destroy(bitMapSistema);
-	//pthread_mutex_unlock(&mutexSabotaje);
+	pthread_mutex_unlock(&mutexBitMap);
 }
 
 void resolverSabotajeSizeFile()

@@ -35,6 +35,7 @@ typedef enum{
 t_dictionary* caracterAsociadoATarea;
 t_config* configuracionMongo;
 t_log* loggerMongo;
+t_bitarray* bitMapEnMemoria;
 
 int socket_escucha;
 

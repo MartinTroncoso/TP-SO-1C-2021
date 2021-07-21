@@ -98,6 +98,7 @@ void inicializarDiccionario(){
 void inicializarFileSystem(){
 	inicializarSuperBloque();
 	inicializarBlocks();
+	bitMapEnMemoria = recuperarBitArray();
 }
 
 void inicializarSuperBloque(){
@@ -108,7 +109,7 @@ void inicializarSuperBloque(){
 	if(stat(direccionSuperBloque,&statCarpeta)==-1){
 
 		log_info(loggerMongo,"No existe SupreBloque");
-		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8)), (cantidadDeBlocks/8)+(cantidadDeBlocks%8), LSB_FIRST);
+		t_bitarray* bitArray = bitarray_create_with_mode(malloc((cantidadDeBlocks/8)+byteExcedente(cantidadDeBlocks, 8)), (cantidadDeBlocks/8)+byteExcedente(cantidadDeBlocks, 8), LSB_FIRST);
 		log_info(loggerMongo,"Tamanio struct: %d", sizeof(bitArray));
 		log_info(loggerMongo,"Tamanio bitarray antes de poner en 1: %d",string_length(bitArray->bitarray));
 		for(int i = 0; i<bitarray_get_max_bit(bitArray);i++){
@@ -153,7 +154,7 @@ void inicializarSuperBloque(){
 	}
 	else
 	{
-		log_info(loggerMongo,"El archvio SuperBloque.ims ya existe");
+		log_info(loggerMongo,"El archivo SuperBloque.ims ya existe");
 		t_bitarray* recuperado = recuperarBitArray();
 		log_info(loggerMongo,"Posicion del blocks libre: %d", posicionBlockLibre(recuperado));
 		guardarBitArray(recuperado);
@@ -187,8 +188,8 @@ t_bitarray* recuperarBitArray(){
 //		printf("%c",archivoEnMemoria[marcador]);
 //	}
 
-	void* punteroMemoria = calloc((cantidadDeBlocks/8)+(cantidadDeBlocks%8),1);
-	t_bitarray* nuevoBitArray = bitarray_create_with_mode(punteroMemoria, cantidadDeBlocks/8+cantidadDeBlocks%8, LSB_FIRST);
+	void* punteroMemoria = calloc((cantidadDeBlocks/8)+byteExcedente(cantidadDeBlocks, 8),1);
+	t_bitarray* nuevoBitArray = bitarray_create_with_mode(punteroMemoria, cantidadDeBlocks/8+byteExcedente(cantidadDeBlocks, 8), LSB_FIRST);
 	//char* charArray = malloc(caracteristicasArchivo2.st_size - marcador);
 	for(int i = 0; i<bitarray_get_max_bit(nuevoBitArray);i++){
 		bitarray_clean_bit(nuevoBitArray,i);
@@ -565,7 +566,7 @@ void loggearAtencionSabotaje(uint32_t id_tripulante){
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
-	char* stringBitacora = string_duplicate("Atiende el sabotaje");
+	char* stringBitacora = string_duplicate("Atiende el sabotaje;");
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);
@@ -579,7 +580,7 @@ void loggearResolucionSabotaje(uint32_t id_tripulante){
 	char* directorioTripulante = string_from_format("%s/Files/Bitacoras/Tripulante%d.ims",PUNTO_MONTAJE,id_tripulante);
 	t_config* configuracionTripulante = config_create(directorioTripulante);
 
-	char* stringBitacora = string_duplicate("Resolvio el sabotaje\n");
+	char* stringBitacora = string_duplicate("Resolvio el sabotaje;");
 	escribirBitacora(stringBitacora, configuracionTripulante);
 	config_save(configuracionTripulante);
 	config_destroy(configuracionTripulante);
@@ -1001,8 +1002,9 @@ void escribirBitacora(char* string, t_config* configuracionTripulante){
 int ocuparBitVacio(){
 	pthread_mutex_lock(&mutexBitMap);
 	t_bitarray* bitMap = recuperarBitArray();
-	int posicion = posicionBlockLibre(bitMap);
+	int posicion = posicionBlockLibre(bitMapEnMemoria);
 	bitarray_set_bit(bitMap,posicion);
+	bitarray_set_bit(bitMapEnMemoria,posicion);
 	guardarBitArray(bitMap);
 	free(bitMap->bitarray);
 	bitarray_destroy(bitMap);
@@ -1366,6 +1368,7 @@ void liberarBit(int bit){
 	t_bitarray* bitMap = recuperarBitArray();
 	//int posicion = posicionBlockLibre(bitMap);
 	bitarray_clean_bit(bitMap,bit);
+	bitarray_clean_bit(bitMapEnMemoria,bit);
 	guardarBitArray(bitMap);
 	free(bitMap->bitarray);
 	bitarray_destroy(bitMap);
