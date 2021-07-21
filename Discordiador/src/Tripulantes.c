@@ -986,7 +986,7 @@ void listarTripulantes(){
 		for(int i=0; i<list_size(tripulantes); i++){
 			t_tripulante* tripulante = (t_tripulante*) list_get(tripulantes,i);
 			if(tripulante->estado == EXIT){
-				log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: -    Status: %s",
+				log_trace(loggerDiscordiador,"Tripulante: %d    Patota: %d    Posicion: ---    Status: %s",
 						  tripulante->tid,
 						  tripulante->idPatota,
 						  getEstadoComoCadena(tripulante->estado));
