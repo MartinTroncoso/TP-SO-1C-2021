@@ -3,7 +3,7 @@
 bool verificarCantidadBlock() //true si hay un sabotaje
 {//
 	//
-	pthread_mutex_lock(&mutexSabotaje);
+	//pthread_mutex_lock(&mutexSabotaje);
 	bool respuesta;
 	struct stat statCarpeta;
 	char* directorioSuperBloque = string_from_format("%s/SuperBloque.ims",PUNTO_MONTAJE);
@@ -15,14 +15,14 @@ bool verificarCantidadBlock() //true si hay un sabotaje
 	free(directorioSuperBloque);
 	free(directorioBlocks);
 	config_destroy(datosConfig);
-	pthread_mutex_unlock(&mutexSabotaje);
+	//pthread_mutex_unlock(&mutexSabotaje);
 	return respuesta;
 	//
 }
 
 bool verificarBitMap()
 {
-	pthread_mutex_lock(&mutexSabotaje);
+	//pthread_mutex_lock(&mutexSabotaje);
 	pthread_mutex_lock(&mutexBitMap);
 	bool resultado = false;
 	t_bitarray* bitMapDesdeArchivos = bitmapDesdeBloques();
@@ -48,7 +48,7 @@ bool verificarBitMap()
 	bitarray_destroy(bitMapDesdeArchivos);
 	bitarray_destroy(bitArraySistema);
 	pthread_mutex_unlock(&mutexBitMap);
-	pthread_mutex_unlock(&mutexSabotaje);
+	//pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
 
 }
@@ -146,7 +146,7 @@ t_bitarray* bitmapDesdeBloques()
 
 bool verificarSizeFile()
 {
-	pthread_mutex_lock(&mutexSabotaje);
+	//pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* ubicacion;
@@ -205,7 +205,13 @@ bool verificarSizeFile()
 				}
 
 			}
-			resultado = (marcador!= tamanioFile);
+//			log_warning(loggerMongo,"TamanioFile: %d", tamanioFile);
+//			log_warning(loggerMongo,"El marcador es %d", marcador);
+			if(marcador!=tamanioFile)
+			{
+				resultado = true;
+			}
+
 //			if(marcador != tamanioFile-1)
 //			{
 //				resultado = true;
@@ -226,13 +232,13 @@ bool verificarSizeFile()
 
 
 	free(direccionFiles);
-	pthread_mutex_unlock(&mutexSabotaje);
+	//pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
 }
 
 bool verificarMD5()
 {
-	pthread_mutex_lock(&mutexSabotaje);
+	//pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	struct dirent *dir;
 	char* direccionFiles = string_from_format("%s/Files",PUNTO_MONTAJE);
@@ -298,13 +304,13 @@ bool verificarMD5()
 	free(direccionFiles);
 
 
-	pthread_mutex_unlock(&mutexSabotaje);
+	//pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
 }
 
 bool verificarBlockCount()
 {
-	pthread_mutex_lock(&mutexSabotaje);
+	//pthread_mutex_lock(&mutexSabotaje);
 	bool resultado = false;
 	char* direccion = string_from_format("%s/Files",PUNTO_MONTAJE);
 	struct dirent *dir;
@@ -351,7 +357,7 @@ bool verificarBlockCount()
 	log_info(loggerMongo,"Valor bool: %d",resultado);
 
 
-	pthread_mutex_unlock(&mutexSabotaje);
+	//pthread_mutex_unlock(&mutexSabotaje);
 	return resultado;
 }
 
