@@ -69,7 +69,7 @@ int main(void) {
 
 void inicializar_variables(){
 	configuracionMiRam = config_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.config");
-	logger_mi_ram = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.log", "MI-RAM-HQ", 0, LOG_LEVEL_INFO);
+	logger_mi_ram = log_create("/home/utnso/workspace/tp-2021-1c-No-C-Aprueba-/MI-RAM-HQ/miram.log", "MI-RAM-HQ", 0, LOG_LEVEL_TRACE);
 	TAMANIO_MEMORIA = config_get_int_value(configuracionMiRam,"TAMANIO_MEMORIA");
 	TAMANIO_PAGINA = config_get_int_value(configuracionMiRam,"TAMANIO_PAGINA");
 	TAMANIO_SWAP = config_get_int_value(configuracionMiRam,"TAMANIO_SWAP");
