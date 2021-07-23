@@ -39,7 +39,7 @@ uint32_t cantidad_paginas_swap_libres;
 marco* marcos_array;
 uint32_t cantidad_marcos;
 uint32_t cantidad_marcos_libres;
-t_list* cola_marcos_usados;
+
 
 t_list* tablas_paginacion;
 static t_dictionary* dic_tid_tabla;
@@ -49,7 +49,7 @@ static void pag_lectura_de_memoria(uint32_t pid, uint32_t direccion_logica, uint
 static void _pag_liberar_patota(pag_tabla* tabla_a_eliminar);
 static uint32_t buscar_index_swap(uint32_t pid, uint32_t n_pagina);
 
-static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica);
+static uint32_t paginacion_mmu(uint32_t pid, uint32_t direccion_logica);
 static respuesta_solicitud_memoria solicitar_memoria_disponible();
 
 static pag_tabla* buscar_tabla(uint32_t pid);
@@ -60,10 +60,22 @@ static uint32_t obtener_n_pagina(uint32_t direccion_logica);
 static uint32_t obtener_offset(uint32_t direccion_logica);
 static uint32_t min_number(uint32_t number1, uint32_t number2);
 
-static uint32_t eleccion_marco_victima();
-
+//Reemplazo de paginas
+t_list* cola_marcos_usados;
+uint32_t puntero_clock;
+static uint32_t eleccion_marco_para_swap();
+static uint32_t (*eleccion_victima)();
+static uint32_t algoritmo_lru();
+static uint32_t algoritmo_clock();
+static void (*pasos_uso_marco)(uint32_t n_marco);
+static void (*pasos_liberacion_marco)(uint32_t n_marco);
+static void uso_marco_lru(uint32_t n_marco);
+static void uso_marco_clock(uint32_t n_marco);
+static void liberacion_lru(uint32_t n_marco);
+static void liberacion_clock(uint32_t n_marco);
 
 void pag_inicializacion() {
+
 	cantidad_marcos = TAMANIO_MEMORIA / TAMANIO_PAGINA;
 	cantidad_paginas_swap = TAMANIO_SWAP / TAMANIO_PAGINA;
 
@@ -73,15 +85,32 @@ void pag_inicializacion() {
 	marcos_array = malloc(sizeof(marco) * cantidad_marcos);
 	paginas_swap = malloc(sizeof(pagina_swap) * cantidad_paginas_swap);
 
-	cola_marcos_usados = list_create();
-
+	tablas_paginacion = list_create();
+	dic_tid_tabla = dictionary_create();
 	for(int i = 0; i < cantidad_marcos; i++) {
 		(marcos_array[i]).libre = true;
 	}
-	tablas_paginacion = list_create();
-	dic_tid_tabla = dictionary_create();
 
-	// MEMORIA VIRTUAL
+	// PREPARACION DE ALGORITMOS DE ELECCION DE VICTIMA
+
+	if(strcmp(ALGORITMO_REEMPLAZO, "LRU") == 0) {
+		cola_marcos_usados = list_create();
+		eleccion_victima = algoritmo_lru;
+		pasos_uso_marco = uso_marco_lru;
+		pasos_liberacion_marco = liberacion_lru;
+	}
+	else if(strcmp(ALGORITMO_REEMPLAZO, "CLOCK") == 0) {
+		puntero_clock = 0;
+		eleccion_victima = algoritmo_clock;
+		pasos_uso_marco = uso_marco_clock;
+		pasos_liberacion_marco = liberacion_clock;
+	}
+	else {
+		log_error(logger_admin, "Ha ocurrido un error, no se selecciono un ALGORITMO_REEMPLAZO valido");
+	}
+
+	// PREPARACION MEMORIA VIRTUAL
+
     int fd, result;
 
     fd = open(PATH_SWAP, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
@@ -103,7 +132,6 @@ void pag_inicializacion() {
     	close(fd);
     	log_error(logger_admin, "[INICIALIZACION] - Error al mapear el archivo");
     }
-
     for(int i = 0; i < cantidad_paginas_swap; i++) {
     	paginas_swap[i].utilizado = false;
     }
@@ -111,7 +139,7 @@ void pag_inicializacion() {
 	log_info(logger_admin, "[INICIALIZACION] - Se finalizo la administracion de memoria: PAGINACION");
 }
 
-void pag_guardar_nueva_patota(datos_patota* nueva_patota) {
+int pag_guardar_nueva_patota(datos_patota* nueva_patota) {
 
 	uint32_t cant_tripulantes = nueva_patota->tripulantes;
 	uint32_t tamanio_tareas = strlen(nueva_patota->tareas) + 1;
@@ -126,6 +154,15 @@ void pag_guardar_nueva_patota(datos_patota* nueva_patota) {
 	tabla_nueva->tamanio_tareas = tamanio_tareas;
 	tabla_nueva->paginas = list_create();
 	uint32_t index_prox_pagina = 0;
+
+	uint32_t paginas_necesarias = (memoria_necesaria + TAMANIO_PAGINA - 1) / TAMANIO_PAGINA;
+	//Division entera: memoria_necesaria/TAMANIO_PAGINA, redondea para arriba
+	log_info(logger_admin, "[Almacenamiento patota %d] - Requiere: %d paginas", nueva_patota->pid, paginas_necesarias);
+
+	if(paginas_necesarias > cantidad_marcos_libres + cantidad_paginas_swap_libres) {
+		log_error(logger_admin, "Se encontro una imposibilidad factica para asignar memoria, no hay mas");
+		return 1;
+	}
 
 	// RESERVO MEMORIA
 
@@ -148,6 +185,7 @@ void pag_guardar_nueva_patota(datos_patota* nueva_patota) {
 			nueva_pagina->presente = true;
 			marcos_array[index_frame].n_pagina = index_prox_pagina;
 			marcos_array[index_frame].pid = nueva_patota->pid;
+			marcos_array[index_frame].usado = false;
 		}
 		else {
 			int index_swap = respuesta_pedido.index;
@@ -217,7 +255,7 @@ void pag_guardar_nueva_patota(datos_patota* nueva_patota) {
 	pag_escritura_a_memoria(nueva_patota->pid, dir_logica_tareas, tamanio_tareas, buffer);
 
 	free(buffer);
-
+	return 0;
 }
 
 void pag_guardar_nuevo_tripulante(datos_tripulante* nuevo_tripulante) {
@@ -500,19 +538,54 @@ static uint32_t buscar_index_swap(uint32_t pid, uint32_t n_pagina) {
 }
 
 
-static uint32_t eleccion_marco_victima() {
-
+static uint32_t eleccion_marco_para_swap() {
 	//Reviso si hay marcos libresss..
 	for(int i = 0; i < cantidad_marcos; i++) {
 		if(marcos_array[i].libre) {
 			return i;
 		}
 	}
+	//Busco victima
+	return eleccion_victima();
+}
 
-	//LRU (?
+static uint32_t algoritmo_lru() {
 	return (uint32_t) list_remove(cola_marcos_usados, 0);
 }
 
+static uint32_t algoritmo_clock() {
+	if(marcos_array[puntero_clock].usado) {
+		marcos_array[puntero_clock].usado = false;
+		puntero_clock = (puntero_clock + 1) % cantidad_marcos;
+		log_trace(logger_admin, "Se mueve la aguja a %d", puntero_clock);
+		return algoritmo_clock();
+	}
+	return puntero_clock;
+}
+
+static void uso_marco_lru(uint32_t n_frame) {
+	bool es_el_frame(void* _frame) {
+		return ((uint32_t) _frame) == n_frame;
+	}
+	list_remove_by_condition(cola_marcos_usados, es_el_frame);
+	list_add(cola_marcos_usados, (void*) n_frame);
+}
+
+static void uso_marco_clock(uint32_t n_frame) {
+	marcos_array[n_frame].usado = true;
+}
+
+static void liberacion_lru(uint32_t n_marco) {
+	//Quito de la pila
+	bool es_el_marco(void* _marco) {
+		return ((uint32_t) _marco) == n_marco;
+	}
+	list_remove_by_condition(cola_marcos_usados, es_el_marco);
+}
+
+static void liberacion_clock(uint32_t n_marco) {
+	//No realizo nada
+}
 
 static void pag_escritura_a_memoria(uint32_t pid, uint32_t direccion_logica, uint32_t size, void* buffer) {
 	uint32_t size_restante = size;
@@ -524,7 +597,7 @@ static void pag_escritura_a_memoria(uint32_t pid, uint32_t direccion_logica, uin
 		uint32_t max_direccion = (n_pagina + 1) * TAMANIO_PAGINA;
 		uint32_t bytes_a_escribir = min_number(size_restante, max_direccion - prox_direccion);
 
-		uint32_t direccion_fisica = segmentacion_mmu(pid, prox_direccion);
+		uint32_t direccion_fisica = paginacion_mmu(pid, prox_direccion);
 		escritura_a_memoria(direccion_fisica, bytes_a_escribir, buffer + offset_buffer);
 
 		prox_direccion += bytes_a_escribir;
@@ -543,7 +616,7 @@ static void pag_lectura_de_memoria(uint32_t pid, uint32_t direccion_logica, uint
 		uint32_t max_direccion = (n_pagina + 1) * TAMANIO_PAGINA;
 		uint32_t bytes_a_leer = min_number(size_restante, max_direccion - prox_direccion);
 
-		uint32_t direccion_fisica = segmentacion_mmu(pid, prox_direccion);
+		uint32_t direccion_fisica = paginacion_mmu(pid, prox_direccion);
 		lectura_de_memoria(buffer + offset_buffer, direccion_fisica, bytes_a_leer);
 
 		prox_direccion += bytes_a_leer;
@@ -553,7 +626,8 @@ static void pag_lectura_de_memoria(uint32_t pid, uint32_t direccion_logica, uint
 }
 
 // devuelve direccion fisica
-static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica) {
+static uint32_t paginacion_mmu(uint32_t pid, uint32_t direccion_logica) {
+
 	pag_tabla* tabla = buscar_tabla(pid);
 
 	uint32_t n_pagina = obtener_n_pagina(direccion_logica);
@@ -568,13 +642,7 @@ static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica) {
 
 	if(pagina_buscada->presente) {
 		uint32_t n_frame = pagina_buscada->n_frame;
-
-		//Agrego al final de la pila
-		bool es_el_frame(void* _frame) {
-			return ((uint32_t) _frame) == n_frame;
-		}
-		list_remove_by_condition(cola_marcos_usados, es_el_frame);
-		list_add(cola_marcos_usados, (void*) n_frame);
+		pasos_uso_marco(n_frame); // Difiere por algoritmo clock o LRU
 		return n_frame * TAMANIO_PAGINA + offset;
 	}
 	else {
@@ -585,7 +653,7 @@ static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica) {
 			log_error(logger_admin, "[SWAP] - Se detecto un error al buscar la pagina de swap");
 		}
 
-		uint32_t frame_victima = eleccion_marco_victima();
+		uint32_t frame_victima = eleccion_marco_para_swap();
 		log_info(logger_admin, "[SWAP] Comienza intercambio entre: index_swap(%d) y frame_victima(%d)", index_swap, frame_victima);
 		log_info(logger_admin, "[SWAP] index_swap(%d) es usado por PID(%d)-N_PAG(%d)", index_swap, paginas_swap[index_swap].pid, paginas_swap[index_swap].n_pagina);
 
@@ -595,7 +663,7 @@ static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica) {
 
 		if(!marcos_array[frame_victima].libre) {
 			//Si el marco no estaba libre, tengo que pasar Marco -> Swap
-			log_info(logger_admin, "[SWAP] frame_victima(%d) es usado por PID(%d)-N_PAG(%d)", index_swap, marcos_array[frame_victima].pid, marcos_array[frame_victima].n_pagina);
+			log_info(logger_admin, "[SWAP] frame_victima(%d) es usado por PID(%d)-N_PAG(%d)", frame_victima, marcos_array[frame_victima].pid, marcos_array[frame_victima].n_pagina);
 			pag_tabla* ant_tabla = buscar_tabla(marcos_array[frame_victima].pid);
 			pagina* ant_pagina = (pagina*) list_get(ant_tabla->paginas, marcos_array[frame_victima].n_pagina);
 
@@ -621,14 +689,13 @@ static uint32_t segmentacion_mmu(uint32_t pid, uint32_t direccion_logica) {
 		//Marco pagina como presente!
 		pagina_buscada->presente = true;
 		pagina_buscada->n_frame = frame_victima;
-		list_add(cola_marcos_usados, (void*) frame_victima);
 
 		log_info(logger_admin, "[SWAP] Finalizo swap entre: index_swap(%d) y frame_victima(%d)", index_swap, frame_victima);
 		log_info(logger_admin, "[SWAP] index_swap(%d) es usado por PID(%d)-N_PAG(%d)", index_swap, paginas_swap[index_swap].pid, paginas_swap[index_swap].n_pagina);
-		log_info(logger_admin, "[SWAP] frame_victima(%d) es usado por PID(%d)-N_PAG(%d)", index_swap, marcos_array[frame_victima].pid, marcos_array[frame_victima].n_pagina);
+		log_info(logger_admin, "[SWAP] frame_victima(%d) es usado por PID(%d)-N_PAG(%d)", frame_victima, marcos_array[frame_victima].pid, marcos_array[frame_victima].n_pagina);
 
-		//Retorno la direccion fisica!
-		return frame_victima * TAMANIO_PAGINA + offset;
+		// Vuelvo a realizar la operacion
+		return paginacion_mmu(pid, direccion_logica);
 	}
 }
 
@@ -642,11 +709,7 @@ static void liberar_pagina(pagina* pag_a_liberar, pag_tabla* tabla) {
 	if(pag_a_liberar->presente) {
 		marcos_array[pag_a_liberar->n_frame].libre = true;
 		cantidad_marcos_libres++;
-		//Quito de la pila
-		bool es_el_marco(void* _marco) {
-			return ((uint32_t) _marco) == pag_a_liberar->n_frame;
-		}
-		list_remove_by_condition(cola_marcos_usados, es_el_marco);
+		pasos_liberacion_marco(pag_a_liberar->n_frame);
 		log_info(logger_admin, "[Liberacion pagina] - Se finalizo de liberar la pagina. Se libero el marco %d", pag_a_liberar->n_frame);
 	}
 	else {

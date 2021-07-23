@@ -22,7 +22,7 @@ const uint32_t TCB_POS_PUNT_PCB = 17;
 
 void inicializar_administrador(t_log* logger,
 		void (*f_inicializacion)(),
-		void (*f_g_n_patota)(datos_patota*),
+		int (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),
 		char (*f_obt_est_tripulante)(uint32_t),
 		char* (*f_obt_prox_instr_tripulante)(uint32_t),

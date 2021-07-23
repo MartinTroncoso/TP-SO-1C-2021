@@ -112,19 +112,7 @@ void inicializar_variables(){
 				pag_liberar_tripulante);
 	}
 	else {
-		inicializar_administrador(
-				logger_mi_ram,
-				bas_inicializacion,
-				bas_guardar_nueva_patota,
-				bas_guardar_nuevo_tripulante,
-				bas_obtener_estado_tripulante,
-				bas_obtener_prox_instruccion_tripulante,
-				bas_actualizar_estado_tripulante,
-				bas_actualizar_posicion_tripulante,
-				bas_actualizar_instruccion_tripulante,
-				bas_generar_dump_memoria,
-				NULL,
-				bas_liberar_tripulante);
+		log_error(logger_mi_ram, "No se configuro correctamente el esquema de memoria");
 	}
 }
 
@@ -174,6 +162,7 @@ void atender_tripulante(void* _cliente) {
 
 void recibir_datos_patota(void* _cliente) {
 	int socket_cliente = (int) _cliente;
+	int resultado_memoria;
 	void* buffer;
 	uint32_t buffer_size;
 	uint32_t desplazamiento = 0;
@@ -203,12 +192,18 @@ void recibir_datos_patota(void* _cliente) {
 
 	//GUARDO LA PATOTA
 	pthread_mutex_lock(&mutex_memoria);
-	mem_guardar_nueva_patota(datos_patota_nuevo);
+	resultado_memoria = mem_guardar_nueva_patota(datos_patota_nuevo);
 	pthread_mutex_unlock(&mutex_memoria);
 
-	enviar_respuesta(OK, socket_cliente);
-	log_info(logger_mi_ram, "Se ha creado la patota: %d."
-			" Tiene %d tripulante/s\nSus instrucciones son: %s", datos_patota_nuevo->pid, datos_patota_nuevo->tripulantes, datos_patota_nuevo->tareas);
+	if(resultado_memoria != 0) {
+		enviar_respuesta(ERROR, socket_cliente);
+		log_error(logger_mi_ram, "No se ha podido crear la patota %d por falta de memoria", datos_patota_nuevo->pid);
+	}
+	else {
+		enviar_respuesta(OK, socket_cliente);
+		log_info(logger_mi_ram, "Se ha creado la patota: %d."
+				" Tiene %d tripulante/s\nSus instrucciones son: %s", datos_patota_nuevo->pid, datos_patota_nuevo->tripulantes, datos_patota_nuevo->tareas);
+	}
 	close(socket_cliente);
 	liberar_datos_patota(datos_patota_nuevo);
 	free(buffer);

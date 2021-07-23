@@ -28,6 +28,7 @@ typedef struct{
 	uint32_t pid;
 	uint32_t n_pagina;
 	bool libre;
+	bool usado;
 } marco;
 
 typedef struct {
@@ -41,7 +42,7 @@ typedef struct {
 
 
 void pag_inicializacion();
-void pag_guardar_nueva_patota(datos_patota*);
+int pag_guardar_nueva_patota(datos_patota*);
 void pag_guardar_nuevo_tripulante(datos_tripulante*);
 char pag_obtener_estado_tripulante(uint32_t);
 char* pag_obtener_prox_instruccion_tripulante(uint32_t);

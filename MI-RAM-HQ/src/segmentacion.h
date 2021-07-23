@@ -30,7 +30,7 @@ typedef struct {
 } seg_area_libre;
 
 void seg_inicializacion();
-void seg_guardar_nueva_patota(datos_patota*);
+int seg_guardar_nueva_patota(datos_patota*);
 void seg_guardar_nuevo_tripulante(datos_tripulante*);
 char seg_obtener_estado_tripulante(uint32_t);
 char* seg_obtener_prox_instruccion_tripulante(uint32_t);

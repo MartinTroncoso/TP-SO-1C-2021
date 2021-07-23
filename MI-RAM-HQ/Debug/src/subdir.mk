@@ -7,7 +7,6 @@ C_SRCS += \
 ../src/MI-RAM-HQ.c \
 ../src/Mapa.c \
 ../src/admin_memoria.c \
-../src/memoria_basica.c \
 ../src/paginacion.c \
 ../src/segmentacion.c 
 
@@ -15,7 +14,6 @@ OBJS += \
 ./src/MI-RAM-HQ.o \
 ./src/Mapa.o \
 ./src/admin_memoria.o \
-./src/memoria_basica.o \
 ./src/paginacion.o \
 ./src/segmentacion.o 
 
@@ -23,7 +21,6 @@ C_DEPS += \
 ./src/MI-RAM-HQ.d \
 ./src/Mapa.d \
 ./src/admin_memoria.d \
-./src/memoria_basica.d \
 ./src/paginacion.d \
 ./src/segmentacion.d 
 

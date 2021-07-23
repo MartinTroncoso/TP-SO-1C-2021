@@ -75,17 +75,23 @@ void seg_inicializacion() {
 	log_info(logger_admin, "Se inicia la administracion de memoria: SEGMENTACION");
 }
 
-void seg_guardar_nueva_patota(datos_patota* nueva_patota) {
+int seg_guardar_nueva_patota(datos_patota* nueva_patota) {
 
 	log_info(logger_admin, "[Almacenamiento patota %d] Se comienza la operacion", nueva_patota->pid);
 
 	uint32_t cantidad_tripulantes = nueva_patota->tripulantes;
 	uint32_t tamanio_tareas = strlen(nueva_patota->tareas) + 1;
 
+	//CHEQUEO SI HAY MEMORIA PRIMERO:
+
+	if(memoria_disponible < TAMANIO_PCB + cantidad_tripulantes * TAMANIO_TCB + tamanio_tareas) {
+		log_error(logger_admin, "Se encontro una imposibilidad factica para asignar memoria, no hay mas");
+		return 1;
+	}
+
 	//ARMO TABLA DE SEGMENTOS:
 
 	seg_tabla* nueva_tabla = malloc(sizeof(seg_tabla));
-
 	nueva_tabla->segmentos = list_create();
 	nueva_tabla->c_tripulantes = nueva_patota->tripulantes;
 	nueva_tabla->pid = nueva_patota->pid;
@@ -93,11 +99,6 @@ void seg_guardar_nueva_patota(datos_patota* nueva_patota) {
 	log_info(logger_admin, "[Almacenamiento patota %d] Se armo la tabla de segmentos", nueva_patota->pid);
 
 	//RESERVO MEMORIA PRIMERO:
-
-	if(memoria_disponible < TAMANIO_PCB + cantidad_tripulantes * TAMANIO_TCB + tamanio_tareas) {
-		log_error(logger_admin, "Se encontro una imposibilidad factica para asignar memoria, no hay mas");
-		//QUE HACER EN ESTE CASOO!!!
-	}
 
 	segmento* segmento_pcb = solicitud_reserva_memoria(TAMANIO_PCB);
 	if(segmento_pcb == NULL) {
@@ -150,6 +151,7 @@ void seg_guardar_nueva_patota(datos_patota* nueva_patota) {
 	free(buffer);
 
 	log_info(logger_admin, "[Almacenamiento patota %d] Se finalizo la operacion", nueva_patota->pid);
+	return 0;
 }
 
 void seg_guardar_nuevo_tripulante(datos_tripulante* nuevo_tripulante) {

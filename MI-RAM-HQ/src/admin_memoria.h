@@ -51,7 +51,7 @@ char* CRITERIO_SELECCION;
 
 void inicializar_administrador(t_log*,
 		void (*f_inicializacion)(),
-		void (*f_g_n_patota)(datos_patota*),
+		int (*f_g_n_patota)(datos_patota*),
 		void (*f_g_n_tripulante)(datos_tripulante*),
 		char (*f_obt_est_tripulante)(uint32_t),
 		char* (*f_obt_prox_instr_tripulante)(uint32_t),
@@ -69,7 +69,7 @@ void escritura_a_memoria(uint32_t direccion_fisica, uint32_t size, void* buffer)
 void finalizar_administrador();
 
 void (*mem_inicializacion)();
-void (*mem_guardar_nueva_patota)(datos_patota*);
+int (*mem_guardar_nueva_patota)(datos_patota*);
 void (*mem_guardar_nuevo_tripulante)(datos_tripulante*);
 char (*mem_obtener_estado_tripulante)(uint32_t);
 char* (*mem_obtener_prox_instruccion_tripulante)(uint32_t);
