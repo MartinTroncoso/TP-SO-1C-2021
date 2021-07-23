@@ -218,7 +218,7 @@ void guardarBitArray(t_bitarray* arrayAGuardar){
 
 int posicionBlockLibre(t_bitarray* bitMap){
 	int posicion = 0;
-	log_info(loggerMongo,"Tamanio bitmap: %d",bitarray_get_max_bit(bitMap));
+	//log_info(loggerMongo,"Tamanio bitmap: %d",bitarray_get_max_bit(bitMap));
 
 	while(posicion < bitarray_get_max_bit(bitMap)){
 		if(!bitarray_test_bit(bitMap,posicion))
@@ -681,37 +681,46 @@ char** getSiguientePosicionSabotaje(){
 		return string_split(POSICIONES_SABOTAJE[sabotajesResueltos],"|");
 	}
 	else
+	{
 		log_trace(loggerMongo,"YA SE RESOLVIERON TODOS LOS SABOTAJES!");
+		return string_split(POSICIONES_SABOTAJE[sabotajesResueltos],"|");
+	}
 
-	return posicionSabotajeActual;
+
 }
 
 void informarSabotaje(){
-	int socket_cliente_discordiador = crearConexionCliente(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
+	if(casoSabotajeActual()!=NO_HAY_SABOTAJES)
+	{
+		int socket_cliente_discordiador = crearConexionCliente(IP_DISCORDIADOR,PUERTO_DISCORDIADOR);
 
-	pthread_mutex_lock(&mutexPosicionSabotaje);
-	uint32_t posSabotajeX = atoi(posicionSabotajeActual[0]);
-	uint32_t posSabotajeY = atoi(posicionSabotajeActual[1]);
-	pthread_mutex_unlock(&mutexPosicionSabotaje);
+		pthread_mutex_lock(&mutexPosicionSabotaje);
+		uint32_t posSabotajeX = atoi(posicionSabotajeActual[0]);
+		uint32_t posSabotajeY = atoi(posicionSabotajeActual[1]);
+		pthread_mutex_unlock(&mutexPosicionSabotaje);
 
-	log_debug(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!",posSabotajeX,posSabotajeY);
+		log_debug(loggerMongo,"¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!",posSabotajeX,posSabotajeY);
 
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = 2*sizeof(uint32_t);
-	buffer->stream = malloc(buffer->size);
+		t_buffer* buffer = malloc(sizeof(t_buffer));
+		buffer->size = 2*sizeof(uint32_t);
+		buffer->stream = malloc(buffer->size);
 
-	int desplazamiento = 0;
+		int desplazamiento = 0;
 
-	memcpy(buffer->stream + desplazamiento, &posSabotajeX, sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
-	memcpy(buffer->stream + desplazamiento, &posSabotajeY, sizeof(uint32_t));
+		memcpy(buffer->stream + desplazamiento, &posSabotajeX, sizeof(uint32_t));
+		desplazamiento += sizeof(uint32_t);
+		memcpy(buffer->stream + desplazamiento, &posSabotajeY, sizeof(uint32_t));
 
-	enviar_buffer(buffer,socket_cliente_discordiador);
+		enviar_buffer(buffer,socket_cliente_discordiador);
 
-	free(buffer->stream);
-	free(buffer);
+		free(buffer->stream);
+		free(buffer);
 
-	close(socket_cliente_discordiador);
+		close(socket_cliente_discordiador);
+	}else
+	{
+		log_debug(loggerMongo, "!NO HAY SABOJATES!");
+	}
 }
 
 void ejecutarFSCK(){

@@ -179,10 +179,8 @@ bool verificarSizeFile()
 			arrayBloques = config_get_array_value(configuracionFile,"BLOCKS");
 			tamanioFile = config_get_int_value(configuracionFile,"SIZE");
 			//cantidadBloquesUsados = config_get_int_value(configuracionFile,"BLOCK_COUNT");
-			log_info(loggerMongo,"Tamanio file: %d",tamanioFile);
 			stringDeLlenado = config_get_string_value(configuracionFile,"CARACTER_LLENADO");
 			caracterDeLlenado = stringDeLlenado[0];
-			log_info(loggerMongo,"caracter llenado: %c",caracterDeLlenado);
 			contador = 0;
 			while(arrayBloques[contador]!=NULL)
 			{
@@ -223,11 +221,8 @@ bool verificarSizeFile()
 		}
 		free(ubicacion);
 	}
-	log_info(loggerMongo,"Libero dir");
 	free(dir);
-	log_info(loggerMongo,"Se libero di y paso a closedir");
 	closedir(directorio);  //por alguna razon crashean
-	log_info(loggerMongo,"Se libero closedir");
 
 
 
@@ -354,7 +349,6 @@ bool verificarBlockCount()
 	free(dir);
 	closedir(directorio);
 	free(direccion);
-	log_info(loggerMongo,"Valor bool: %d",resultado);
 
 
 	//pthread_mutex_unlock(&mutexSabotaje);
@@ -363,22 +357,27 @@ bool verificarBlockCount()
 
 casoDeSabotaje casoSabotajeActual()
 {
+	log_trace(loggerMongo,"Se verifica la cantidad de bloques en Superbloque");
 	if(verificarCantidadBlock())
 	{
 		return SABOTAJE_EN_SUPERBLOQUE_CANTIDAD;
 	}
+	log_trace(loggerMongo,"Se verifica integridad de BitMap");
 	if(verificarBitMap())
 	{
 		return SABOTAJE_EN_SUPERBLOQUE_BITMAP;
 	}
+	log_trace(loggerMongo,"Se verifica MD5 data");
 	if(verificarMD5())
 	{
 		return SABOTAJE_EN_FILE_BLOCKS;
 	}
+	log_trace(loggerMongo,"Se verifica tamanio del archivo");
 	if(verificarSizeFile())
 	{
 		return SABOTAJE_EN_FILE_SIZE;
 	}
+	log_trace(loggerMongo,"Se verifica Block count de file");
 	if(verificarBlockCount())
 	{
 		return SABOTAJE_EN_FILE_BLOCK_COUNT;
