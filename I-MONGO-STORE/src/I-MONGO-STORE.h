@@ -57,6 +57,8 @@ pthread_mutex_t mutexMD5;
 pthread_mutex_t mutexSabotaje;
 pthread_mutex_t mutexPosicionSabotaje;
 
+void sincronizarBlocks();
+void atenderTripulantes();
 void inicializarVariables();
 void inicializarFileSystem();
 void inicializarSuperBloque();

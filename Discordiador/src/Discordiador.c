@@ -239,7 +239,7 @@ void atenderSabotajes(){
 			posicionSabotajeActual->posX = posSabotajeX;
 			posicionSabotajeActual->posY = posSabotajeY;
 
-			log_info(loggerDiscordiador,"¡¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!!",posicionSabotajeActual->posX,posicionSabotajeActual->posY);
+			log_debug(loggerDiscordiador,"¡¡¡SE PRODUJO UN SABOTAJE EN %d|%d!!!",posicionSabotajeActual->posX,posicionSabotajeActual->posY);
 
 			gestionarSabotaje();
 		}

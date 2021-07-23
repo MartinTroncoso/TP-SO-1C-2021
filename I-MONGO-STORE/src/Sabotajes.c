@@ -462,18 +462,15 @@ void resolverSabotajeSizeFile()
 			caracterDeLlenado = stringDeLlenado[0];
 			//log_info(loggerMongo,"caracter llenado: %c",caracterDeLlenado);
 			contador = 0;
-			while(arrayBloques[contador]!=NULL)
-			{
+
+			while(arrayBloques[contador]!=NULL){
 				bloqueRecuperadoFile = bloqueRecuperado(atoi(arrayBloques[contador]));
 				string_append(&recursoRecuperado, bloqueRecuperadoFile);
 				contador++;
 				free(bloqueRecuperadoFile);
 			}
 
-			//
-			for(int i = 0; i<contador*tamanioBlock;i++)
-			{
-				printf("%d",i);
+			for(int i = 0; i<contador*tamanioBlock;i++){
 				marcador = i;
 				if(recursoRecuperado[i]!=caracterDeLlenado)
 				{
@@ -484,8 +481,7 @@ void resolverSabotajeSizeFile()
 
 			}
 
-			if(marcador!=tamanioFile)
-			{
+			if(marcador!=tamanioFile){
 				char* nuevoSize = string_itoa(marcador);
 				config_set_value(configuracionFile,"SIZE",nuevoSize);
 				config_save(configuracionFile);

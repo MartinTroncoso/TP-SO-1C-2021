@@ -11,45 +11,15 @@
 #include "I-MONGO-STORE.h"
 
 int main(void){
+//	signal(SIGINT,terminar_programa);
 	signal(SIGUSR1,informarSabotaje);
-//	signal(SIGINT,terminar_programa); //ctrl+C
 
 	inicializarVariables();
-
-//	escribirFile("Oxigeno", 39);
-//	t_bitarray* unArray = recuperarBitArray();
-//	bitarray_clean_bit(unArray,2);
-//	guardarBitArray(unArray);
-//	bitarray_destroy(unArray);
-//	bool unvalor = verificarSizeFile();
-//	resolverSabotajeSizeFile();
-//	eliminarArchivoYLiberar("Oxigeno");
-//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
-//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
-//	log_info(loggerMongo,"Caso sabotaje: %d",casoSabotajeActual());
-//	resolverSabotajeBitMap();
-//	resolverSabotajeBlockCount();
-//	resolverSabotajeCantidadBlocks();
-//	resolverSabotajeMD5();
-//	resolverSabotajeSizeFile();
-
-	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
-	ejecutarFSCK();
-	log_info(loggerMongo,"Situacion de sabotaje %d",casoSabotajeActual());
 	log_info(loggerMongo,"PID DE I-MONGO-STORE: %d",getpid());
 
-	pthread_t hilo_sincro;
-	pthread_create(&hilo_sincro,NULL,(void*) asincronia,NULL);
-	pthread_detach(hilo_sincro);
+	sincronizarBlocks();
 
-	while(1){
-		int socket_cliente = esperar_cliente(socket_escucha);
-		log_info(loggerMongo,"Se conectó un Tripulante!");
-
-		pthread_t hilo_receptor;
-		pthread_create(&hilo_receptor , NULL ,(void*) atenderTripulante, (void*) socket_cliente);
-		pthread_detach(hilo_receptor);
-	}
+	atenderTripulantes();
 
 	return EXIT_SUCCESS;
 }
@@ -238,10 +208,8 @@ void guardarBitArray(t_bitarray* arrayAGuardar){
 	else
 		memcpy(archivoEnMemoria+marcador,arrayAGuardar->bitarray,caracteristicasArchivo.st_size - marcador);
 
-
-	//TODO ESTÁ BIEN ESTO? SE ESTARÍA SINCRONIZANDO APARTE DEL HILO CREO
 	if(msync(archivoEnMemoria,caracteristicasArchivo.st_size,MS_INVALIDATE)==0)
-		printf("\nSe actualizo el archivo\n");
+		log_info(loggerMongo,"Se actualizo el archivo");
 
 	munmap(archivoEnMemoria,caracteristicasArchivo.st_size);
 	free(direccionSuperBloque);
@@ -326,6 +294,23 @@ void inicializarMapeoBlocks(){
 	}
 }
 
+void sincronizarBlocks(){
+	pthread_t hilo_sincro;
+	pthread_create(&hilo_sincro,NULL,(void*) asincronia,NULL);
+	pthread_detach(hilo_sincro);
+}
+
+void atenderTripulantes(){
+	while(1){
+		int socket_cliente = esperar_cliente(socket_escucha);
+		log_info(loggerMongo,"Se conectó un Tripulante!");
+
+		pthread_t hilo_receptor;
+		pthread_create(&hilo_receptor , NULL ,(void*) atenderTripulante, (void*) socket_cliente);
+		pthread_detach(hilo_receptor);
+	}
+}
+
 void forzarSincronizacionBlocks(){
 	pthread_mutex_lock(&mutexBlocks);
 	memcpy(blocksMapOriginal, blocksMap, cantidadDeBlocks * tamanioBlock);
@@ -364,7 +349,7 @@ void atenderTripulante(void* _cliente){
 			recibirFinalizaTarea(socket_tripulante,idTripulante);
 			break;
 		case PETICION_ENTRADA_SALIDA:
-			log_info(loggerMongo,"[TRIPULANTE %d] REALIZA PETICIÓN DE ENTRADA/SALIDA",idTripulante);
+			log_trace(loggerMongo,"[TRIPULANTE %d] REALIZA PETICIÓN DE ENTRADA/SALIDA",idTripulante);
 			realizarTareaIO(socket_tripulante,idTripulante);
 			break;
 		case ATENDER_SABOTAJE:
@@ -384,7 +369,7 @@ void atenderTripulante(void* _cliente){
 			return;
 			break;
 		default:
-			log_info(loggerMongo , "[TRIPULANTE %d] Tipo de mensaje desconocido!!!",idTripulante);
+			log_trace(loggerMongo , "[TRIPULANTE %d] Se desconecta...",idTripulante);
 			close(socket_tripulante);
 			return;
 			break;
@@ -646,7 +631,7 @@ char* recuperarBitacora(uint32_t id_tripulante){
 			bitacora[i]='\n';
 	}
 
-	log_info(loggerMongo,"%s",bitacora);
+//	log_info(loggerMongo,"%s",bitacora);
 
 	free(bloqueRecuperado);
 	liberarArray(bloquesUtilizados);

@@ -83,7 +83,7 @@ void esperarParaEjecutar(t_tripulante* tripulante){
 				}
 
 				if(tripulante->quantum == QUANTUM && !tripulante->expulsado){
-					log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+					log_warning(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 					esperarSiHaySabotaje(tripulante); //SI LLEGA EL SABOTAJE EN EL ÚLTIMO SLEEP, SE ESPERA PARA HABILITAR AL PRÓXIMO
 
@@ -563,7 +563,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 
 				if(tieneTareasPendientes(tripulante)){
 					if(tripulante->quantum == QUANTUM){
-						log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+						log_warning(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 						esperarSiHaySabotaje(tripulante);
 
@@ -616,7 +616,7 @@ void ejecutarTareaRR(t_tripulante* tripulante){
 					pthread_mutex_unlock(&mutexTripulantes);
 				}
 
-				log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+				log_warning(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 				esperarSiHaySabotaje(tripulante);
 
@@ -779,7 +779,7 @@ void planificarTripulanteRR(t_tripulante* tripulante){
 			if(!tripulante->expulsado){
 				//SI EL QUANTUM DEL TRIPULANTE ES IGUAL AL MAXIMO, QUIERE DECIR QUE NO PUEDE EMPEZAR A EJECUTAR LA TAREA. VUELVE A READY
 				if(tripulante->quantum == QUANTUM){
-					log_debug(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
+					log_warning(loggerSecundario,"[TRIPULANTE %d] CONSUMÍ TODO EL QUANTUM.",tripulante->tid);
 
 					esperarSiHaySabotaje(tripulante);
 
@@ -861,8 +861,9 @@ void gestionarTripulante(t_tripulante* tripulante){
 	int socket_MIRAM = crearConexionCliente(IP_MI_RAM,PUERTO_MI_RAM);
 	int socket_MONGO = crearConexionCliente(IP_I_MONGO_STORE,PUERTO_I_MONGO_STORE);
 
-	pthread_mutex_lock(&mutexTripulantes);
 	log_info(loggerDiscordiador,"[TRIPULANTE %d] SE CONECTÓ",tripulante->tid);
+
+	pthread_mutex_lock(&mutexTripulantes);
 	tripulante->socket_MIRAM = socket_MIRAM;
 	tripulante->socket_MONGO = socket_MONGO;
 	pthread_mutex_unlock(&mutexTripulantes);
@@ -931,18 +932,22 @@ void iniciarPatota(t_iniciar_patota* estructura){
 	eliminar_paquete(paquete);
 	free(tareas);
 
-	//Espero el OK
+	//Espero la respuesta de si se pudo crear la patota
 	tipo_respuesta cod_respuesta = recibir_respuesta(socket_cliente_MIRAM);
 	switch(cod_respuesta) {
 	case OK:
 		log_info(loggerDiscordiador,"Se creó la patota %d",patota->pid);
+		close(socket_cliente_MIRAM);
 		break;
+	case ERROR:
+		log_warning(loggerDiscordiador,"No hay espacio en memoria para crear la patota :(");
+		close(socket_cliente_MIRAM);
+		return;
 	default:
-		log_error(loggerDiscordiador, "MIRAM fallo, me salgo");
+		log_error(loggerDiscordiador, "Falló MI-RAM. No es posible concretar la operación");
+		close(socket_cliente_MIRAM);
 		return;
 	}
-
-	close(socket_cliente_MIRAM);
 
 	sumarIdPatota();
 

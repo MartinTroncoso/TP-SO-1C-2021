@@ -489,7 +489,7 @@ void gestionarSabotaje(){
 	list_iterate(colaBlockEmergencia,(void*) pasarABlockPorEmergencia);
 	list_iterate(colaBlockIO,(void*) pasarABlockPorEmergencia); //NO LOS SACO DE LA DE I/O PORQUE NO CAMBIA EN NADA
 
-	log_info(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteParaElSabotaje->tid);
+	log_debug(loggerDiscordiador,"[TRIPULANTE %d] ELEGIDO PARA RESOLVER EL SABOTAJE",tripulanteParaElSabotaje->tid);
 
 	notificarAtencionSabotaje(tripulanteParaElSabotaje);
 
@@ -509,11 +509,11 @@ void gestionarSabotaje(){
 	invocarFSCK(tripulanteParaElSabotaje);
 
 	//EMPIEZA A RESOLVERLO
-	log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIENDO SABOTAJE...",tripulanteParaElSabotaje->tid);
+	log_debug(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIENDO SABOTAJE...",tripulanteParaElSabotaje->tid);
 	for(int i = 0; i<DURACION_SABOTAJE ;i++)
 		sleep(RETARDO_CICLO_CPU);
 
-	log_info(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",tripulanteParaElSabotaje->tid);
+	log_debug(loggerDiscordiador,"[TRIPULANTE %d] RESOLVIÓ EL SABOTAJE",tripulanteParaElSabotaje->tid);
 
 	notificarResolucionSabotaje(tripulanteParaElSabotaje);
 
